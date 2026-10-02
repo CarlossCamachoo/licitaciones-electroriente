@@ -1,4 +1,6 @@
-# Documentos que Electroriente debe tener listos para licitar.
+# Documentos generales que la empresa debe tener para presentar cualquier
+# licitacion. Lo que depende de cada proceso (garantia de seriedad, fichas
+# tecnicas, acuerdo de consorcio, etc.) NO va aqui: se ve en cada pliego.
 #
 # El panel los muestra en la pestana "Documentos". Cada persona marca en el
 # panel cuales ya tiene; esa marca se guarda en su navegador, no en este
@@ -87,34 +89,6 @@ categorias:
         vigencia: "Corta; se descarga cerca de la fecha de cierre"
         cuando: siempre
 
-      - id: medidas_correctivas
-        nombre: "Certificado de medidas correctivas (RNMC)"
-        para_que: "Confirma que no hay multas pendientes del Código de Policía."
-        emite: "Policía Nacional"
-        vigencia: "Corta; se descarga cerca de la fecha de cierre"
-        cuando: segun_pliego
-
-      - id: redam
-        nombre: "Certificado REDAM (deudores alimentarios morosos)"
-        para_que: "Algunas entidades lo piden para el representante legal."
-        emite: "Consejo Superior de la Judicatura"
-        vigencia: "Corta"
-        cuando: segun_pliego
-
-      - id: autorizacion_junta
-        nombre: "Autorización de la junta o asamblea para presentar la oferta"
-        para_que: "Solo si los estatutos limitan lo que el representante legal puede contratar por su cuenta."
-        emite: "Junta de socios o asamblea"
-        vigencia: "Para cada proceso"
-        cuando: si_aplica
-
-      - id: acuerdo_consorcio
-        nombre: "Acuerdo de consorcio o unión temporal"
-        para_que: "Necesario para procesos de obra o montaje, donde Electroriente participa con un aliado instalador."
-        emite: "Las empresas que se asocian"
-        vigencia: "Para cada proceso"
-        cuando: si_aplica
-        condicion: requiere_aliado
 
   - id: financieros
     titulo: "Financieros"
@@ -128,19 +102,6 @@ categorias:
         cuando: siempre
         pendiente: capacidad_financiera
 
-      - id: contador
-        nombre: "Tarjeta profesional y certificado de antecedentes del contador"
-        para_que: "Respalda quién firma los estados financieros."
-        emite: "Junta Central de Contadores"
-        vigencia: "El certificado es de vigencia corta"
-        cuando: segun_pliego
-
-      - id: declaracion_renta
-        nombre: "Declaración de renta del último año"
-        para_que: "Algunos pliegos la piden como respaldo adicional de la capacidad financiera."
-        emite: "DIAN"
-        vigencia: "Último año gravable"
-        cuando: segun_pliego
 
   - id: experiencia
     titulo: "Experiencia"
@@ -154,47 +115,11 @@ categorias:
         cuando: siempre
         pendiente: certificaciones_experiencia
 
-      - id: soportes_contratos
-        nombre: "Soportes de los contratos: contrato, actas de liquidación o facturas"
-        para_que: "Respaldan cada certificación cuando el pliego lo exige."
-        emite: "Electroriente y el cliente"
-        vigencia: "No vencen"
-        cuando: segun_pliego
 
   - id: tecnicos
     titulo: "Técnicos y comerciales"
     descripcion: "Describen lo que se ofrece y demuestran que cumple."
     documentos:
-      - id: fichas_tecnicas
-        nombre: "Fichas técnicas de los productos ofertados"
-        para_que: "Muestran que cada ítem cumple lo que pide el pliego. Si el pliego nombra una marca, se pueden ofrecer equivalentes y se justifican aquí."
-        emite: "Fabricantes"
-        vigencia: "Vigentes a la fecha"
-        cuando: siempre
-
-      - id: certificados_producto
-        nombre: "Certificados de conformidad de producto (por ejemplo RETIE)"
-        para_que: "El material eléctrico regulado debe acreditar su conformidad."
-        emite: "Fabricante u organismo certificador"
-        vigencia: "Según cada certificado"
-        cuando: segun_pliego
-        si_menciona: [luminaria, luminarias, lampara, cable, cables, conductor, conductores, tablero, tableros, transformador, transformadores, interruptor, breaker, tomacorriente, iluminacion, alumbrado, led]
-
-      - id: distribuidor_autorizado
-        nombre: "Carta de distribuidor autorizado y certificaciones del fabricante"
-        para_que: "Respalda que Electroriente puede vender y dar soporte a la marca. Aquí cuentan las certificaciones Schneider (IAD y Drive Expert)."
-        emite: "Fabricante (Schneider u otros)"
-        vigencia: "Se pide actualizada, normalmente del año en curso"
-        cuando: segun_pliego
-        si_menciona: [variador, variadores, plc, automatizacion, arrancador, arrancadores, contactor, contactores, schneider, hmi, drive]
-
-      - id: garantia_fabricante
-        nombre: "Garantía de fábrica y condiciones de soporte"
-        para_que: "Muchos pliegos piden garantía mínima y tiempos de respuesta."
-        emite: "Fabricante y Electroriente"
-        vigencia: "Según el pliego"
-        cuando: segun_pliego
-
       - id: propuesta_economica
         nombre: "Propuesta económica en el formato de la entidad"
         para_que: "Es lo que se evalúa en precio. Cambiar el formato puede ser causal de rechazo."
@@ -206,14 +131,6 @@ categorias:
     titulo: "Garantías y plataforma"
     descripcion: "Se tramitan con terceros y toman días, así que no se dejan para el final."
     documentos:
-      - id: garantia_seriedad
-        nombre: "Garantía de seriedad de la oferta"
-        para_que: "Póliza que respalda que, si gana, firmará el contrato. Se entrega junto con la oferta."
-        emite: "Aseguradora"
-        vigencia: "La fija el pliego, contada desde el cierre"
-        cuando: segun_pliego
-        pendiente: poliza_aseguradora
-
       - id: usuario_secop
         nombre: "Usuario de SECOP II habilitado para el representante legal"
         para_que: "La oferta se carga en la plataforma. Crear y habilitar el usuario toma días."

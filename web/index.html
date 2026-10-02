@@ -214,10 +214,9 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 
   <div id="vista-docs" role="tabpanel" aria-labelledby="tab-docs" hidden>
     <div class="prog" id="docs-prog"></div>
-    <p class="nota-doc">Suba aquí los documentos de la empresa. El radar los cruza con cada alerta y le dice cuáles faltan para aplicar. Los archivos quedan en su computador (carpeta docs/empresa), nunca en GitHub. Cada pliego define sus propios requisitos: use esto como guía y contraste con el del proceso.</p>
+    <p class="nota-doc">Suba aquí los documentos de la empresa. El radar los cruza con cada alerta y le dice cuáles faltan para aplicar. Los archivos quedan en su computador (carpeta docs/empresa), nunca en GitHub. Aquí solo van los documentos generales que se piden en toda licitación; lo que cambia según el proceso se ve en su pliego.</p>
     <div class="controls" role="group" aria-label="Filtro de documentos">
       <label class="chk"><input type="checkbox" id="soloFaltan"> Solo los que faltan</label>
-      <label class="chk"><input type="checkbox" id="soloSiempre"> Solo los que siempre se piden</label>
     </div>
     <div id="docs-lista" aria-live="polite"></div>
   </div>
@@ -435,8 +434,7 @@ async function quitar(a) {
 
 function filaDoc(d) {
   const li = el('li', 'doc');
-  const h = el('h3'); h.append(el('span', '', d.nombre),
-    el('span', 'chip sm' + (d.cuando === 'siempre' ? '' : ' nota'), CUANDO[d.cuando] || d.cuando));
+  const h = el('h3'); h.append(el('span', '', d.nombre));
   const [cls, txt] = ESTADO[d.estado]; h.append(el('span', cls, txt));
   li.append(h, el('p', 'para', d.para_que), el('p', 'datos', `Lo emite: ${d.emite}. Vigencia: ${d.vigencia}.`));
 
@@ -477,9 +475,9 @@ function pintarDocs() {
   const bar = el('div', 'bar'), i = el('i'); i.style.width = (todos.length ? hechos / todos.length * 100 : 0) + '%';
   bar.append(i); $('docs-prog').replaceChildren(n, bar);
 
-  const soloFaltan = $('soloFaltan').checked, soloSiempre = $('soloSiempre').checked;
+  const soloFaltan = $('soloFaltan').checked;
   const grupos = docs.map(c => {
-    const items = c.documentos.filter(d => (!soloFaltan || d.estado === 'falta' || d.estado === 'vencido') && (!soloSiempre || d.cuando === 'siempre'));
+    const items = c.documentos.filter(d => (!soloFaltan || d.estado === 'falta' || d.estado === 'vencido'));
     if (!items.length) return null;
     const g = el('section', 'grupo');
     g.append(el('h2', '', c.titulo), el('p', '', c.descripcion));
@@ -524,7 +522,7 @@ function vista(nombre) {
 }
 $('tab-radar').onclick = () => vista('radar');
 $('tab-docs').onclick = () => vista('documentos');
-['soloFaltan', 'soloSiempre'].forEach(id => $(id).addEventListener('input', pintarDocs));
+['soloFaltan'].forEach(id => $(id).addEventListener('input', pintarDocs));
 
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
