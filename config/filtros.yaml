@@ -1,0 +1,154 @@
+# Reglas de filtrado del radar.
+#
+# COMO FUNCIONA, en tres pasos:
+#   1. INCLUIR  -> si el texto del proceso contiene alguno de estos terminos, entra
+#   2. EXCLUIR  -> si contiene alguno de estos, sale (aunque haya entrado)
+#   3. PUNTUAR  -> se calcula una relevancia de 0 a 100 para ordenar
+#
+# Editar este archivo es la forma principal de afinar el sistema.
+# Cada vez que una alerta sea ruido, agrega el termino a "excluir".
+# Cada vez que se escape una oportunidad, agrega el termino a "incluir".
+
+# ---------------------------------------------------------------
+# PASO 1: terminos que hacen entrar un proceso
+# Agrupados por familia. El grupo determina el puntaje base.
+# ---------------------------------------------------------------
+incluir:
+
+  # Peso alto: es la especialidad declarada de la empresa
+  nucleo:
+    peso: 40
+    terminos:
+      - "variador de velocidad"
+      - "variadores de velocidad"
+      - "variador de frecuencia"
+      - "automatizacion industrial"
+      - "control de motores"
+      - "arrancador suave"
+      - "guardamotor"
+      - "plc"
+      - "control de procesos"
+      - "tablero de control"
+
+  # Peso medio alto: producto central del catalogo
+  catalogo_principal:
+    peso: 30
+    terminos:
+      - "material electrico"
+      - "materiales electricos"
+      - "suministro electrico"
+      - "cable electrico"
+      - "cables y alambres"
+      - "conductores electricos"
+      - "tablero electrico"
+      - "tablero de distribucion"
+      - "totalizador"
+      - "breaker"
+      - "interruptor automatico"
+      - "protecciones electricas"
+      - "canaleta"
+      - "bornera"
+      - "prensaestopa"
+
+  # Peso medio: lineas reales del catalogo con mercado publico propio
+  lineas_secundarias:
+    peso: 25
+    terminos:
+      - "iluminacion led"
+      - "luminaria"
+      - "alumbrado publico"
+      - "panel led"
+      - "ups"
+      - "estabilizador"
+      - "calidad de energia"
+      - "eficiencia energetica"
+      - "panel solar"
+      - "energia solar"
+      - "fotovoltaico"
+      - "pararrayos"
+      - "apantallamiento"
+      - "puesta a tierra"
+      - "subestacion"
+      - "media tension"
+      - "baja tension"
+      - "transformador"
+
+  # Peso bajo: señal de sector, no de producto. Sirve combinado.
+  contexto:
+    peso: 10
+    terminos:
+      - "retie"
+      - "retilap"
+      - "ntc 2050"
+      - "red electrica"
+      - "instalacion electrica"
+      - "mantenimiento electrico"
+
+# ---------------------------------------------------------------
+# PASO 2: terminos que sacan un proceso aunque haya entrado
+# Esto es lo que evita que el area deje de mirar las alertas.
+# ---------------------------------------------------------------
+excluir:
+  # No es el negocio
+  - "interventoria"
+  - "consultoria juridica"
+  - "vigilancia"
+  - "aseo y cafeteria"
+  - "papeleria"
+  - "combustible"
+  - "transporte escolar"
+  - "alimentacion escolar"
+  - "dotacion de vestuario"
+  - "poliza de seguros"
+  - "electrodomestico"
+  - "electrobisturi"
+  - "electrocardiograf"
+
+# Modalidades que no aplican o no interesan por ahora
+excluir_modalidad:
+  - "Contratación directa"   # suele venir con proveedor ya definido
+
+# Tipos de contrato que requieren aliado. No se excluyen:
+# se marcan aparte para revisar como union temporal.
+marcar_union_temporal:
+  tipos_contrato:
+    - "Obra"
+  terminos:
+    - "construccion"
+    - "obra civil"
+    - "instalacion y puesta en marcha"
+    - "montaje"
+
+# ---------------------------------------------------------------
+# PASO 3: ajustes de puntaje
+# ---------------------------------------------------------------
+puntaje:
+  bono_territorio_prioritario: 15   # proceso en Santander y alrededores
+  bono_entidad_conocida: 10         # entidades que ya compran este tipo de material
+  penalizacion_fuera_de_cuantia: -40
+  umbral_alerta: 30                 # por debajo de esto no se notifica
+
+entidades_conocidas:
+  - "EMPRESAS PUBLICAS DE MEDELLIN"
+  - "EMPRESAS MUNICIPALES DE CALI"
+  - "ECOPETROL"
+  - "CENIT"
+  - "ELECTRIFICADORA DE SANTANDER"
+  - "ESSA"
+
+# ---------------------------------------------------------------
+# Codigos UNSPSC. Red ancha, independiente de como redacte la entidad.
+# PENDIENTE: ampliar esta lista revisando el buscador UNSPSC de SECOP.
+# Formato: codigo de familia a 6 digitos + 00
+# ---------------------------------------------------------------
+unspsc:
+  - "26111700"  # Equipo de distribucion y control electrico
+  - "26111600"  # Generadores y equipo de energia
+  - "39121000"  # Componentes de distribucion electrica
+  - "39121500"  # Cajas y tableros electricos
+  - "26121600"  # Cables electricos
+  - "39101600"  # Lamparas y bombillas
+  - "39111500"  # Iluminacion interior
+  - "39111600"  # Iluminacion exterior y alumbrado publico
+  - "41111900"  # Instrumentos de medicion electrica
+  - "40101700"  # Control industrial

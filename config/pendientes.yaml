@@ -1,0 +1,126 @@
+# Pendientes del proyecto.
+#
+# El radar lee este archivo y muestra un aviso cada vez que lo corres,
+# para que nada de esto se quede olvidado.
+#
+# Cuando resuelvas algo, cambia "resuelto: false" a "resuelto: true".
+# Lo resuelto deja de aparecer en el aviso.
+
+pendientes:
+
+  # ---------------------------------------------------------------
+  # BLOQUEANTES: sin esto, el radar puede alertar procesos a los que
+  # la empresa no se puede presentar. Es lo primero.
+  # ---------------------------------------------------------------
+
+  - id: rup
+    resuelto: false
+    criticidad: bloqueante
+    titulo: "Confirmar RUP vigente y codigos UNSPSC inscritos"
+    necesito: "Certificado del RUP de Electroriente"
+    por_que: >
+      Sin RUP vigente no hay oferta valida. Y si los codigos UNSPSC
+      inscritos no cubren el objeto del proceso, la empresa queda
+      inhabilitada aunque tenga el producto. Es el primer filtro real.
+    que_hago_con_el: >
+      Extraigo los codigos inscritos y los cargo en config/filtros.yaml
+      para que el radar solo alerte procesos donde si se puede participar.
+
+  - id: capacidad_financiera
+    resuelto: false
+    criticidad: bloqueante
+    titulo: "Validar rango de cuantia con el area de licitaciones"
+    necesito: "Estados financieros o los indices del RUP"
+    por_que: >
+      Los valores en config/perfil.yaml (minimo 20 millones, maximo 2.000
+      millones sola) los estime a partir del patrimonio publico. Son un
+      punto de partida inventado, no un dato confirmado.
+    que_hago_con_el: >
+      Calculo la capacidad residual segun la formula de Colombia Compra
+      y ajusto los rangos reales.
+
+  # ---------------------------------------------------------------
+  # DOCUMENTACION DE LA OFERTA: necesaria para el Bloque C
+  # ---------------------------------------------------------------
+
+  - id: certificaciones_experiencia
+    resuelto: false
+    criticidad: alta
+    titulo: "Reunir certificaciones de experiencia"
+    necesito: "Certificaciones firmadas por clientes de contratos ejecutados"
+    por_que: >
+      La experiencia acreditada es requisito habilitante en casi todo
+      proceso, y en muchos tambien otorga puntaje. Sin certificaciones
+      no se puede acreditar nada, por mucha trayectoria que haya.
+    que_hago_con_el: >
+      Armo un inventario de experiencia con valores, objetos y codigos
+      UNSPSC, para cruzarlo automaticamente contra lo que pide cada pliego.
+
+  - id: documentos_base
+    resuelto: false
+    criticidad: alta
+    titulo: "Carpeta de documentos base de la oferta"
+    necesito: >
+      Certificado de existencia y representacion legal, RUT,
+      certificacion de aportes a seguridad social, antecedentes
+      (fiscales, disciplinarios, judiciales, medidas correctivas)
+    por_que: >
+      Son los documentos que se repiten en toda oferta. Tenerlos
+      ordenados y con fechas de vigencia es la diferencia entre
+      presentar en dos horas o en dos dias.
+    que_hago_con_el: >
+      Construyo el checklist del Bloque C con alertas de vencimiento
+      por documento.
+
+  - id: poliza_aseguradora
+    resuelto: false
+    criticidad: media
+    titulo: "Definir aseguradora para garantias"
+    necesito: "Contacto y condiciones de la aseguradora"
+    por_que: >
+      La garantia de seriedad de la oferta se presenta junto con la
+      propuesta. Si conseguirla toma cinco dias, se pierden procesos
+      con plazos cortos.
+    que_hago_con_el: >
+      Lo incluyo en el cronograma inverso de cada proceso, calculando
+      desde la fecha de cierre hacia atras.
+
+  - id: secop_usuario
+    resuelto: false
+    criticidad: media
+    titulo: "Usuario de SECOP II habilitado"
+    necesito: "Confirmacion de que existe cuenta y quien firma"
+    por_que: >
+      La oferta se carga en plataforma. Crear el usuario y habilitar al
+      representante legal toma dias, y no se puede hacer a ultima hora.
+    que_hago_con_el: >
+      Marco el proyecto como listo para presentar, no solo para detectar.
+
+  # ---------------------------------------------------------------
+  # AJUSTES TECNICOS: no dependen de documentos
+  # ---------------------------------------------------------------
+
+  - id: unspsc_oficial
+    resuelto: false
+    criticidad: media
+    titulo: "Validar lista UNSPSC contra el buscador oficial de SECOP"
+    necesito: "Nada, esto lo puedo hacer yo"
+    por_que: >
+      La lista actual en config/filtros.yaml la arme de memoria del
+      estandar. Puede tener codigos incorrectos o faltar familias.
+    que_hago_con_el: >
+      Reemplazo la lista por codigos verificados y agrego filtrado
+      por UNSPSC al radar.
+
+  - id: umbral_union_temporal
+    resuelto: false
+    criticidad: baja
+    titulo: "Decidir si se persigue obra con aliados"
+    necesito: "Una decision tuya o del area, no un documento"
+    por_que: >
+      Hoy los procesos de obra se caen por umbral antes de que se
+      aplique la marca de union temporal. Lo vimos con el caso de
+      Cormacarena, alumbrado fotovoltaico con montaje.
+    que_hago_con_el: >
+      Si la respuesta es si, bajo el umbral para esa categoria y
+      genero una lista separada de oportunidades con aliado.

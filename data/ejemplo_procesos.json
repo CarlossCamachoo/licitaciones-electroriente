@@ -1,0 +1,138 @@
+[
+ {
+  "entidad": "ESSA",
+  "departamento_entidad": "Santander",
+  "descripci_n_del_procedimiento": "Suministro de variadores de velocidad y arrancadores suaves para bombeo",
+  "nombre_del_procedimiento": "Suministro de variadores de velocidad y arrancadores suaves ",
+  "precio_base": "180000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-001",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "Alcaldía de Piedecuesta",
+  "departamento_entidad": "Santander",
+  "descripci_n_del_procedimiento": "Suministro de material eléctrico y cable eléctrico para mantenimiento",
+  "nombre_del_procedimiento": "Suministro de material eléctrico y cable eléctrico para mant",
+  "precio_base": "60000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-002",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "CORMACARENA",
+  "departamento_entidad": "Meta",
+  "descripci_n_del_procedimiento": "Alumbrado público fotovoltaico con montaje e instalación",
+  "nombre_del_procedimiento": "Alumbrado público fotovoltaico con montaje e instalación",
+  "precio_base": "150000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Obra",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-003",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "Hospital X",
+  "departamento_entidad": "Cesar",
+  "descripci_n_del_procedimiento": "Compra de electrocardiografo y electrobisturi",
+  "nombre_del_procedimiento": "Compra de electrocardiografo y electrobisturi",
+  "precio_base": "40000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-004",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "Colegio Y",
+  "departamento_entidad": "Boyacá",
+  "descripci_n_del_procedimiento": "Suministro de grupos de estudiantes y papelería",
+  "nombre_del_procedimiento": "Suministro de grupos de estudiantes y papelería",
+  "precio_base": "5000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-005",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "Ecopetrol",
+  "departamento_entidad": "Santander",
+  "descripci_n_del_procedimiento": "Automatización industrial PLC y tablero de control",
+  "nombre_del_procedimiento": "Automatización industrial PLC y tablero de control",
+  "precio_base": "9500000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-006",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "Alcaldía Z",
+  "departamento_entidad": "Santander",
+  "descripci_n_del_procedimiento": "Suministro de variador de frecuencia",
+  "nombre_del_procedimiento": "Suministro de variador de frecuencia",
+  "precio_base": "30000000",
+  "modalidad_de_contratacion": "Selección Abreviada de Menor Cuantía",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Cerrado",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-007",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ },
+ {
+  "entidad": "Entidad W",
+  "departamento_entidad": "Santander",
+  "descripci_n_del_procedimiento": "Suministro de luminarias LED",
+  "nombre_del_procedimiento": "Suministro de luminarias LED",
+  "precio_base": "50000000",
+  "modalidad_de_contratacion": "Contratación directa",
+  "tipo_de_contrato": "Compraventa",
+  "estado_del_procedimiento": "Publicado",
+  "estado_de_apertura_del_proceso": "Abierto",
+  "fase": "Presentación de oferta",
+  "fecha_de_publicacion_del": "2026-09-29T00:00:00.000",
+  "referencia_del_proceso": "DEMO-008",
+  "urlproceso": {
+   "url": "https://community.secop.gov.co/demo"
+  }
+ }
+]

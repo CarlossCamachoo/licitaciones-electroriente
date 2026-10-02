@@ -1,0 +1,80 @@
+# Perfil de Electroriente S.A.S.
+# Este archivo define quien es la empresa. El radar lo usa para decidir
+# que procesos tienen sentido. Si cambia la capacidad o el portafolio,
+# se edita aqui y todo lo demas se ajusta solo.
+
+empresa:
+  razon_social: "ELECTRORIENTE S.A.S."
+  nit: "890203703"
+  digito_verificacion: "0"
+  matricula_mercantil: "0000001355"
+  camara_comercio: "Bucaramanga"
+  ciudad: "Bucaramanga"
+  departamento: "Santander"
+  actividad_ciiu: "4663"
+
+# Capacidad para licitar. Estos numeros filtran por cuantia.
+# Fuente: registro mercantil y ficha empresarial publica.
+capacidad:
+  patrimonio_neto_cop: 5416622000
+  ventas_anuales_min_cop: 10000000000
+  ventas_anuales_max_cop: 20000000000
+
+  # Rango de procesos que tiene sentido perseguir.
+  # Por debajo del minimo, el esfuerzo de armar la oferta no se paga.
+  # Por encima del maximo, probablemente se necesita union temporal.
+  # REVISAR con el area de licitaciones: estos valores son un punto de partida.
+  cuantia_minima_cop: 20000000
+  cuantia_maxima_sola_cop: 2000000000
+  cuantia_maxima_union_temporal_cop: 8000000000
+
+# Que hace la empresa por si misma y que necesita aliados.
+# Esto es clave: Electroriente suministra, pero instala con terceros.
+modalidad_participacion:
+  suministro_directo: true
+  obra_con_instalacion: false   # requiere union temporal o consorcio
+  servicios_ingenieria: true     # asesoria, dimensionamiento, programacion
+  capacitacion: true
+
+# Especialidad declarada. Pesa en el puntaje de relevancia.
+especialidad_nucleo:
+  - "automatizacion industrial"
+  - "variacion de velocidad"
+  - "control de motores"
+
+certificaciones:
+  - "Schneider Electric Industrial Automation Distributor (IAD)"
+  - "Schneider Electric Drive Expert"
+  - "B2B Distribution Generalist"
+
+marcas_distribuidas:
+  - Schneider Electric
+  - Procables
+  - Prysmian
+  - Sylvania
+  - VCP Electric
+  - Dexson
+  - Lovato
+  - 3M
+  - Centelsa
+  - Cabur
+  - Autonics
+  - Teldor
+  - Leviton
+  - Coraflex
+  - Plastimec
+
+# Experiencia acreditable. Importante para requisitos habilitantes.
+# PENDIENTE: confirmar con el area que certificaciones de experiencia existen.
+experiencia:
+  sectores_con_caso:
+    - "agroindustria avicola"
+    - "eficiencia energetica"
+  contratacion_estatal_previa: "sin rastro confirmado en SECOP a octubre 2026"
+
+# Cobertura geografica preferente. No excluye, solo prioriza.
+territorio_prioritario:
+  - Santander
+  - Norte de Santander
+  - Boyaca
+  - Cesar

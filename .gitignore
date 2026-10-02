@@ -1,0 +1,10 @@
+.env
+.env.*
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/salidas/
+data/revision*.json
+docs/empresa/
