@@ -28,7 +28,7 @@ se usa. Eso significa que las explicaciones importan tanto como el codigo.
 |---|---|---|
 | A, radar | Detecta procesos en SECOP y los puntua | Funcionando, probado contra la API real (2 oct 2026) |
 | B, analista | Extraer requisitos y plazos de los pliegos | No construido |
-| C, gestor | Checklist de documentos, plazos, archivo historico | No construido |
+| C, gestor | Checklist de documentos, plazos, archivo historico | Parcial: el panel recibe los documentos de la empresa (`docs/empresa/`, fuera de git) y dice que falta para cada alerta, por reglas de `config/documentos.yaml`. No lee pliegos ni extrae datos de los archivos |
 
 **Ya probado en vivo:** los nombres de campo de la API son correctos. Se
 corrigio un bug: el limite de 2000 descartaba el 88 % de los procesos de la

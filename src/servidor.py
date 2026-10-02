@@ -16,11 +16,12 @@ import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
 import yaml
 
+import documentos as docs
 import radar
 
 WEB = radar.RAIZ / "web"
@@ -68,24 +69,11 @@ def pendientes():
              "resuelto": bool(p.get("resuelto"))} for p in lista]
 
 
-def documentos():
-    ruta = radar.RAIZ / "config" / "documentos.yaml"
-    with open(ruta, encoding="utf-8") as f:
-        cats = (yaml.safe_load(f) or {}).get("categorias", [])
-    texto = lambda v: " ".join(str(v or "").split())
-    return [{"id": texto(c.get("id")),
-             "titulo": texto(c.get("titulo")),
-             "descripcion": texto(c.get("descripcion")),
-             "documentos": [{k: texto(d.get(k)) for k in
-                             ("id", "nombre", "para_que", "emite", "vigencia",
-                              "cuando", "pendiente")}
-                            for d in c.get("documentos", [])]}
-            for c in cats]
-
-
 class Manejador(BaseHTTPRequestHandler):
-    def _enviar(self, codigo, cuerpo, tipo):
+    def _enviar(self, codigo, cuerpo, tipo, extra=None):
         self.send_response(codigo)
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
         self.send_header("Content-Type", tipo)
         self.send_header("Content-Length", str(len(cuerpo)))
         self.send_header("Cache-Control", "no-store")
@@ -104,7 +92,44 @@ class Manejador(BaseHTTPRequestHandler):
         self._enviar(codigo, json.dumps(obj, ensure_ascii=False).encode("utf-8"),
                      "application/json; charset=utf-8")
 
+    def _local_ok(self):
+        """Evita que otra web abra o escriba en el panel (DNS rebinding / CSRF)."""
+        puerto = self.server.server_address[1]
+        validos = {f"{HOST}:{puerto}", f"localhost:{puerto}"}
+        if self.headers.get("Host") not in validos:
+            return False
+        origen = self.headers.get("Origin")
+        return origen is None or origen in {"http://" + h for h in validos}
+
+    def do_POST(self):
+        if not self._local_ok() or self.headers.get("X-Panel") != "1":
+            return self._json(403, {"error": "Solicitud no permitida."})
+        url = urlparse(self.path)
+        q = parse_qs(url.query)
+        try:
+            if url.path == "/api/subir":
+                try:
+                    largo = int(self.headers.get("Content-Length", ""))
+                except ValueError:
+                    return self._json(411, {"error": "Falta el tamaño del archivo."})
+                if largo > docs.MAX_BYTES:
+                    return self._json(413, {"error": "El archivo supera 25 MB."})
+                cuerpo = self.rfile.read(largo)
+                nombre = unquote(self.headers.get("X-Nombre", ""))
+                entrada = docs.guardar(q.get("doc", [""])[0], nombre,
+                                       self.headers.get("X-Vence", ""), cuerpo)
+                self._json(201, entrada)
+            elif url.path == "/api/eliminar":
+                docs.eliminar(q.get("id", [""])[0])
+                self._json(200, {"ok": True})
+            else:
+                self._json(404, {"error": "no encontrado"})
+        except docs.ErrorDocumento as e:
+            self._json(400, {"error": str(e)})
+
     def do_GET(self):
+        if not self._local_ok():
+            return self._json(403, {"error": "Solicitud no permitida."})
         url = urlparse(self.path)
         if url.path in ("/", "/index.html"):
             self._enviar(200, (WEB / "index.html").read_bytes(),
@@ -117,14 +142,25 @@ class Manejador(BaseHTTPRequestHandler):
                 return self._json(400, {"error": "dias debe ser un numero"})
             cerrados = q.get("cerrados", ["0"])[0] == "1"
             try:
-                self._json(200, calcular(dias, cerrados))
+                datos = calcular(dias, cerrados)
+                cats = docs.listar()
+                self._json(200, {**datos, "resultados": [
+                    {**r, "documentos": docs.requisitos(r, cats)}
+                    for r in datos["resultados"]]})
             except requests.RequestException:
                 self._json(502, {"error": "No se pudo consultar SECOP. "
                                           "Revisa la conexion e intenta de nuevo."})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
         elif url.path == "/api/documentos":
-            self._json(200, documentos())
+            self._json(200, docs.listar())
+        elif url.path == "/api/archivo":
+            try:
+                datos, tipo, ext = docs.abrir(parse_qs(url.query).get("id", [""])[0])
+            except docs.ErrorDocumento as e:
+                return self._json(404, {"error": str(e)})
+            self._enviar(200, datos, tipo, {
+                "Content-Disposition": f'attachment; filename="documento{ext}"'})
         else:
             self._json(404, {"error": "no encontrado"})
 
