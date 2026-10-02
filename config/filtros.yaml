@@ -128,7 +128,7 @@ puntaje:
   penalizacion_fuera_de_cuantia: -40
   umbral_alerta: 30                 # por debajo de esto no se notifica
   penalizacion_requiere_aliado: -15 # obra/montaje: solo sirve en union temporal
-  umbral_revisar: 15                # entre este y el de alerta: "por revisar"
+  umbral_revisar: 5                 # entre este y el de alerta: "por revisar"
 
 # Niveles de factibilidad segun el puntaje final
 niveles:

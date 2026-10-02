@@ -45,9 +45,10 @@ h1 svg.i { color: var(--primary); width: 30px; height: 30px; stroke-width: 1.4; 
 
 .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 label.f { display: flex; flex-direction: column; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); gap: 4px; }
-select, input[type=search] { font: 400 .9375rem var(--sans); min-height: 44px; padding: 0 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; transition: border-color var(--t); }
-select:hover, input[type=search]:hover { border-color: var(--text-2); }
+select, input[type=search], input[type=number] { font: 400 .9375rem var(--sans); min-height: 44px; padding: 0 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; transition: border-color var(--t); }
+select:hover, input[type=search]:hover, input[type=number]:hover { border-color: var(--text-2); }
 input[type=search] { min-width: 240px; }
+input[type=number] { width: 96px; }
 .chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; transition: border-color var(--t); }
 .chk:hover { border-color: var(--text-2); }
 .chk input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
@@ -220,6 +221,12 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     <label class="f">Departamento
       <select id="dep"><option value="">Todos</option></select>
     </label>
+    <label class="f">Puntaje mín.
+      <input type="number" id="pmin" min="0" max="100" step="5" value="5" inputmode="numeric">
+    </label>
+    <label class="f">Puntaje máx.
+      <input type="number" id="pmax" min="0" max="100" step="5" value="100" inputmode="numeric">
+    </label>
     <label class="chk"><input type="checkbox" id="soloAliado"> Solo con aliado</label>
     <label class="chk"><input type="checkbox" id="soloMonto"> Solo con valor publicado</label>
   </div>
@@ -341,7 +348,10 @@ function pintarKpis() {
 
 function filtrar() {
   const q = $('q').value.trim().toLowerCase(), dep = $('dep').value;
+  const num = (id, def) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : def; };
+  const pmin = num('pmin', 0), pmax = num('pmax', 100);
   return base().filter(r =>
+    r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
     (!$('soloAliado').checked || r.requiere_aliado) &&
     (!$('soloMonto').checked || r.valor_cop > 0) &&
@@ -610,7 +620,7 @@ TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
 $('cerrados').onchange = cargar;
-['q', 'dep', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', pintar));
+['q', 'dep', 'pmin', 'pmax', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', pintar));
 pendientes();
 cargar();
 vista(location.hash.slice(1) || 'radar');
