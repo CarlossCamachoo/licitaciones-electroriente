@@ -68,6 +68,21 @@ def pendientes():
              "resuelto": bool(p.get("resuelto"))} for p in lista]
 
 
+def documentos():
+    ruta = radar.RAIZ / "config" / "documentos.yaml"
+    with open(ruta, encoding="utf-8") as f:
+        cats = (yaml.safe_load(f) or {}).get("categorias", [])
+    texto = lambda v: " ".join(str(v or "").split())
+    return [{"id": texto(c.get("id")),
+             "titulo": texto(c.get("titulo")),
+             "descripcion": texto(c.get("descripcion")),
+             "documentos": [{k: texto(d.get(k)) for k in
+                             ("id", "nombre", "para_que", "emite", "vigencia",
+                              "cuando", "pendiente")}
+                            for d in c.get("documentos", [])]}
+            for c in cats]
+
+
 class Manejador(BaseHTTPRequestHandler):
     def _enviar(self, codigo, cuerpo, tipo):
         self.send_response(codigo)
@@ -108,6 +123,8 @@ class Manejador(BaseHTTPRequestHandler):
                                           "Revisa la conexion e intenta de nuevo."})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
+        elif url.path == "/api/documentos":
+            self._json(200, documentos())
         else:
             self._json(404, {"error": "no encontrado"})
 

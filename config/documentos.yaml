@@ -1,0 +1,217 @@
+# Documentos que Electroriente debe tener listos para licitar.
+#
+# El panel los muestra en la pestana "Documentos". Cada persona marca en el
+# panel cuales ya tiene; esa marca se guarda en su navegador, no en este
+# archivo.
+#
+# IMPORTANTE: esto es la lista habitual, no la lista de un proceso concreto.
+# Los requisitos exactos y la vigencia de cada documento los define el pliego
+# de cada licitacion. Antes de presentar, se contrasta con el pliego.
+#
+# Campos:
+#   cuando:   siempre | segun_pliego | si_aplica
+#   emite:    quien lo expide o firma
+#   vigencia: tiempo tipico de validez (orientativo)
+#   pendiente: id de config/pendientes.yaml relacionado, si existe
+
+categorias:
+
+  - id: juridicos
+    titulo: "Jurídicos"
+    descripcion: "Demuestran que la empresa existe, quién la representa y que está al día."
+    documentos:
+      - id: carta_presentacion
+        nombre: "Carta de presentación de la oferta"
+        para_que: "Formaliza la oferta. Se usa el formato exacto que entrega la entidad."
+        emite: "Representante legal (firma)"
+        vigencia: "Se hace para cada proceso"
+        cuando: siempre
+
+      - id: existencia_representacion
+        nombre: "Certificado de existencia y representación legal"
+        para_que: "Prueba que la empresa existe y quién puede firmar por ella."
+        emite: "Cámara de Comercio de Bucaramanga"
+        vigencia: "El pliego fija la antigüedad máxima (suele ser de 30 a 90 días)"
+        cuando: siempre
+
+      - id: rup
+        nombre: "RUP, Registro Único de Proponentes"
+        para_que: "Acredita experiencia, capacidad financiera y códigos UNSPSC inscritos. Sin RUP vigente y en firme no hay oferta válida en la mayoría de procesos."
+        emite: "Cámara de Comercio"
+        vigencia: "Se renueva cada año"
+        cuando: siempre
+        pendiente: rup
+
+      - id: rut
+        nombre: "RUT"
+        para_que: "Identificación tributaria de la empresa."
+        emite: "DIAN"
+        vigencia: "Debe estar actualizado"
+        cuando: siempre
+
+      - id: cedula_rl
+        nombre: "Cédula del representante legal"
+        para_que: "Identifica a quien firma la oferta."
+        emite: "Registraduría"
+        vigencia: "No vence"
+        cuando: siempre
+
+      - id: seguridad_social
+        nombre: "Certificación de aportes a seguridad social y parafiscales"
+        para_que: "Demuestra que la empresa está al día con salud, pensión, riesgos y parafiscales."
+        emite: "Revisor fiscal o representante legal"
+        vigencia: "El pliego define los meses a certificar (suele ser los últimos 6)"
+        cuando: siempre
+
+      - id: antecedentes_fiscales
+        nombre: "Antecedentes fiscales"
+        para_que: "Confirma que ni la empresa ni el representante están en el boletín de responsables fiscales."
+        emite: "Contraloría General de la República"
+        vigencia: "Corta; se descarga cerca de la fecha de cierre"
+        cuando: siempre
+
+      - id: antecedentes_disciplinarios
+        nombre: "Antecedentes disciplinarios"
+        para_que: "Confirma que no hay inhabilidades disciplinarias."
+        emite: "Procuraduría General de la Nación"
+        vigencia: "Corta; se descarga cerca de la fecha de cierre"
+        cuando: siempre
+
+      - id: antecedentes_judiciales
+        nombre: "Antecedentes judiciales"
+        para_que: "Confirma que no hay antecedentes penales del representante legal."
+        emite: "Policía Nacional"
+        vigencia: "Corta; se descarga cerca de la fecha de cierre"
+        cuando: siempre
+
+      - id: medidas_correctivas
+        nombre: "Certificado de medidas correctivas (RNMC)"
+        para_que: "Confirma que no hay multas pendientes del Código de Policía."
+        emite: "Policía Nacional"
+        vigencia: "Corta; se descarga cerca de la fecha de cierre"
+        cuando: segun_pliego
+
+      - id: redam
+        nombre: "Certificado REDAM (deudores alimentarios morosos)"
+        para_que: "Algunas entidades lo piden para el representante legal."
+        emite: "Consejo Superior de la Judicatura"
+        vigencia: "Corta"
+        cuando: segun_pliego
+
+      - id: autorizacion_junta
+        nombre: "Autorización de la junta o asamblea para presentar la oferta"
+        para_que: "Solo si los estatutos limitan lo que el representante legal puede contratar por su cuenta."
+        emite: "Junta de socios o asamblea"
+        vigencia: "Para cada proceso"
+        cuando: si_aplica
+
+      - id: acuerdo_consorcio
+        nombre: "Acuerdo de consorcio o unión temporal"
+        para_que: "Necesario para procesos de obra o montaje, donde Electroriente participa con un aliado instalador."
+        emite: "Las empresas que se asocian"
+        vigencia: "Para cada proceso"
+        cuando: si_aplica
+
+  - id: financieros
+    titulo: "Financieros"
+    descripcion: "Muestran que la empresa tiene la capacidad económica que pide el proceso."
+    documentos:
+      - id: estados_financieros
+        nombre: "Estados financieros del último año, con notas"
+        para_que: "Sustentan los indicadores de liquidez, endeudamiento y capital de trabajo."
+        emite: "Contador y representante legal; revisor fiscal si aplica"
+        vigencia: "Corte del último año fiscal"
+        cuando: siempre
+        pendiente: capacidad_financiera
+
+      - id: contador
+        nombre: "Tarjeta profesional y certificado de antecedentes del contador"
+        para_que: "Respalda quién firma los estados financieros."
+        emite: "Junta Central de Contadores"
+        vigencia: "El certificado es de vigencia corta"
+        cuando: segun_pliego
+
+      - id: declaracion_renta
+        nombre: "Declaración de renta del último año"
+        para_que: "Algunos pliegos la piden como respaldo adicional de la capacidad financiera."
+        emite: "DIAN"
+        vigencia: "Último año gravable"
+        cuando: segun_pliego
+
+  - id: experiencia
+    titulo: "Experiencia"
+    descripcion: "Prueban que la empresa ya ejecutó contratos parecidos al que se licita."
+    documentos:
+      - id: certificaciones_experiencia
+        nombre: "Certificaciones de experiencia firmadas por los clientes"
+        para_que: "Acreditan contratos ejecutados, con objeto, valor y fechas. En muchos procesos también dan puntaje."
+        emite: "Cada cliente"
+        vigencia: "No vencen, pero deben corresponder al objeto y al valor que pide el pliego"
+        cuando: siempre
+        pendiente: certificaciones_experiencia
+
+      - id: soportes_contratos
+        nombre: "Soportes de los contratos: contrato, actas de liquidación o facturas"
+        para_que: "Respaldan cada certificación cuando el pliego lo exige."
+        emite: "Electroriente y el cliente"
+        vigencia: "No vencen"
+        cuando: segun_pliego
+
+  - id: tecnicos
+    titulo: "Técnicos y comerciales"
+    descripcion: "Describen lo que se ofrece y demuestran que cumple."
+    documentos:
+      - id: fichas_tecnicas
+        nombre: "Fichas técnicas de los productos ofertados"
+        para_que: "Muestran que cada ítem cumple lo que pide el pliego. Si el pliego nombra una marca, se pueden ofrecer equivalentes y se justifican aquí."
+        emite: "Fabricantes"
+        vigencia: "Vigentes a la fecha"
+        cuando: siempre
+
+      - id: certificados_producto
+        nombre: "Certificados de conformidad de producto (por ejemplo RETIE)"
+        para_que: "El material eléctrico regulado debe acreditar su conformidad."
+        emite: "Fabricante u organismo certificador"
+        vigencia: "Según cada certificado"
+        cuando: segun_pliego
+
+      - id: distribuidor_autorizado
+        nombre: "Carta de distribuidor autorizado y certificaciones del fabricante"
+        para_que: "Respalda que Electroriente puede vender y dar soporte a la marca. Aquí cuentan las certificaciones Schneider (IAD y Drive Expert)."
+        emite: "Fabricante (Schneider u otros)"
+        vigencia: "Se pide actualizada, normalmente del año en curso"
+        cuando: segun_pliego
+
+      - id: garantia_fabricante
+        nombre: "Garantía de fábrica y condiciones de soporte"
+        para_que: "Muchos pliegos piden garantía mínima y tiempos de respuesta."
+        emite: "Fabricante y Electroriente"
+        vigencia: "Según el pliego"
+        cuando: segun_pliego
+
+      - id: propuesta_economica
+        nombre: "Propuesta económica en el formato de la entidad"
+        para_que: "Es lo que se evalúa en precio. Cambiar el formato puede ser causal de rechazo."
+        emite: "Electroriente"
+        vigencia: "Se hace para cada proceso"
+        cuando: siempre
+
+  - id: garantias
+    titulo: "Garantías y plataforma"
+    descripcion: "Se tramitan con terceros y toman días, así que no se dejan para el final."
+    documentos:
+      - id: garantia_seriedad
+        nombre: "Garantía de seriedad de la oferta"
+        para_que: "Póliza que respalda que, si gana, firmará el contrato. Se entrega junto con la oferta."
+        emite: "Aseguradora"
+        vigencia: "La fija el pliego, contada desde el cierre"
+        cuando: segun_pliego
+        pendiente: poliza_aseguradora
+
+      - id: usuario_secop
+        nombre: "Usuario de SECOP II habilitado para el representante legal"
+        para_que: "La oferta se carga en la plataforma. Crear y habilitar el usuario toma días."
+        emite: "Colombia Compra Eficiente (SECOP II)"
+        vigencia: "Permanente"
+        cuando: siempre
+        pendiente: secop_usuario

@@ -109,6 +109,32 @@ a.go:hover { border-bottom-color: currentColor; }
   input[type=search] { min-width: 0; width: 100%; }
   .controls > * { flex: 1 1 auto; }
 }
+
+.tabs { display: flex; gap: 4px; margin: -8px 0 24px; border-bottom: 1px solid var(--border); }
+.tab { font: 500 .9375rem var(--sans); min-height: 44px; padding: 0 16px; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-2); cursor: pointer; transition: color var(--t), border-color var(--t); }
+.tab:hover { color: var(--text); }
+.tab[aria-selected=true] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+[hidden] { display: none !important; }
+
+.prog { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 4px 0 20px; }
+.prog .n { font: 500 2.5rem/1 var(--serif); letter-spacing: -.02em; }
+.prog .n small { font: 400 1rem var(--sans); color: var(--text-2); letter-spacing: 0; }
+.prog .bar { flex: 1 1 200px; margin: 0; height: 5px; }
+.nota-doc { color: var(--text-2); font-size: .875rem; max-width: 70ch; margin: 0 0 20px; }
+.grupo { margin-top: 28px; }
+.grupo h2 { font: 500 1.5rem/1.2 var(--serif); letter-spacing: -.01em; margin: 0; }
+.grupo > p { margin: 4px 0 8px; color: var(--text-2); font-size: .9375rem; }
+ul.docs { list-style: none; margin: 0; padding: 0; }
+.doc { display: grid; grid-template-columns: 44px 1fr; gap: 0 8px; padding: 14px 0; border-top: 1px solid var(--hair); }
+.doc input { width: 20px; height: 20px; margin: 12px; accent-color: var(--primary); cursor: pointer; }
+.doc label { font-weight: 600; cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding-top: 10px; }
+.doc.listo label > span:first-child { color: var(--text-2); text-decoration: line-through; text-decoration-color: var(--border); }
+.doc p { margin: 4px 0 0; grid-column: 2; }
+.doc .para { max-width: 70ch; }
+.doc .datos { color: var(--text-2); font-size: .875rem; }
+.chip.sm { font-size: .75rem; padding: 1px 9px; font-weight: 500; }
+.chip.sin { background: var(--danger-soft); color: var(--danger); font-weight: 600; }
+@media (max-width: 600px) { .tabs { overflow-x: auto; } }
 footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width: 70ch; border-top: 1px solid var(--border); margin-top: 24px; }
 </style>
 </head>
@@ -123,7 +149,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
       </h1>
       <p class="sub">Electroriente S.A.S. · SECOP II · <span id="generado">sin consultar</span></p>
     </div>
-    <div class="controls" role="group" aria-label="Consulta">
+    <div class="controls" id="ctlRadar" role="group" aria-label="Consulta">
       <label class="f">Periodo
         <select id="dias">
           <option value="3">Últimos 3 días</option>
@@ -140,6 +166,12 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     </div>
   </header>
 
+  <div class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" id="tab-radar" aria-controls="vista-radar" aria-selected="true" type="button">Radar</button>
+    <button class="tab" role="tab" id="tab-docs" aria-controls="vista-docs" aria-selected="false" type="button">Documentos</button>
+  </div>
+
+  <div id="vista-radar" role="tabpanel" aria-labelledby="tab-radar">
   <section class="banner" id="pend" hidden aria-label="Pendientes del proyecto"></section>
   <section class="banner warn" id="trunc" hidden role="status"></section>
 
@@ -160,6 +192,17 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     <p class="count" id="cuenta"></p>
     <ol class="lista" id="lista"></ol>
   </main>
+  </div>
+
+  <div id="vista-docs" role="tabpanel" aria-labelledby="tab-docs" hidden>
+    <div class="prog" id="docs-prog"></div>
+    <p class="nota-doc">Lista habitual para licitar. Cada pliego define sus propios requisitos y la vigencia exacta: antes de presentar, contrasta con el del proceso. Lo que marque aquí se guarda solo en este navegador.</p>
+    <div class="controls" role="group" aria-label="Filtro de documentos">
+      <label class="chk"><input type="checkbox" id="soloFaltan"> Solo los que faltan</label>
+      <label class="chk"><input type="checkbox" id="soloSiempre"> Solo los que siempre se piden</label>
+    </div>
+    <div id="docs-lista" aria-live="polite"></div>
+  </div>
 
   <footer>
     Las alertas son exploratorias mientras haya pendientes bloqueantes: pueden mostrar procesos a los que la empresa aún no puede presentarse.
@@ -323,12 +366,79 @@ async function pendientes() {
   } catch (_) { /* el panel funciona sin el aviso */ }
 }
 
+
+const CUANDO = { siempre: 'Siempre se pide', segun_pliego: 'Según el pliego', si_aplica: 'Si aplica' };
+let docs = null, listos = new Set();
+try { listos = new Set(JSON.parse(localStorage.getItem('docs-listos') || '[]')); } catch (_) {}
+function guardarListos() { try { localStorage.setItem('docs-listos', JSON.stringify([...listos])); } catch (_) {} }
+
+async function cargarDocs() {
+  const cont = $('docs-lista');
+  try {
+    const r = await fetch('/api/documentos');
+    if (!r.ok) throw new Error('No se pudo leer la lista de documentos');
+    docs = await r.json();
+    pintarDocs();
+  } catch (e) {
+    const st = el('div', 'state');
+    st.append(svg('alert'), el('h2', '', 'No se pudo cargar la lista'), el('p', '', e.message));
+    const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = cargarDocs;
+    st.append(b); cont.replaceChildren(st);
+  }
+}
+
+function pintarDocs() {
+  if (!docs) return;
+  const todos = docs.flatMap(c => c.documentos);
+  const hechos = todos.filter(d => listos.has(d.id)).length;
+  const prog = $('docs-prog'), n = el('div', 'n', String(hechos));
+  n.append(el('small', '', ` de ${todos.length} documentos listos`));
+  const bar = el('div', 'bar'), i = el('i'); i.style.width = (todos.length ? hechos / todos.length * 100 : 0) + '%';
+  bar.append(i); prog.replaceChildren(n, bar);
+
+  const soloFaltan = $('soloFaltan').checked, soloSiempre = $('soloSiempre').checked;
+  const grupos = docs.map(c => {
+    const items = c.documentos.filter(d => (!soloFaltan || !listos.has(d.id)) && (!soloSiempre || d.cuando === 'siempre'));
+    if (!items.length) return null;
+    const g = el('section', 'grupo');
+    g.append(el('h2', '', c.titulo), el('p', '', c.descripcion));
+    const ul = el('ul', 'docs');
+    items.forEach(d => {
+      const li = el('li', 'doc' + (listos.has(d.id) ? ' listo' : ''));
+      const cb = el('input'); cb.type = 'checkbox'; cb.id = 'd-' + d.id; cb.checked = listos.has(d.id);
+      cb.onchange = () => { cb.checked ? listos.add(d.id) : listos.delete(d.id); guardarListos(); pintarDocs(); };
+      const lb = el('label'); lb.htmlFor = cb.id;
+      lb.append(el('span', '', d.nombre), el('span', 'chip sm' + (d.cuando === 'siempre' ? '' : ' nota'), CUANDO[d.cuando] || d.cuando));
+      if (d.pendiente && !listos.has(d.id)) lb.append(el('span', 'chip sm sin', 'Pendiente del proyecto'));
+      li.append(cb, lb, el('p', 'para', d.para_que),
+                el('p', 'datos', `Lo emite: ${d.emite}. Vigencia: ${d.vigencia}.`));
+      ul.append(li);
+    });
+    g.append(ul);
+    return g;
+  }).filter(Boolean);
+  $('docs-lista').replaceChildren(...(grupos.length ? grupos : [el('p', 'nota-doc', 'No hay documentos con este filtro. Todo lo que aplica está marcado como listo.')]));
+}
+
+function vista(nombre) {
+  const d = nombre === 'documentos';
+  $('vista-radar').hidden = d; $('vista-docs').hidden = !d; $('ctlRadar').hidden = d;
+  $('tab-radar').setAttribute('aria-selected', String(!d));
+  $('tab-docs').setAttribute('aria-selected', String(d));
+  if (d && !docs) cargarDocs();
+  history.replaceState(null, '', d ? '#documentos' : '#radar');
+}
+$('tab-radar').onclick = () => vista('radar');
+$('tab-docs').onclick = () => vista('documentos');
+['soloFaltan', 'soloSiempre'].forEach(id => $(id).addEventListener('input', pintarDocs));
+
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
 $('cerrados').onchange = cargar;
 ['q', 'dep', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', pintar));
 pendientes();
 cargar();
+if (location.hash === '#documentos') vista('documentos');
 </script>
 </body>
 </html>
