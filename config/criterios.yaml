@@ -1,0 +1,72 @@
+# Criterios con los que se decide si una licitacion vale la pena.
+# El panel los muestra en la pestana "Criterios". Es la "mente experta" del
+# radar: aqui se explica por que sube o baja un proceso, y que revisar
+# cuando se quiera agregar o quitar terminos.
+#
+# Los pesos reales viven en config/filtros.yaml y config/perfil.yaml; este
+# archivo solo los explica.
+#
+# estado: activo | supuesto | sin_datos | pendiente
+
+criterios:
+  - titulo: "El objeto es algo que Electroriente suministra"
+    como: "Se buscan términos por familia: núcleo (variadores, PLC), catálogo (material eléctrico, cable, breaker), líneas secundarias (luminarias, UPS, solar) y contexto (RETIE)."
+    por_que: "Es el filtro principal. Sin coincidencia de objeto el proceso ni entra."
+    estado: activo
+
+  - titulo: "Tipo de contrato"
+    como: "Suma si es Suministros o Compraventa; resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos. Obra no resta aquí: se trata aparte como 'requiere aliado'."
+    por_que: "Electroriente vende producto. Los contratos de servicios casi nunca son para un distribuidor."
+    estado: supuesto
+
+  - titulo: "Modalidad de contratación"
+    como: "Suma en mínima cuantía, selección abreviada (menor cuantía y subasta inversa) y licitación pública. Resta en 'solicitud de información' (no es oferta). La contratación directa se excluye."
+    por_que: "En estas modalidades el proceso está abierto a ofertas de proveedores. La contratación directa suele llegar con proveedor definido."
+    estado: supuesto
+
+  - titulo: "Cuantía dentro de la capacidad"
+    como: "Penaliza si el valor está por debajo del mínimo útil o muy por encima de lo que puede asumir la empresa. Sin valor publicado no penaliza: se marca para revisión."
+    por_que: "Un proceso fuera de capacidad financiera no se puede ganar, y uno muy pequeño no paga el esfuerzo de la oferta."
+    estado: supuesto
+
+  - titulo: "Territorio prioritario"
+    como: "Suma si la entidad está en Santander, Norte de Santander, Boyacá o Cesar."
+    por_que: "Entrega, soporte y relación comercial son más fáciles cerca de Bucaramanga."
+    estado: activo
+
+  - titulo: "Entidad que ya compra este material"
+    como: "Suma si la entidad está en la lista de entidades conocidas (EPM, Ecopetrol, ESSA, etc.)."
+    por_que: "Compradores recurrentes de material eléctrico y automatización repiten procesos."
+    estado: activo
+
+  - titulo: "Requiere instalación o montaje"
+    como: "Se marca 'requiere aliado' si el contrato es de Obra o el objeto menciona construcción, obra civil, montaje o puesta en marcha. Resta 15 puntos: el proceso baja a 'por revisar' en lugar de perderse."
+    por_que: "Electroriente instala a través de aliados, así que esos procesos solo sirven en unión temporal o consorcio."
+    estado: activo
+
+  - titulo: "Proceso todavía abierto"
+    como: "Solo se muestran procesos con estado de apertura 'Abierto' (se pueden ver los cerrados aparte)."
+    por_que: "Un proceso cerrado ya no admite ofertas."
+    estado: activo
+
+  - titulo: "Fecha de cierre y plazo restante"
+    como: "Los datos abiertos de SECOP no traen la fecha de cierre de ofertas. Hay que abrir el proceso para verla."
+    por_que: "Con menos de 5 días hábiles, una primera oferta difícilmente alcanza."
+    estado: sin_datos
+
+  - titulo: "Códigos UNSPSC"
+    como: "No se usan para puntuar: en los datos abiertos la mayoría de procesos trae el código como 'UNSPECIFIED' o con códigos poco confiables."
+    por_que: "Sí importan para el RUP: la empresa solo puede presentarse si sus códigos inscritos cubren el objeto."
+    estado: pendiente
+
+  - titulo: "Requisitos habilitantes (RUP, experiencia, capacidad financiera)"
+    como: "Aún no se cruzan: faltan los documentos de la empresa. Cuando estén, el radar podrá descartar lo que no se pueda presentar."
+    por_que: "Falta un solo habilitante y la oferta no es válida."
+    estado: pendiente
+
+revision_semanal:
+  - "Abra la pestaña 'Por revisar' y lea los primeros 10 a 15. Para cada uno pregúntese: ¿podríamos suministrar esto?"
+  - "Si SÍ y no estaba en el Radar: anote qué palabra del objeto lo habría subido y agréguela a 'incluir' en config/filtros.yaml."
+  - "Si NO (ruido): anote la palabra que lo hizo entrar y agréguela a 'excluir'."
+  - "Si hay una familia de términos que nunca coincide en la tabla de arriba, probablemente sobra o está mal escrita."
+  - "Una oportunidad real que el radar nunca mostró se descubre mirando SECOP a mano una vez al mes y comparando."

@@ -180,7 +180,7 @@ def cargar_demo():
 # Evaluacion de un proceso
 # --------------------------------------------------------------------------
 
-def evaluar(proceso, perfil, filtros, solo_abiertos=True):
+def evaluar(proceso, perfil, filtros, solo_abiertos=True, umbral=None):
     """Devuelve un dict con el veredicto, o None si no aplica.
 
     El veredicto siempre explica por que. Si no se puede auditar,
@@ -264,13 +264,38 @@ def evaluar(proceso, perfil, filtros, solo_abiertos=True):
         requiere_aliado = True
     if requiere_aliado and not perfil["modalidad_participacion"]["obra_con_instalacion"]:
         notas.append("incluye obra o montaje, requiere aliado instalador")
+        # Baja la factibilidad, pero no lo descarta: queda en "por revisar".
+        puntaje += ajustes.get("penalizacion_requiere_aliado", 0)
+
+    # Tipo de contrato y modalidad: lo que Electroriente hace de verdad
+    # (suministro) contra lo que no (servicios, informacion sin oferta).
+    tipo = proceso.get("tipo_de_contrato", "")
+    fav = filtros.get("ajustes_contrato", {}).get("favorables", {})
+    des = filtros.get("ajustes_contrato", {}).get("desfavorables", {})
+    if tipo in fav.get("tipos", []):
+        puntaje += fav["bono"]
+        notas.append(f"contrato de {tipo.lower()}")
+    elif tipo in des.get("tipos", []):
+        puntaje += des["penalizacion"]
+        notas.append(f"contrato de {tipo.lower()}, poco afin")
+    mod_fav = filtros.get("ajustes_modalidad", {}).get("favorables", {})
+    mod_info = filtros.get("ajustes_modalidad", {}).get("solo_informacion", {})
+    if modalidad in mod_fav.get("modalidades", []):
+        puntaje += mod_fav["bono"]
+    elif modalidad in mod_info.get("modalidades", []):
+        puntaje += mod_info["penalizacion"]
+        notas.append("solo solicitud de informacion, no es oferta")
 
     puntaje = max(0, min(100, puntaje))
-    if puntaje < ajustes["umbral_alerta"]:
+    if puntaje < (ajustes["umbral_alerta"] if umbral is None else umbral):
         return None
+    niveles = filtros.get("niveles", {"alta": 50, "media": 30})
+    nivel = ("alta" if puntaje >= niveles["alta"] else
+             "media" if puntaje >= niveles["media"] else "revisar")
 
     return {
         "puntaje": puntaje,
+        "nivel": nivel,
         "requiere_aliado": requiere_aliado,
         "entidad": limpiar(proceso.get("entidad", "")),
         "departamento": departamento,

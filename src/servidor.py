@@ -45,8 +45,11 @@ def calcular(dias, cerrados):
 
     perfil, filtros = radar.cargar_config()
     procesos, truncado = radar.consultar_secop(dias)
-    resultados = [r for r in (radar.evaluar(p, perfil, filtros, not cerrados)
+    minimo = filtros["puntaje"]["umbral_revisar"]
+    resultados = [r for r in (radar.evaluar(p, perfil, filtros, not cerrados, minimo)
                               for p in procesos) if r]
+    # Mejor puntaje primero; a igualdad, el mas reciente.
+    resultados.sort(key=lambda r: r["fecha_publicacion"], reverse=True)
     resultados.sort(key=lambda r: r["puntaje"], reverse=True)
     datos = {
         "revisados": len(procesos),
@@ -67,6 +70,32 @@ def pendientes():
              "criticidad": p.get("criticidad", ""),
              "necesito": " ".join(str(p.get("necesito", "")).split()),
              "resuelto": bool(p.get("resuelto"))} for p in lista]
+
+
+def criterios():
+    """Criterios explicados, terminos de busqueda y cuantas veces acerto cada uno."""
+    with open(radar.RAIZ / "config" / "criterios.yaml", encoding="utf-8") as f:
+        crit = yaml.safe_load(f) or {}
+    _, filtros = radar.cargar_config()
+
+    # Aciertos sobre la consulta mas reciente que haya en memoria.
+    reciente = max(_cache.values(), key=lambda g: g["t"], default=None)
+    aciertos, base = {}, None
+    if reciente:
+        base = {"generado": reciente["datos"]["generado"],
+                "candidatos": len(reciente["datos"]["resultados"])}
+        for r in reciente["datos"]["resultados"]:
+            for t in r["coincidencias"]:
+                aciertos[t] = aciertos.get(t, 0) + 1
+
+    grupos = [{"id": nombre, "peso": g["peso"],
+               "terminos": [{"t": t, "n": aciertos.get(radar.normalizar(t), 0)}
+                            for t in g["terminos"]]}
+              for nombre, g in filtros["incluir"].items()]
+    return {"criterios": crit.get("criterios", []),
+            "revision": crit.get("revision_semanal", []),
+            "grupos": grupos, "excluir": filtros["excluir"], "base": base,
+            "puntaje": filtros["puntaje"], "niveles": filtros["niveles"]}
 
 
 class Manejador(BaseHTTPRequestHandler):
@@ -154,6 +183,8 @@ class Manejador(BaseHTTPRequestHandler):
             self._json(200, pendientes())
         elif url.path == "/api/documentos":
             self._json(200, docs.listar())
+        elif url.path == "/api/criterios":
+            self._json(200, criterios())
         elif url.path == "/api/archivo":
             try:
                 datos, tipo, ext = docs.abrir(parse_qs(url.query).get("id", [""])[0])

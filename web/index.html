@@ -153,6 +153,20 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 .chip.sm { font-size: .75rem; padding: 1px 9px; font-weight: 500; }
 .chip.sin { background: var(--danger-soft); color: var(--danger); font-weight: 600; }
 @media (max-width: 600px) { .tabs { overflow-x: auto; } }
+.intro { color: var(--text-2); font-size: .9375rem; max-width: 75ch; margin: 0 0 20px; }
+.chip.alta { background: var(--primary); color: var(--on-primary); font-weight: 600; }
+.chip.media { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+.chip.revisar { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.crit { padding: 14px 0; border-top: 1px solid var(--hair); }
+.crit h3 { margin: 0; font: 600 1rem/1.4 var(--sans); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.crit p { margin: 4px 0 0; max-width: 72ch; }
+.crit .por { color: var(--text-2); font-size: .9375rem; }
+.terms { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.term { font-size: .8125rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-2); }
+.term.hit { background: var(--primary-soft); color: var(--primary); border-color: transparent; font-weight: 600; }
+.term.out { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+ol.pasos { max-width: 72ch; padding-left: 20px; }
+ol.pasos li { margin: 6px 0; }
 footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width: 70ch; border-top: 1px solid var(--border); margin-top: 24px; }
 </style>
 </head>
@@ -185,11 +199,15 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   </header>
 
   <div class="tabs" role="tablist" aria-label="Secciones">
-    <button class="tab" role="tab" id="tab-radar" aria-controls="vista-radar" aria-selected="true" type="button">Radar</button>
-    <button class="tab" role="tab" id="tab-docs" aria-controls="vista-docs" aria-selected="false" type="button">Documentos</button>
+    <button class="tab" role="tab" id="tab-radar" aria-selected="true" type="button">Radar</button>
+    <button class="tab" role="tab" id="tab-santander" aria-selected="false" type="button">Santander</button>
+    <button class="tab" role="tab" id="tab-revisar" aria-selected="false" type="button">Por revisar</button>
+    <button class="tab" role="tab" id="tab-docs" aria-selected="false" type="button">Documentos</button>
+    <button class="tab" role="tab" id="tab-crit" aria-selected="false" type="button">Criterios</button>
   </div>
 
-  <div id="vista-radar" role="tabpanel" aria-labelledby="tab-radar">
+  <div id="vista-radar" role="tabpanel">
+  <p class="intro" id="intro"></p>
   <section class="banner" id="pend" hidden aria-label="Pendientes del proyecto"></section>
   <section class="banner warn" id="trunc" hidden role="status"></section>
 
@@ -219,6 +237,11 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
       <label class="chk"><input type="checkbox" id="soloFaltan"> Solo los que faltan</label>
     </div>
     <div id="docs-lista" aria-live="polite"></div>
+  </div>
+
+  <div id="vista-crit" role="tabpanel" aria-labelledby="tab-crit" hidden>
+    <p class="intro">Así decide el radar si una licitación vale la pena. Los pesos son supuestos de negocio para calibrar con el área; si algo no coincide con su experiencia, dígamelo y se ajusta.</p>
+    <div id="crit-cuerpo"></div>
   </div>
 
   <footer>
@@ -293,12 +316,23 @@ function llenarDeps() {
   sel.value = deps.includes(actual) ? actual : '';
 }
 
+const MODOS = {
+  radar: { f: r => r.nivel !== 'revisar',
+    intro: 'Procesos que superan el umbral de alerta, de mejor a menor puntaje. Es la lista para trabajar primero.' },
+  santander: { f: r => r.departamento === 'Santander',
+    intro: 'Solo entidades de Santander, de la opción más factible a la menos factible. Incluye los "por revisar": en su territorio vale la pena mirar también lo dudoso.' },
+  revisar: { f: r => r.nivel === 'revisar',
+    intro: 'Señales más débiles: no llegan al umbral de alerta, pero podrían servir. Revíselos para decidir si podemos suministrar o aplicar, y para ver qué términos faltan en la búsqueda.' }
+};
+let modo = 'radar';
+const base = () => datos.resultados.filter(MODOS[modo].f);
+
 function pintarKpis() {
-  const r = datos.resultados;
+  const r = base();
   const k = $('kpis'); k.hidden = false;
   const data = [
     [datos.revisados.toLocaleString('es-CO'), 'Procesos revisados'],
-    [r.length, 'Alertas'],
+    [r.length, modo === 'radar' ? 'Alertas' : 'Procesos'],
     [r.filter(x => x.requiere_aliado).length, 'Requieren aliado'],
     [r.length ? Math.max(...r.map(x => x.puntaje)) : '—', 'Mejor puntaje']
   ];
@@ -307,7 +341,7 @@ function pintarKpis() {
 
 function filtrar() {
   const q = $('q').value.trim().toLowerCase(), dep = $('dep').value;
-  return datos.resultados.filter(r =>
+  return base().filter(r =>
     (!dep || r.departamento === dep) &&
     (!$('soloAliado').checked || r.requiere_aliado) &&
     (!$('soloMonto').checked || r.valor_cop > 0) &&
@@ -329,6 +363,7 @@ function tarjeta(r) {
   body.append(meta, el('p', 'desc', r.descripcion));
 
   const chips = el('div', 'chips');
+  chips.append(el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel));
   chips.append(el('span', 'why', 'Coincide por:'));
   r.coincidencias.slice(0, 8).forEach(c => chips.append(el('span', 'chip', c)));
   if (r.requiere_aliado) chips.append(el('span', 'chip aliado', 'Requiere aliado'));
@@ -351,13 +386,14 @@ function tarjeta(r) {
 function pintar() {
   if (!datos) return;
   const f = filtrar(), lista = $('lista');
-  $('cuenta').textContent = `${f.length} de ${datos.resultados.length} alertas`;
+  const total = base().length;
+  $('cuenta').textContent = `${f.length} de ${total} procesos`;
   if (!f.length) {
     const st = el('li', 'state');
     st.append(svg('search'), el('h2', '', 'Sin alertas con estos filtros'),
-      el('p', '', datos.resultados.length
+      el('p', '', total
         ? 'Quita algún filtro para ver más resultados.'
-        : `Ningún proceso superó el umbral de ${datos.umbral} puntos. Prueba un periodo más largo o revisa config/filtros.yaml.`));
+        : modo === 'radar' ? `Ningún proceso superó el umbral de ${datos.umbral} puntos. Prueba un periodo más largo o revisa config/filtros.yaml.` : 'No hay procesos en esta vista para el periodo elegido. Prueba un periodo más largo.'));
     lista.replaceChildren(st);
     return;
   }
@@ -385,6 +421,7 @@ async function pendientes() {
 }
 
 
+const NIVEL = { alta: 'Factibilidad alta', media: 'Factibilidad media', revisar: 'Por revisar' };
 const CUANDO = { siempre: 'Siempre se pide', segun_pliego: 'Según el pliego', si_aplica: 'Si aplica' };
 const ESTADO = {
   falta: ['chip sm sin', 'Falta'], listo: ['chip sm ok', 'Cargado'],
@@ -511,17 +548,63 @@ function bloqueDocs(r) {
   return det;
 }
 
-function vista(nombre) {
-  const d = nombre === 'documentos';
-  $('vista-radar').hidden = d; $('vista-docs').hidden = !d; $('ctlRadar').hidden = d;
-  $('tab-radar').setAttribute('aria-selected', String(!d));
-  $('tab-docs').setAttribute('aria-selected', String(d));
-  if (d && !docs) cargarDocs();
-  if (!d && alertasViejas) { alertasViejas = false; cargar(); }
-  history.replaceState(null, '', d ? '#documentos' : '#radar');
+const ESTADO_CRIT = { activo: ['chip sm ok', 'Activo'], supuesto: ['chip sm aviso', 'Supuesto a validar'],
+  sin_datos: ['chip sm nota', 'No está en los datos'], pendiente: ['chip sm sin', 'Pendiente'] };
+let critListo = false;
+async function cargarCrit() {
+  const c = $('crit-cuerpo');
+  try {
+    const r = await fetch('/api/criterios'); if (!r.ok) throw new Error('No se pudieron leer los criterios');
+    const d = await r.json(); critListo = true;
+    const sec = (t, sub) => { const g = el('section', 'grupo'); g.append(el('h2', '', t)); if (sub) g.append(el('p', '', sub)); return g; };
+
+    const g1 = sec('Qué se evalúa', `Puntaje de 0 a 100. Factibilidad alta desde ${d.niveles.alta}, media desde ${d.niveles.media}; entre ${d.puntaje.umbral_revisar} y ${d.niveles.media - 1} queda "por revisar".`);
+    d.criterios.forEach(x => {
+      const div = el('div', 'crit'); const h = el('h3'); h.append(el('span', '', x.titulo));
+      const e = ESTADO_CRIT[x.estado]; if (e) h.append(el('span', e[0], e[1]));
+      div.append(h, el('p', '', x.como), el('p', 'por', 'Por qué importa: ' + x.por_que)); g1.append(div);
+    });
+
+    const g2 = sec('Términos de búsqueda', d.base
+      ? `Los números cuentan en cuántos procesos de la última consulta (${d.base.generado}, ${d.base.candidatos} candidatos) acertó cada término. Los que están en gris no acertaron nada.`
+      : 'Abra la pestaña Radar para consultar SECOP y ver cuántas veces acierta cada término.');
+    d.grupos.forEach(g => {
+      g2.append(el('h4', 'why', `${g.id.replace(/_/g, ' ')} · ${g.peso} puntos`));
+      const w = el('div', 'terms');
+      g.terminos.forEach(t => w.append(el('span', 'term' + (t.n ? ' hit' : ''), t.t + (t.n ? ' · ' + t.n : ''))));
+      g2.append(w);
+    });
+    g2.append(el('h4', 'why', 'Términos que sacan un proceso (ruido)'));
+    const wx = el('div', 'terms'); d.excluir.forEach(t => wx.append(el('span', 'term out', t))); g2.append(wx);
+    g2.append(el('p', 'nota-doc', 'Para agregar o quitar términos se edita config/filtros.yaml, o dígame cuáles y los agrego.'));
+
+    const g3 = sec('Revisión semanal: cómo decidir si agregar términos');
+    const ol = el('ol', 'pasos'); d.revision.forEach(t => ol.append(el('li', '', t))); g3.append(ol);
+    c.replaceChildren(g1, g2, g3);
+  } catch (e) {
+    const st = el('div', 'state'); st.append(svg('alert'), el('h2', '', 'No se pudo cargar'), el('p', '', e.message));
+    const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = cargarCrit; st.append(b); c.replaceChildren(st);
+  }
 }
-$('tab-radar').onclick = () => vista('radar');
-$('tab-docs').onclick = () => vista('documentos');
+
+const TABS = ['radar', 'santander', 'revisar', 'docs', 'crit'];
+function vista(nombre) {
+  if (nombre === 'documentos') nombre = 'docs';
+  if (!TABS.includes(nombre)) nombre = 'radar';
+  const esRadar = ['radar', 'santander', 'revisar'].includes(nombre);
+  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-crit').hidden = nombre !== 'crit';
+  $('ctlRadar').hidden = !esRadar;
+  TABS.forEach(t => $('tab-' + t).setAttribute('aria-selected', String(t === nombre)));
+  if (esRadar) {
+    modo = nombre; $('intro').textContent = MODOS[modo].intro;
+    $('dep').closest('label').hidden = modo === 'santander';
+    if (alertasViejas) { alertasViejas = false; cargar(); } else if (datos) { pintarKpis(); pintar(); }
+  }
+  if (nombre === 'docs' && !docs) cargarDocs();
+  if (nombre === 'crit') cargarCrit();
+  history.replaceState(null, '', '#' + nombre);
+}
+TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
 ['soloFaltan'].forEach(id => $(id).addEventListener('input', pintarDocs));
 
 $('actualizar').onclick = cargar;
@@ -530,7 +613,7 @@ $('cerrados').onchange = cargar;
 ['q', 'dep', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', pintar));
 pendientes();
 cargar();
-if (location.hash === '#documentos') vista('documentos');
+vista(location.hash.slice(1) || 'radar');
 </script>
 </body>
 </html>

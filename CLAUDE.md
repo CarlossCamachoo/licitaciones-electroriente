@@ -105,7 +105,12 @@ obra con aliados.
 
 ---
 
-## Problema conocido sin resolver
+## Problema conocido, mitigado en el panel
+
+Desde las pestanas Santander y Por revisar, la obra con aliado ya no se pierde:
+resta 15 puntos y cae en "por revisar" en lugar de desaparecer. La CLI sigue
+usando solo el umbral de alerta. La decision de negocio sigue abierta. Texto
+original del problema:
 
 Los procesos de obra se caen por umbral antes de que se aplique la marca de
 "requiere aliado". Se vio con un caso real de Cormacarena, alumbrado publico

@@ -127,6 +127,36 @@ puntaje:
   bono_entidad_conocida: 10         # entidades que ya compran este tipo de material
   penalizacion_fuera_de_cuantia: -40
   umbral_alerta: 30                 # por debajo de esto no se notifica
+  penalizacion_requiere_aliado: -15 # obra/montaje: solo sirve en union temporal
+  umbral_revisar: 15                # entre este y el de alerta: "por revisar"
+
+# Niveles de factibilidad segun el puntaje final
+niveles:
+  alta: 50
+  media: 30                         # debajo de esto (y desde umbral_revisar): por revisar
+
+# ---------------------------------------------------------------
+# Ajustes por tipo de contrato y modalidad (valores exactos de SECOP).
+# Son supuestos de negocio para calibrar con el area, no datos.
+# ---------------------------------------------------------------
+ajustes_contrato:
+  favorables:
+    bono: 15
+    tipos: ["Suministros", "Compraventa"]       # lo que Electroriente hace
+  desfavorables:
+    penalizacion: -15
+    tipos: ["Prestación de servicios", "Consultoría", "Interventoría", "Seguros",
+            "Arrendamiento de inmuebles", "Arrendamiento de muebles",
+            "Servicios financieros", "Comodato"]
+
+ajustes_modalidad:
+  favorables:
+    bono: 10
+    modalidades: ["Mínima cuantía", "Selección Abreviada de Menor Cuantía",
+                  "Selección abreviada subasta inversa", "Licitación pública"]
+  solo_informacion:
+    penalizacion: -10               # piden información, no ofertas
+    modalidades: ["Solicitud de información a los Proveedores"]
 
 entidades_conocidas:
   - "EMPRESAS PUBLICAS DE MEDELLIN"
