@@ -493,23 +493,20 @@ function pintarDocs() {
 function bloqueDocs(r) {
   const dc = r.documentos; if (!dc) return null;
   const mal = (x) => x.estado === 'falta' || x.estado === 'vencido';
-  const faltan = dc.necesarios.filter(mal), probables = dc.probables.filter(mal);
+  const lista = [...dc.necesarios.map(x => ({ ...x, probable: false })), ...dc.probables.map(x => ({ ...x, probable: true }))];
+  const faltan = lista.filter(mal);
   const det = el('details', 'req');
   const sm = el('summary');
-  if (faltan.length) sm.append(el('span', 'chip sm sin', `Faltan ${faltan.length} de ${dc.necesarios.length} documentos`));
-  else sm.append(el('span', 'chip sm ok', 'Documentos básicos completos'));
+  sm.append(el('span', faltan.length ? 'chip sm sin' : 'chip sm ok',
+    faltan.length ? `Faltan ${faltan.length} de ${lista.length} documentos` : 'Documentos completos'));
   sm.append(document.createTextNode(' para aplicar'));
   const cuerpo = el('div', 'cuerpo');
-  const lista = (titulo, arr, cls) => {
-    if (!arr.length) return;
-    cuerpo.append(el('h4', '', titulo));
-    const ul = el('ul'); arr.forEach(x => ul.append(el('li', cls && mal(x) ? cls : '', x.nombre + (x.estado === 'vencido' ? ' (vencido)' : x.estado === 'por_vencer' ? ' (vence pronto)' : x.estado === 'falta' ? '' : ' (cargado)'))));
-    cuerpo.append(ul);
-  };
-  lista('Se piden siempre', dc.necesarios, 'falta');
-  lista('Probables según el objeto', dc.probables, 'falta');
-  lista('Verificar en el pliego', dc.verificar, '');
-  cuerpo.append(el('p', 'nota', 'Estimación por reglas, no lectura del pliego. Confirme la lista exacta en los documentos del proceso.'));
+  const ul = el('ul');
+  lista.forEach(x => {
+    const marca = x.estado === 'vencido' ? ' (vencido)' : x.estado === 'por_vencer' ? ' (vence pronto)' : x.estado === 'falta' ? '' : ' (cargado)';
+    ul.append(el('li', mal(x) ? 'falta' : '', x.nombre + (x.probable ? ' · probable' : '') + marca));
+  });
+  cuerpo.append(ul, el('p', 'nota', 'Estimación por reglas, no lectura del pliego. Confirme en los documentos del proceso.'));
   const ir = el('button', 'link', 'Ir a subir documentos'); ir.type = 'button'; ir.onclick = () => vista('documentos');
   cuerpo.append(ir);
   det.append(sm, cuerpo);
