@@ -117,8 +117,8 @@ categorias:
 
 
   - id: tecnicos
-    titulo: "Técnicos y comerciales"
-    descripcion: "Describen lo que se ofrece y demuestran que cumple."
+    titulo: "Oferta"
+    descripcion: "Lo que se presenta como propuesta."
     documentos:
       - id: propuesta_economica
         nombre: "Propuesta económica en el formato de la entidad"
@@ -128,8 +128,8 @@ categorias:
         cuando: siempre
 
   - id: garantias
-    titulo: "Garantías y plataforma"
-    descripcion: "Se tramitan con terceros y toman días, así que no se dejan para el final."
+    titulo: "Plataforma"
+    descripcion: "Se tramita con anticipación: toma días."
     documentos:
       - id: usuario_secop
         nombre: "Usuario de SECOP II habilitado para el representante legal"
