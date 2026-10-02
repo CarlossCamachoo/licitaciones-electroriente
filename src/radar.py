@@ -19,6 +19,7 @@ import json
 import os
 import re
 import sys
+import time
 import unicodedata
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -131,6 +132,26 @@ def avisar_pendientes(pendientes):
 # Consulta a SECOP
 # --------------------------------------------------------------------------
 
+def _pedir_pagina(parametros, cabeceras, intentos=4):
+    """Una pagina de SECOP. Reintenta ante errores del servidor o de red:
+    el servicio da 503 de forma intermitente y no vale perder una consulta
+    de 20 segundos por un fallo pasajero."""
+    for intento in range(1, intentos + 1):
+        try:
+            respuesta = requests.get(API_PROCESOS, params=parametros,
+                                     headers=cabeceras, timeout=TIEMPO_ESPERA)
+            if respuesta.status_code >= 500 or respuesta.status_code == 429:
+                respuesta.raise_for_status()
+            respuesta.raise_for_status()
+            return respuesta.json()
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            reintentable = not isinstance(e, requests.HTTPError) or \
+                e.response is None or e.response.status_code >= 500 or e.response.status_code == 429
+            if intento == intentos or not reintentable:
+                raise
+            time.sleep(2 * intento)
+
+
 def consultar_secop(dias, limite=LIMITE_POR_DEFECTO):
     """Trae procesos publicados en los ultimos N dias, paginando.
 
@@ -157,10 +178,7 @@ def consultar_secop(dias, limite=LIMITE_POR_DEFECTO):
             # puede repetir o saltarse filas.
             "$order": "fecha_de_publicacion_del DESC, id_del_proceso",
         }
-        respuesta = requests.get(API_PROCESOS, params=parametros,
-                                 headers=cabeceras, timeout=TIEMPO_ESPERA)
-        respuesta.raise_for_status()
-        pagina = respuesta.json()
+        pagina = _pedir_pagina(parametros, cabeceras)
         procesos.extend(pagina)
         if len(pagina) < parametros["$limit"]:
             return procesos, False
@@ -275,7 +293,8 @@ def evaluar(proceso, perfil, filtros, solo_abiertos=True, umbral=None):
     if tipo in fav.get("tipos", []):
         puntaje += fav["bono"]
         notas.append(f"contrato de {tipo.lower()}")
-    elif tipo in des.get("tipos", []):
+    elif tipo in des.get("tipos", []) and not any(
+            contiene(texto_norm, t) for t in des.get("salvo_si_menciona", [])):
         puntaje += des["penalizacion"]
         notas.append(f"contrato de {tipo.lower()}, poco afin")
     mod_fav = filtros.get("ajustes_modalidad", {}).get("favorables", {})

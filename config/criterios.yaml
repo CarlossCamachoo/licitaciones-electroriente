@@ -15,7 +15,7 @@ criterios:
     estado: activo
 
   - titulo: "Tipo de contrato"
-    como: "Suma si es Suministros o Compraventa; resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos. Obra no resta aquí: se trata aparte como 'requiere aliado'."
+    como: "Suma si es Suministros o Compraventa; resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga 'suministro de' o 'adquisición de' (el tipo de contrato lo llena la entidad y a veces viene mal). Obra no resta aquí: se trata aparte como 'requiere aliado'."
     por_que: "Electroriente vende producto. Los contratos de servicios casi nunca son para un distribuidor."
     estado: supuesto
 
@@ -25,7 +25,7 @@ criterios:
     estado: supuesto
 
   - titulo: "Cuantía dentro de la capacidad"
-    como: "Penaliza si el valor está por debajo del mínimo útil o muy por encima de lo que puede asumir la empresa. Sin valor publicado no penaliza: se marca para revisión."
+    como: "Penaliza si el valor está por debajo del mínimo útil (hoy 5 millones, definido por el área) o muy por encima de lo que puede asumir la empresa. Sin valor publicado no penaliza: se marca para revisión."
     por_que: "Un proceso fuera de capacidad financiera no se puede ganar, y uno muy pequeño no paga el esfuerzo de la oferta."
     estado: supuesto
 

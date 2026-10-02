@@ -145,6 +145,10 @@ ajustes_contrato:
     tipos: ["Suministros", "Compraventa"]       # lo que Electroriente hace
   desfavorables:
     penalizacion: -15
+    # El tipo de contrato lo diligencia la entidad y a veces viene mal (un
+    # suministro marcado como "Servicios financieros"). Si el objeto dice
+    # claramente que compra bienes, no se penaliza.
+    salvo_si_menciona: ["suministro de", "suministro e", "suministros de", "adquisicion de", "compra de", "compraventa de"]
     tipos: ["Prestación de servicios", "Consultoría", "Interventoría", "Seguros",
             "Arrendamiento de inmuebles", "Arrendamiento de muebles",
             "Servicios financieros", "Comodato"]

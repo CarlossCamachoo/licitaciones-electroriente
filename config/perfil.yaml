@@ -24,7 +24,7 @@ capacidad:
   # Por debajo del minimo, el esfuerzo de armar la oferta no se paga.
   # Por encima del maximo, probablemente se necesita union temporal.
   # REVISAR con el area de licitaciones: estos valores son un punto de partida.
-  cuantia_minima_cop: 20000000
+  cuantia_minima_cop: 5000000   # decidido por el area: estamos empezando a licitar
   cuantia_maxima_sola_cop: 2000000000
   cuantia_maxima_union_temporal_cop: 8000000000
 

@@ -32,7 +32,7 @@ pendientes:
     titulo: "Validar rango de cuantia con el area de licitaciones"
     necesito: "Estados financieros o los indices del RUP"
     por_que: >
-      Los valores en config/perfil.yaml (minimo 20 millones, maximo 2.000
+      Los valores en config/perfil.yaml (minimo 5 millones, definido por el area; maximo 2.000
       millones sola) los estime a partir del patrimonio publico. Son un
       punto de partida inventado, no un dato confirmado.
     que_hago_con_el: >
