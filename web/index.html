@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Licitaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F8FAFC; --surface: #FFFFFF; --muted: #E9EEF6; --border: #CBD5E1;
+  --text: #0F172A; --text-2: #475569;
+  --primary: #1E40AF; --on-primary: #FFFFFF; --primary-soft: #DBEAFE;
+  --accent: #B45309; --accent-soft: #FEF3C7;
+  --danger: #B91C1C; --danger-soft: #FEE2E2;
+  --ok: #047857; --ok-soft: #D1FAE5;
+  --ring: #1E40AF;
+  --sans: "Fira Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Fira Code", ui-monospace, Menlo, monospace;
+  --r: 10px; --t: 180ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0B1220; --surface: #111A2E; --muted: #1B2740; --border: #2B3A57;
+    --text: #E6EDF7; --text-2: #A5B3CC;
+    --primary: #7AA2FF; --on-primary: #0B1220; --primary-soft: #1B2B55;
+    --accent: #FBBF24; --accent-soft: #3A2A0A;
+    --danger: #FCA5A5; --danger-soft: #3B1518;
+    --ok: #6EE7B7; --ok-soft: #0E2F25;
+    --ring: #9DB9FF;
+  }
+}
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; font: 400 16px/1.5 var(--sans); background: var(--bg); color: var(--text); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 16px; }
+:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 6px; }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--primary); color: var(--on-primary); padding: 8px 12px; border-radius: 6px; z-index: 10; }
+.skip:focus { left: 8px; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; padding: 8px 0 16px; }
+h1 { margin: 0; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+h1 svg { color: var(--primary); width: 28px; height: 28px; }
+.sub { color: var(--text-2); font-size: .875rem; margin: 2px 0 0; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+label.f { display: flex; flex-direction: column; font-size: .75rem; font-weight: 500; color: var(--text-2); gap: 2px; }
+select, input[type=search] { font: inherit; font-size: .9375rem; min-height: 44px; padding: 0 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+input[type=search] { min-width: 220px; }
+.chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; }
+.chk input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+button.btn { font: 600 .9375rem var(--sans); min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: opacity var(--t), transform var(--t); }
+button.btn:hover { opacity: .9; }
+button.btn:disabled { opacity: .5; cursor: not-allowed; }
+button.btn.ghost { background: transparent; color: var(--primary); }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 16px; }
+.kpi b { display: block; font: 600 1.75rem/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: .8125rem; color: var(--text-2); }
+
+.banner { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: var(--r); padding: 12px 16px; margin-bottom: 16px; }
+.banner.warn { border-color: var(--danger); background: var(--danger-soft); }
+.banner > .row { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.banner strong { display: flex; gap: 8px; align-items: center; }
+.banner ul { margin: 8px 0 0; padding-left: 20px; font-size: .9375rem; }
+.banner[hidden] { display: none; }
+
+.count { color: var(--text-2); font-size: .875rem; margin: 0 0 8px; }
+ol.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; display: grid; grid-template-columns: 72px 1fr; gap: 16px; transition: border-color var(--t), box-shadow var(--t); }
+.card:hover { border-color: var(--primary); box-shadow: 0 2px 10px rgba(30,64,175,.12); }
+.score { text-align: center; }
+.score b { display: block; font: 600 1.75rem/1 var(--mono); font-variant-numeric: tabular-nums; }
+.score small { color: var(--text-2); font-size: .6875rem; }
+.bar { height: 6px; border-radius: 3px; background: var(--muted); margin-top: 8px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--primary); }
+.card h2 { margin: 0 0 2px; font-size: 1.0625rem; font-weight: 600; }
+.meta { color: var(--text-2); font-size: .875rem; display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; }
+.meta span { display: inline-flex; align-items: center; gap: 4px; }
+.meta svg { width: 16px; height: 16px; }
+.desc { margin: 0 0 10px; max-width: 75ch; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; align-items: center; }
+.chip { font-size: .8125rem; padding: 2px 10px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+.chip.aliado { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); }
+.chip.nota { background: var(--muted); color: var(--text); font-weight: 400; }
+.why { font-size: .8125rem; color: var(--text-2); margin-right: 4px; }
+a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--primary); font-weight: 600; text-decoration: none; }
+a.go:hover { text-decoration: underline; }
+
+.state { text-align: center; padding: 48px 16px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--r); }
+.state h2 { margin: 8px 0 4px; font-size: 1.125rem; }
+.state p { margin: 0 auto 16px; color: var(--text-2); max-width: 52ch; }
+.skel { height: 120px; border-radius: var(--r); background: linear-gradient(90deg, var(--muted), var(--surface), var(--muted)); background-size: 200% 100%; animation: sh 1.4s linear infinite; }
+@keyframes sh { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media (max-width: 560px) {
+  .card { grid-template-columns: 1fr; gap: 8px; }
+  .score { display: flex; align-items: baseline; gap: 8px; text-align: left; }
+  .score .bar { flex: 1; margin: 0; }
+  input[type=search] { min-width: 0; width: 100%; }
+  .controls > * { flex: 1 1 auto; }
+}
+footer { color: var(--text-2); font-size: .8125rem; padding: 24px 0 8px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#resultados">Saltar a los resultados</a>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg>
+        Radar de Licitaciones
+      </h1>
+      <p class="sub">Electroriente S.A.S. · SECOP II · <span id="generado">sin consultar</span></p>
+    </div>
+    <div class="controls" role="group" aria-label="Consulta">
+      <label class="f">Periodo
+        <select id="dias">
+          <option value="3">Últimos 3 días</option>
+          <option value="7" selected>Últimos 7 días</option>
+          <option value="15">Últimos 15 días</option>
+          <option value="30">Últimos 30 días</option>
+        </select>
+      </label>
+      <label class="chk"><input type="checkbox" id="cerrados"> Incluir cerrados</label>
+      <button class="btn" id="actualizar" type="button">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+        Actualizar
+      </button>
+    </div>
+  </header>
+
+  <section class="banner" id="pend" hidden aria-label="Pendientes del proyecto"></section>
+  <section class="banner warn" id="trunc" hidden role="status"></section>
+
+  <section class="kpis" aria-label="Resumen" id="kpis" hidden></section>
+
+  <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros">
+    <label class="f">Buscar
+      <input type="search" id="q" placeholder="Entidad, objeto o término" autocomplete="off">
+    </label>
+    <label class="f">Departamento
+      <select id="dep"><option value="">Todos</option></select>
+    </label>
+    <label class="chk"><input type="checkbox" id="soloAliado"> Solo con aliado</label>
+    <label class="chk"><input type="checkbox" id="soloMonto"> Solo con valor publicado</label>
+  </div>
+
+  <main id="resultados" aria-live="polite" tabindex="-1">
+    <p class="count" id="cuenta"></p>
+    <ol class="lista" id="lista"></ol>
+  </main>
+
+  <footer>
+    Las alertas son exploratorias mientras haya pendientes bloqueantes: pueden mostrar procesos a los que la empresa aún no puede presentarse.
+    El panel no interpreta derecho contractual.
+  </footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const ICON = {
+  pin: '<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>',
+  doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'
+};
+function svg(name) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('class', 'i'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = ICON[name];
+  return s;
+}
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+const pesos = (v) => v ? '$' + Math.round(v).toLocaleString('es-CO') + ' COP' : 'Sin valor publicado';
+
+let datos = null;
+
+async function cargar() {
+  const btn = $('actualizar');
+  btn.disabled = true;
+  const lista = $('lista');
+  lista.replaceChildren(...[1, 2, 3].map(() => el('li', 'skel')));
+  $('cuenta').textContent = 'Consultando SECOP… puede tardar unos 20 segundos la primera vez.';
+  $('kpis').hidden = true; $('trunc').hidden = true;
+  try {
+    const url = `/api/alertas?dias=${$('dias').value}&cerrados=${$('cerrados').checked ? 1 : 0}`;
+    const r = await fetch(url);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'Error inesperado');
+    datos = j;
+    $('generado').textContent = 'consultado ' + j.generado;
+    llenarDeps();
+    pintarKpis();
+    if (j.truncado) {
+      const t = $('trunc'); t.hidden = false;
+      t.replaceChildren(el('strong', '', 'Resultado incompleto: se alcanzó el límite de procesos. Reduce el periodo.'));
+    }
+    pintar();
+  } catch (e) {
+    datos = null;
+    $('cuenta').textContent = '';
+    const st = el('li', 'state');
+    st.append(svg('alert'), el('h2', '', 'No se pudo cargar el radar'), el('p', '', e.message));
+    const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = cargar;
+    st.append(b);
+    lista.replaceChildren(st);
+  } finally { btn.disabled = false; }
+}
+
+function llenarDeps() {
+  const sel = $('dep'), actual = sel.value;
+  const deps = [...new Set(datos.resultados.map(r => r.departamento).filter(Boolean))].sort();
+  sel.replaceChildren(new Option('Todos', ''), ...deps.map(d => new Option(d, d)));
+  sel.value = deps.includes(actual) ? actual : '';
+}
+
+function pintarKpis() {
+  const r = datos.resultados;
+  const k = $('kpis'); k.hidden = false;
+  const data = [
+    [datos.revisados.toLocaleString('es-CO'), 'Procesos revisados'],
+    [r.length, 'Alertas'],
+    [r.filter(x => x.requiere_aliado).length, 'Requieren aliado'],
+    [r.length ? Math.max(...r.map(x => x.puntaje)) : '—', 'Mejor puntaje']
+  ];
+  k.replaceChildren(...data.map(([n, t]) => { const d = el('div', 'kpi'); d.append(el('b', '', String(n)), el('span', '', t)); return d; }));
+}
+
+function filtrar() {
+  const q = $('q').value.trim().toLowerCase(), dep = $('dep').value;
+  return datos.resultados.filter(r =>
+    (!dep || r.departamento === dep) &&
+    (!$('soloAliado').checked || r.requiere_aliado) &&
+    (!$('soloMonto').checked || r.valor_cop > 0) &&
+    (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
+}
+
+function tarjeta(r) {
+  const li = el('li', 'card');
+  const sc = el('div', 'score');
+  sc.append(el('b', '', String(r.puntaje)), el('small', '', 'de 100'));
+  const bar = el('div', 'bar'); const i = el('i'); i.style.width = r.puntaje + '%'; bar.append(i); sc.append(bar);
+
+  const body = el('div');
+  body.append(el('h2', '', r.entidad || 'Entidad sin nombre'));
+  const meta = el('div', 'meta');
+  const m = (ic, t) => { const s = el('span'); s.append(svg(ic), document.createTextNode(t)); return s; };
+  meta.append(m('pin', r.departamento || 'Sin departamento'), m('cal', r.fecha_publicacion || '—'),
+              m('cash', pesos(r.valor_cop)), m('doc', r.modalidad || '—'));
+  body.append(meta, el('p', 'desc', r.descripcion));
+
+  const chips = el('div', 'chips');
+  chips.append(el('span', 'why', 'Coincide por:'));
+  r.coincidencias.slice(0, 8).forEach(c => chips.append(el('span', 'chip', c)));
+  if (r.requiere_aliado) chips.append(el('span', 'chip aliado', 'Requiere aliado'));
+  body.append(chips);
+  if (r.notas.length) {
+    const n = el('div', 'chips');
+    r.notas.forEach(t => n.append(el('span', 'chip nota', t)));
+    body.append(n);
+  }
+  if (r.url) {
+    const a = el('a', 'go'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.append(document.createTextNode('Abrir en SECOP'), svg('ext'));
+    body.append(a);
+  }
+  li.append(sc, body);
+  return li;
+}
+
+function pintar() {
+  if (!datos) return;
+  const f = filtrar(), lista = $('lista');
+  $('cuenta').textContent = `${f.length} de ${datos.resultados.length} alertas`;
+  if (!f.length) {
+    const st = el('li', 'state');
+    st.append(svg('search'), el('h2', '', 'Sin alertas con estos filtros'),
+      el('p', '', datos.resultados.length
+        ? 'Quita algún filtro para ver más resultados.'
+        : `Ningún proceso superó el umbral de ${datos.umbral} puntos. Prueba un periodo más largo o revisa config/filtros.yaml.`));
+    lista.replaceChildren(st);
+    return;
+  }
+  lista.replaceChildren(...f.map(tarjeta));
+}
+
+async function pendientes() {
+  try {
+    const p = (await (await fetch('/api/pendientes')).json()).filter(x => !x.resuelto);
+    if (!p.length) return;
+    const bloq = p.filter(x => x.criticidad === 'bloqueante');
+    const b = $('pend'); b.hidden = false;
+    if (bloq.length) b.classList.add('warn');
+    const row = el('div', 'row');
+    const s = el('strong'); s.append(svg('alert'),
+      document.createTextNode(`${p.length} pendientes sin resolver, ${bloq.length} bloqueantes`));
+    const tg = el('button', 'btn ghost', 'Ver detalle'); tg.type = 'button';
+    tg.setAttribute('aria-expanded', 'false'); tg.setAttribute('aria-controls', 'pend-lista');
+    row.append(s, tg);
+    const ul = el('ul'); ul.id = 'pend-lista'; ul.hidden = true;
+    p.forEach(x => ul.append(el('li', '', `${x.criticidad.toUpperCase()}: ${x.titulo}. Falta: ${x.necesito}`)));
+    tg.onclick = () => { ul.hidden = !ul.hidden; tg.setAttribute('aria-expanded', String(!ul.hidden)); tg.textContent = ul.hidden ? 'Ver detalle' : 'Ocultar'; };
+    b.replaceChildren(row, ul);
+  } catch (_) { /* el panel funciona sin el aviso */ }
+}
+
+$('actualizar').onclick = cargar;
+$('dias').onchange = cargar;
+$('cerrados').onchange = cargar;
+['q', 'dep', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', pintar));
+pendientes();
+cargar();
+</script>
+</body>
+</html>

@@ -45,12 +45,27 @@ python src/radar.py --dias 15 --salida data/revision.json
 
 ---
 
+## Panel visual
+
+```bash
+python src/servidor.py          # abre http://127.0.0.1:8765
+python src/servidor.py --puerto 9000
+```
+
+Muestra las alertas con filtros, resumen y el aviso de pendientes. Solo
+escucha en tu computador (127.0.0.1). Si el puerto está ocupado, avisa y no
+arranca. Guarda el resultado 10 minutos para no saturar SECOP.
+
+---
+
 ## Estructura
 
 ```
 config/perfil.yaml      Quién es la empresa: capacidad, portafolio, territorio
 config/filtros.yaml     Reglas de inclusión, exclusión y puntaje
 src/radar.py            El motor
+src/servidor.py         Servidor local del panel
+web/index.html          El panel visual
 data/                   Resultados y datos de prueba
 docs/                   Guía del ciclo de licitación
 ```
