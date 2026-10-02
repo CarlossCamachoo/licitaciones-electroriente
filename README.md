@@ -33,9 +33,6 @@ python src/radar.py
 # Últimos 30 días
 python src/radar.py --dias 30
 
-# Incluir procesos ya cerrados
-python src/radar.py --incluir-cerrados
-
 # Sin conexión, con datos de prueba
 python src/radar.py --demo
 

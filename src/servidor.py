@@ -37,8 +37,8 @@ def puerto_libre(puerto):
         return s.connect_ex((HOST, puerto)) != 0
 
 
-def calcular(dias, cerrados):
-    clave = (dias, cerrados)
+def calcular(dias):
+    clave = dias
     guardado = _cache.get(clave)
     if guardado and time.time() - guardado["t"] < VIGENCIA_CACHE:
         return guardado["datos"]
@@ -46,7 +46,7 @@ def calcular(dias, cerrados):
     perfil, filtros = radar.cargar_config()
     procesos, truncado = radar.consultar_secop(dias)
     minimo = filtros["puntaje"]["umbral_revisar"]
-    resultados = [r for r in (radar.evaluar(p, perfil, filtros, not cerrados, minimo)
+    resultados = [r for r in (radar.evaluar(p, perfil, filtros, minimo)
                               for p in procesos) if r]
     # Mejor puntaje primero; a igualdad, el mas reciente.
     resultados.sort(key=lambda r: r["fecha_publicacion"], reverse=True)
@@ -169,9 +169,8 @@ class Manejador(BaseHTTPRequestHandler):
                 dias = max(1, min(90, int(q.get("dias", ["7"])[0])))
             except ValueError:
                 return self._json(400, {"error": "dias debe ser un numero"})
-            cerrados = q.get("cerrados", ["0"])[0] == "1"
             try:
-                datos = calcular(dias, cerrados)
+                datos = calcular(dias)
                 cats = docs.listar()
                 self._json(200, {**datos, "resultados": [
                     {**r, "documentos": docs.requisitos(r, cats)}

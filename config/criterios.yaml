@@ -45,7 +45,7 @@ criterios:
     estado: activo
 
   - titulo: "Proceso todavía abierto"
-    como: "Solo se muestran procesos con estado de apertura 'Abierto' (se pueden ver los cerrados aparte)."
+    como: "Solo se muestran procesos con estado de apertura 'Abierto' (los cerrados se descartan)."
     por_que: "Un proceso cerrado ya no admite ofertas."
     estado: activo
 

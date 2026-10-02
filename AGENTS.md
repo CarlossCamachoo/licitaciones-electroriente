@@ -33,7 +33,7 @@ se usa. Eso significa que las explicaciones importan tanto como el codigo.
 **Ya probado en vivo:** los nombres de campo de la API son correctos. Se
 corrigio un bug: el limite de 2000 descartaba el 88 % de los procesos de la
 semana (hay unos 17.000). Ahora pagina, avisa si se corta, y por defecto
-solo muestra procesos abiertos (`--incluir-cerrados` para verlos todos).
+solo muestra procesos abiertos; los cerrados se descartan.
 Seguridad: ver `docs/SEGURIDAD.md`. Pendiente: Python 3.10+ por urllib3.
 
 ---

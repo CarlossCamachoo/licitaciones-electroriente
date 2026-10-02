@@ -191,7 +191,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
           <option value="30">Últimos 30 días</option>
         </select>
       </label>
-      <label class="chk"><input type="checkbox" id="cerrados"> Incluir cerrados</label>
       <button class="btn" id="actualizar" type="button">
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
         Actualizar
@@ -292,7 +291,7 @@ async function cargar() {
   $('cuenta').textContent = 'Consultando SECOP… puede tardar unos 20 segundos la primera vez.';
   $('kpis').hidden = true; $('trunc').hidden = true;
   try {
-    const url = `/api/alertas?dias=${$('dias').value}&cerrados=${$('cerrados').checked ? 1 : 0}`;
+    const url = `/api/alertas?dias=${$('dias').value}`;
     const r = await fetch(url);
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'Error inesperado');
@@ -619,7 +618,6 @@ TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
 
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
-$('cerrados').onchange = cargar;
 ['q', 'dep', 'pmin', 'pmax', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', pintar));
 pendientes();
 cargar();

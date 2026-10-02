@@ -198,7 +198,7 @@ def cargar_demo():
 # Evaluacion de un proceso
 # --------------------------------------------------------------------------
 
-def evaluar(proceso, perfil, filtros, solo_abiertos=True, umbral=None):
+def evaluar(proceso, perfil, filtros, umbral=None):
     """Devuelve un dict con el veredicto, o None si no aplica.
 
     El veredicto siempre explica por que. Si no se puede auditar,
@@ -215,7 +215,7 @@ def evaluar(proceso, perfil, filtros, solo_abiertos=True, umbral=None):
     # Un proceso cerrado ya no admite ofertas. Si el campo viene vacio
     # no se descarta: es mejor revisar de mas que perder una oportunidad.
     apertura = proceso.get("estado_de_apertura_del_proceso", "")
-    if solo_abiertos and apertura and apertura != "Abierto":
+    if apertura and apertura != "Abierto":
         return None
 
     # --- Paso 1: inclusion y puntaje base -----------------------------
@@ -386,8 +386,6 @@ def main():
     ap.add_argument("--limite", type=int, default=LIMITE_POR_DEFECTO,
                     help="maximo de procesos a descargar (por defecto %d)"
                     % LIMITE_POR_DEFECTO)
-    ap.add_argument("--incluir-cerrados", action="store_true",
-                    help="no descarta procesos que ya cerraron")
     ap.add_argument("--sin-avisos", action="store_true",
                     help="oculta el recordatorio de pendientes")
     args = ap.parse_args()
@@ -416,7 +414,7 @@ def main():
 
     resultados = []
     for p in procesos:
-        veredicto = evaluar(p, perfil, filtros, not args.incluir_cerrados)
+        veredicto = evaluar(p, perfil, filtros)
         if veredicto:
             resultados.append(veredicto)
 
