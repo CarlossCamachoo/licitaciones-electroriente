@@ -53,6 +53,13 @@ Muestra las alertas con filtros, resumen y el aviso de pendientes. Solo
 escucha en tu computador (127.0.0.1). Si el puerto está ocupado, avisa y no
 arranca. Guarda el resultado 10 minutos para no saturar SECOP.
 
+**Como app en el Mac:** `bash app/crear_app.sh` crea «Radar de Licitaciones»
+en `~/Applications` (con el icono de Electroriente). Al abrirla arranca el
+panel si hace falta y lo muestra en su propia ventana de Chrome. Para que
+aparezca con su propio icono en el Dock, también se puede abrir el panel en
+Chrome y usar «Instalar Radar de Licitaciones». El icono sale de la «O» del
+logo de Electroriente sobre azul marino.
+
 ---
 
 ## Estructura

@@ -1,0 +1,13 @@
+{
+  "name": "Radar de Licitaciones",
+  "short_name": "Radar",
+  "description": "Radar de licitaciones de SECOP II para Electroriente",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#000775",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

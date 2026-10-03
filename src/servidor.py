@@ -30,6 +30,16 @@ HOST = "127.0.0.1"
 PUERTO_POR_DEFECTO = 8765
 VIGENCIA_CACHE = 600  # segundos: SECOP es lento, no se consulta en cada clic
 
+# Archivos fijos de web/ que se sirven tal cual (logo, iconos, manifiesto).
+ESTATICOS = {
+    "/logo.webp": ("logo.webp", "image/webp"),
+    "/favicon.png": ("favicon-32.png", "image/png"),
+    "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
+    "/icon-192.png": ("icon-192.png", "image/png"),
+    "/icon-512.png": ("icon-512.png", "image/png"),
+    "/manifest.webmanifest": ("manifest.webmanifest", "application/manifest+json"),
+}
+
 _cache = {}
 
 
@@ -175,8 +185,9 @@ class Manejador(BaseHTTPRequestHandler):
         if url.path in ("/", "/index.html"):
             self._enviar(200, (WEB / "index.html").read_bytes(),
                          "text/html; charset=utf-8")
-        elif url.path == "/logo.webp":
-            self._enviar(200, (WEB / "logo.webp").read_bytes(), "image/webp")
+        elif url.path in ESTATICOS:
+            nombre, tipo = ESTATICOS[url.path]
+            self._enviar(200, (WEB / nombre).read_bytes(), tipo)
         elif url.path == "/api/alertas":
             q = parse_qs(url.query)
             try:
