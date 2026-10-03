@@ -46,7 +46,7 @@ h1 svg.i { color: var(--primary); width: 30px; height: 30px; stroke-width: 1.4; 
 .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 label.f { display: flex; flex-direction: column; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); gap: 4px; }
 select, input[type=search], input[type=number] { font: 400 1rem var(--sans); min-height: 44px; padding: 0 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; transition: border-color var(--t); }
-input[type=search] { min-width: 240px; }
+input[type=search] { min-width: 200px; }
 input[type=number] { width: 96px; }
 .subir input[type=date] { font-size: 1rem; }
 .chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; transition: border-color var(--t); }
@@ -84,6 +84,7 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .docsres .txt { font-size: .9375rem; }
 .docsres .txt b { font-weight: 600; }
 .docsres .sp { flex: 1; }
+.docsres .acc { display: flex; align-items: center; gap: 8px 12px; margin-left: auto; }
 .docsres ul { margin: 4px 0 8px; padding-left: 20px; columns: 2; column-gap: 32px; font-size: .875rem; color: var(--text-2); }
 .docsres li { break-inside: avoid; margin: 2px 0; }
 .docsres li.falta { color: var(--text); }
@@ -94,7 +95,8 @@ button.dec { font: 600 .875rem var(--sans); min-height: 40px; padding: 0 16px; b
 button.dec:active { transform: scale(0.97); }
 button.dec.si[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 button.dec.no[aria-pressed=true] { background: var(--muted); }
-.card.descartada { opacity: .55; }
+.card.descartada h2, .card.descartada .desc, .card.descartada .score b { color: var(--text-2); }
+.card.descartada .bar i { background: var(--text-2); }
 .hecho { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 12px 0; border-bottom: 1px solid var(--hair); color: var(--text-2); font-size: .9375rem; list-style: none; }
 .hecho strong { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
 .desc.corto { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
@@ -476,7 +478,7 @@ function tarjeta(r) {
     b.onclick = () => {
       const antes = estadoDe(r), nuevo = antes === valor ? '' : valor;
       decidir(r, nuevo);
-      if (ver !== 'todas' && ver !== (nuevo || 'pendientes')) { li.replaceWith(filaHecha(r, nuevo, antes)); pintarConteos(); }
+      if (ver !== 'todas' && ver !== (nuevo || 'pendientes')) { const fila = filaHecha(r, nuevo, antes); li.replaceWith(fila); pintarConteos(); fila.querySelector('button').focus(); }
       else { pintar(); }
     };
     return b;
@@ -509,7 +511,9 @@ function pintarConteos() {
   const previa = filtrar(false);
   $('seg').replaceChildren(...VISTAS.map(([id, texto, fn]) => {
     const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(ver === id));
-    b.append(document.createTextNode(texto), el('b', '', String(previa.filter(fn).length)));
+    const n = previa.filter(fn).length;
+    b.setAttribute('aria-label', `${texto}, ${n}`);
+    b.append(document.createTextNode(texto), el('b', '', String(n)));
     b.onclick = () => { ver = id; mostrados = PAGINA; animar = true; pintar(); };
     return b;
   }));
@@ -566,7 +570,6 @@ async function pendientes() {
 
 
 const NIVEL = { alta: 'Factibilidad alta', media: 'Factibilidad media', revisar: 'Por revisar' };
-const CUANDO = { siempre: 'Siempre se pide', segun_pliego: 'Según el pliego', si_aplica: 'Si aplica' };
 const ESTADO = {
   falta: ['chip sm sin', 'Falta'], listo: ['chip sm ok', 'Cargado'],
   por_vencer: ['chip sm aviso', 'Vence pronto'], vencido: ['chip sm sin', 'Vencido']
@@ -683,14 +686,15 @@ function pintarDocsResumen() {
   } else {
     t.append(el('b', '', 'Documentos de la empresa completos'), document.createTextNode(` (${g.length} de ${g.length}).`));
   }
-  fila.append(t, el('span', 'sp'));
+  fila.append(t);
   const ul = el('ul'); ul.id = 'docsres-lista'; ul.hidden = true;
   g.forEach(x => ul.append(el('li', mal(x) ? 'falta' : '', x.nombre + (x.estado === 'vencido' ? ' (vencido)' : x.estado === 'por_vencer' ? ' (vence pronto)' : x.estado === 'falta' ? '' : ' (cargado)'))));
   const ver = el('button', 'link', 'Ver cuáles'); ver.type = 'button';
   ver.setAttribute('aria-expanded', 'false'); ver.setAttribute('aria-controls', 'docsres-lista');
   ver.onclick = () => { ul.hidden = !ul.hidden; ver.setAttribute('aria-expanded', String(!ul.hidden)); ver.textContent = ul.hidden ? 'Ver cuáles' : 'Ocultar'; };
   const ir = el('button', 'btn ghost', faltan.length ? 'Subir documentos' : 'Gestionar documentos'); ir.type = 'button'; ir.onclick = () => vista('docs');
-  fila.append(ver, ir);
+  const acc = el('span', 'acc'); acc.append(ver, ir);
+  fila.append(acc);
   box.replaceChildren(fila, ul);
 }
 
