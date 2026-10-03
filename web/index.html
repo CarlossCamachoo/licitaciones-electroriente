@@ -615,7 +615,8 @@ async function refrescarSilencioso() {
   } catch (_) { /* la proxima vuelta lo intenta de nuevo */ }
   finally { refrescando = false; }
 }
-const desactualizado = () => ultimaConsulta && Date.now() / 1000 - ultimaConsulta > 1800;
+// El panel local consulta SECOP cada 30 min; la web compartida se publica cada 2 horas.
+const desactualizado = () => ultimaConsulta && Date.now() / 1000 - ultimaConsulta > (document.documentElement.hasAttribute('data-estatico') ? 7500 : 1800);
 setInterval(() => { if (!document.hidden && desactualizado()) refrescarSilencioso(); }, 120000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { cargarNotif(); if (desactualizado()) refrescarSilencioso(); } });
 
@@ -683,21 +684,25 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('notif-
 setInterval(cargarNotif, 60000);
 cargarNotif();
 
-async function cargar() {
-  const btn = $('actualizar');
+// forzar: el boton Actualizar pide a SECOP una consulta nueva (el panel local guarda el resultado 30 minutos).
+// manual: lo pidio una persona con el boton; la web compartida solo relee lo ultimo publicado.
+const estatico = document.documentElement.hasAttribute('data-estatico');
+async function cargar(forzar = false, manual = false) {
+  const btn = $('actualizar'), antes = ultimaConsulta;
   btn.disabled = true;
   const lista = $('lista');
   lista.replaceChildren(...[1, 2, 3].map(() => el('li', 'skel')));
   const d = +$('dias').value;
-  $('cuenta').textContent = d >= 60 ? 'Consultando SECOP… con 60 o 90 días puede tardar unos 2 minutos la primera vez.' : d >= 30 ? 'Consultando SECOP… puede tardar un minuto la primera vez.' : 'Consultando SECOP… puede tardar unos 20 segundos la primera vez.';
+  $('cuenta').textContent = estatico ? 'Actualizando…' : d >= 60 ? 'Consultando SECOP… con 60 o 90 días puede tardar unos 2 minutos.' : d >= 30 ? 'Consultando SECOP… puede tardar un minuto.' : 'Consultando SECOP… puede tardar unos 20 segundos.';
   $('kpis').hidden = true; $('trunc').hidden = true;
   try {
-    const url = `/api/alertas?dias=${$('dias').value}`;
+    const url = `/api/alertas?dias=${$('dias').value}` + (forzar && !estatico ? '&forzar=1' : '');
     const r = await fetch(url);
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'Error inesperado');
     datos = j; mostrados = PAGINA; animar = true;
     ultimaConsulta = j.generado_ts; pintarConsulta();
+    if (manual && estatico && antes === j.generado_ts) avisar(`Ya tiene lo más reciente: los datos se publican cada 2 horas (última publicación ${hace(j.generado_ts)}).`);
     llenarDeps();
     pintarKpis();
     if (j.truncado) {
@@ -710,7 +715,7 @@ async function cargar() {
     $('cuenta').textContent = '';
     const st = el('li', 'state');
     st.append(svg('alert'), el('h2', '', 'No se pudo cargar el radar'), el('p', '', e.message));
-    const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = cargar;
+    const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = () => cargar(true, true);
     st.append(b);
     lista.replaceChildren(st);
   } finally { btn.disabled = false; }
@@ -1509,8 +1514,8 @@ document.addEventListener('keydown', e => {
 ['soloFaltan'].forEach(id => $(id).addEventListener('input', pintarDocs));
 
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
-$('actualizar').onclick = cargar;
-$('dias').onchange = cargar;
+$('actualizar').onclick = () => cargar(true, true);
+$('dias').onchange = () => cargar();
 ['q', 'dep', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 cargar();
 vista(location.hash.slice(1) || 'radar');

@@ -289,8 +289,13 @@ class Manejador(BaseHTTPRequestHandler):
                 dias = max(1, min(90, int(q.get("dias", ["7"])[0])))
             except ValueError:
                 return self._json(400, {"error": "dias debe ser un numero"})
+            # «Actualizar» pide una consulta nueva a SECOP (forzar=1), pero no mas de una por minuto.
+            forzar = q.get("forzar", ["0"])[0] == "1"
+            guardado = _cache.get(dias)
+            if forzar and guardado and time.time() - guardado["t"] < 60:
+                forzar = False
             try:
-                datos = calcular(dias)
+                datos = calcular(dias, forzar)
                 cats = docs.listar()
                 tabla = mercado.historial()
                 self._json(200, {**datos, "documentos_generales": docs.generales(cats),
