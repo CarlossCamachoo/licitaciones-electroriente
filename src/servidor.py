@@ -203,7 +203,7 @@ class Manejador(BaseHTTPRequestHandler):
                     for r in datos["resultados"]]})
             except requests.RequestException:
                 self._json(502, {"error": "No se pudo consultar SECOP. "
-                                          "Revisa la conexion e intenta de nuevo."})
+                                          "Revise la conexion e intente de nuevo."})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
         elif url.path == "/api/documentos":

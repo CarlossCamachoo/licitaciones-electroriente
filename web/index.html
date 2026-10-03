@@ -34,7 +34,7 @@ body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: 
 svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 .barra { background: var(--barra); color: #fff; }
-.barra-in { max-width: 1600px; margin: 0 auto; padding: 18px clamp(20px, 4vw, 56px); display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
+.barra-in { max-width: 1600px; margin: 0 auto; padding: 12px clamp(20px, 4vw, 56px); display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
 .marca { display: flex; align-items: center; gap: 20px; }
 .logo { height: 46px; width: auto; display: block; }
 .titulo { border-left: 1px solid rgba(255,255,255,.3); padding-left: 20px; }
@@ -62,11 +62,11 @@ button.btn:disabled { opacity: .5; cursor: not-allowed; }
 button.btn:active, label.chk:active, button.link:active { transform: scale(0.97); }
 button.btn.ghost { background: transparent; color: var(--primary); }
 
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0 0 28px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.kpi { padding: 18px 20px 16px 0; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0 0 20px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.kpi { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; padding: 12px 20px 12px 0; }
 .kpi + .kpi { padding-left: 20px; border-left: 1px solid var(--hair); }
-.kpi b { display: block; font: 600 2.5rem/1 var(--serif); letter-spacing: -.03em; color: var(--primary); }
-.kpi span { display: block; margin-top: 6px; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); }
+.kpi b { font: 600 1.75rem/1 var(--serif); letter-spacing: -.03em; color: var(--primary); }
+.kpi span { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); }
 
 .banner { border: 1px solid var(--hair); background: var(--surface); border-radius: var(--r); padding: 4px 8px 4px 16px; margin-bottom: 16px; }
 .banner.warn { background: var(--danger-soft); border-color: transparent; padding-top: 10px; padding-bottom: 10px; }
@@ -155,7 +155,7 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
   .controls > * { flex: 1 1 auto; }
 }
 
-.tabs { display: flex; gap: 4px; margin: 0 0 24px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.tabs { display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { flex: none; white-space: nowrap; font: 500 .9375rem var(--sans); min-height: 44px; padding: 0 16px; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-2); cursor: pointer; transition: color var(--t), border-color var(--t); }
 .tab[aria-selected=true] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
@@ -253,11 +253,11 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   </div></header>
 <div class="wrap">
 
-  <div class="tabs" role="tablist" aria-label="Secciones">
-    <button class="tab" role="tab" id="tab-radar" aria-selected="true" type="button">Radar</button>
-    <button class="tab" role="tab" id="tab-revisar" aria-selected="false" type="button">Por revisar</button>
-    <button class="tab" role="tab" id="tab-docs" aria-selected="false" type="button">Documentos</button>
-    <button class="tab" role="tab" id="tab-crit" aria-selected="false" type="button">Criterios</button>
+  <div class="tabs" role="tablist" aria-label="Secciones" id="tablist">
+    <button class="tab" role="tab" id="tab-radar" aria-selected="true" tabindex="0" type="button">Radar</button>
+    <button class="tab" role="tab" id="tab-revisar" aria-selected="false" tabindex="-1" type="button">Por revisar</button>
+    <button class="tab" role="tab" id="tab-docs" aria-selected="false" tabindex="-1" type="button">Documentos</button>
+    <button class="tab" role="tab" id="tab-crit" aria-selected="false" tabindex="-1" type="button">Criterios</button>
   </div>
 
   <div id="vista-radar" role="tabpanel">
@@ -270,7 +270,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 
   <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros">
     <label class="f buscar">Buscar
-      <input type="search" id="q" placeholder="Entidad, objeto o término" autocomplete="off">
+      <input type="search" id="q" placeholder="Entidad, objeto o término (atajo: /)" autocomplete="off">
     </label>
     <label class="f">Departamento
       <select id="dep"><option value="">Todos</option></select>
@@ -420,9 +420,9 @@ function llenarDeps() {
 
 const MODOS = {
   radar: { f: r => r.nivel !== 'revisar',
-    intro: 'Procesos que superan el umbral de alerta, de mejor a menor puntaje. Es la lista para trabajar primero.' },
+    intro: 'Procesos con puntaje suficiente para avisarle, de mejor a menor. Es la lista para trabajar primero.' },
   revisar: { f: r => r.nivel === 'revisar',
-    intro: 'Señales más débiles: no llegan al umbral de alerta, pero podrían servir. Revíselos para decidir si podemos suministrar o aplicar, y para ver qué términos faltan en la búsqueda.' }
+    intro: 'Señales más débiles: no llegan al puntaje de alerta, pero podrían servir. Revíselos para decidir si podemos suministrar o aplicar, y para ver qué términos faltan en la búsqueda.' }
 };
 let modo = 'radar', mostrados = 50, animar = true;
 const PAGINA = 50;
@@ -434,12 +434,12 @@ function pintarKpis() {
   const r = base();
   const k = $('kpis'); k.hidden = false;
   const data = [
-    [datos.revisados.toLocaleString('es-CO'), 'Procesos revisados'],
-    [r.length, modo === 'radar' ? 'Alertas' : 'Procesos'],
-    [r.filter(x => x.requiere_aliado).length, 'Requieren aliado'],
-    [r.length ? Math.max(...r.map(x => x.puntaje)) : '—', 'Mejor puntaje']
+    [datos.revisados.toLocaleString('es-CO'), 'Procesos revisados', 'Procesos abiertos de SECOP II que el radar leyó en el periodo elegido.'],
+    [r.length, modo === 'radar' ? 'Alertas' : 'Procesos', modo === 'radar' ? 'Procesos con puntaje suficiente para avisarle.' : 'Procesos con una señal débil que conviene mirar.'],
+    [r.filter(x => x.requiere_aliado).length, 'Requieren aliado', 'Obra con montaje: Electroriente suministra, pero instalar requiere un aliado (unión temporal o consorcio).'],
+    [r.length ? Math.max(...r.map(x => x.puntaje)) : '—', 'Mejor puntaje', 'El puntaje más alto de la lista, de 0 a 100.']
   ];
-  k.replaceChildren(...data.map(([n, t]) => { const d = el('div', 'kpi'); d.append(el('b', '', String(n)), el('span', '', t)); return d; }));
+  k.replaceChildren(...data.map(([n, t, ayuda]) => { const d = el('div', 'kpi'); d.title = ayuda; d.append(el('b', '', String(n)), el('span', '', t)); return d; }));
 }
 
 let decisiones = {};
@@ -481,8 +481,8 @@ function tarjeta(r) {
 
   const body = el('div');
   const top = el('div', 'top');
-  top.append(el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel));
-  if (r.requiere_aliado) top.append(el('span', 'chip aliado', 'Requiere aliado'));
+  { const c = el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel); c.title = AYUDA_NIVEL[r.nivel] || ''; top.append(c); }
+  if (r.requiere_aliado) { const c = el('span', 'chip aliado', 'Requiere aliado'); c.title = 'Obra con montaje: Electroriente suministra, pero instalar requiere un aliado (unión temporal o consorcio).'; top.append(c); }
   if (estadoDe(r) === 'interesa') top.append(el('span', 'chip ok', 'Me interesa'));
   const cabeza = el('div', 'cabeza');
   const valor = el('div', 'valor');
@@ -580,8 +580,8 @@ function pintar() {
         : ver === 'interesa' ? 'Use "Me interesa" en una tarjeta para guardarla aquí.'
         : ver === 'descarta' ? 'Las tarjetas que descarte quedan aquí por si cambia de opinión.'
         : total
-        ? 'Quita algún filtro para ver más resultados.'
-        : modo === 'radar' ? `Ningún proceso superó el umbral de ${datos.umbral} puntos. Prueba un periodo más largo o revisa config/filtros.yaml.` : 'No hay procesos en esta vista para el periodo elegido. Prueba un periodo más largo.'));
+        ? 'Quite algún filtro para ver más resultados.'
+        : modo === 'radar' ? `Ningún proceso llegó a los ${datos.umbral} puntos que se necesitan para avisarle. Pruebe un periodo más largo o revise config/filtros.yaml.` : 'No hay procesos en esta vista para el periodo elegido. Pruebe un periodo más largo.'));
     lista.replaceChildren(st);
     return;
   }
@@ -617,6 +617,7 @@ async function pendientes() {
 
 
 const NIVEL = { alta: 'Factibilidad alta', media: 'Factibilidad media', revisar: 'Por revisar' };
+const AYUDA_NIVEL = { alta: 'Qué tan probable es que Electroriente pueda suministrarlo: alta.', media: 'Qué tan probable es que Electroriente pueda suministrarlo: media.', revisar: 'Señal débil: no llega al puntaje de alerta, pero podría servir.' };
 const ESTADO = {
   falta: ['chip sm sin', 'Falta'], listo: ['chip sm ok', 'Cargado'],
   por_vencer: ['chip sm aviso', 'Vence pronto'], vencido: ['chip sm sin', 'Vencido']
@@ -815,7 +816,7 @@ function vista(nombre) {
   const esRadar = ['radar', 'revisar'].includes(nombre);
   $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-crit').hidden = nombre !== 'crit';
   $('ctlRadar').hidden = !esRadar;
-  TABS.forEach(t => $('tab-' + t).setAttribute('aria-selected', String(t === nombre)));
+  TABS.forEach(t => { const b = $('tab-' + t); b.setAttribute('aria-selected', String(t === nombre)); b.tabIndex = t === nombre ? 0 : -1; });
   if (esRadar) {
     if (modo !== nombre) { mostrados = PAGINA; animar = true; }
     modo = nombre; $('intro').textContent = MODOS[modo].intro;
@@ -827,6 +828,20 @@ function vista(nombre) {
   history.replaceState(null, '', '#' + nombre);
 }
 TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
+// Flechas, Inicio y Fin recorren las pestañas; "/" lleva al buscador.
+$('tablist').addEventListener('keydown', e => {
+  const i = TABS.findIndex(t => $('tab-' + t) === document.activeElement);
+  if (i < 0) return;
+  const paso = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+  const j = e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : paso === undefined ? -1 : (i + paso + TABS.length) % TABS.length;
+  if (j < 0) return;
+  e.preventDefault(); vista(TABS[j]); $('tab-' + TABS[j]).focus();
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || $('ctlRadar').hidden) return;
+  if (/^(input|select|textarea)$/i.test(document.activeElement.tagName)) return;
+  e.preventDefault(); $('q').focus();
+});
 ['soloFaltan'].forEach(id => $(id).addEventListener('input', pintarDocs));
 
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
