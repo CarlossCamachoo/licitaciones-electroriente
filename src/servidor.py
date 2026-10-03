@@ -213,6 +213,10 @@ class Manejador(BaseHTTPRequestHandler):
             mercado.refrescar_en_segundo_plano()
             self._json(200, {"estado": mercado.estado(),
                              "contratos": mercado.vencimientos()})
+        elif url.path == "/api/mercado":
+            mercado.refrescar_en_segundo_plano()
+            self._json(200, {"estado": mercado.estado(),
+                             "contratos": mercado.contratos_del_ano()})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
         elif url.path == "/api/documentos":

@@ -266,6 +266,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     <button class="tab" role="tab" id="tab-radar" aria-selected="true" tabindex="0" type="button">Radar</button>
     <button class="tab" role="tab" id="tab-revisar" aria-selected="false" tabindex="-1" type="button">Por revisar</button>
     <button class="tab" role="tab" id="tab-venc" aria-selected="false" tabindex="-1" type="button">Oportunidades futuras</button>
+    <button class="tab" role="tab" id="tab-mer" aria-selected="false" tabindex="-1" type="button">Mercado</button>
     <button class="tab" role="tab" id="tab-docs" aria-selected="false" tabindex="-1" type="button">Documentos</button>
     <button class="tab" role="tab" id="tab-crit" aria-selected="false" tabindex="-1" type="button">Criterios</button>
   </div>
@@ -349,6 +350,30 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     </div>
     <p class="count" id="vcuenta" aria-live="polite"></p>
     <ol class="lista" id="vlista"></ol>
+  </div>
+
+  <div id="vista-mer" role="tabpanel" aria-labelledby="tab-mer" hidden>
+    <p class="intro"><b>Quién le vende al Estado lo que Electroriente vende.</b> Son los contratos de suministro y compraventa firmados en SECOP II en los últimos 12 meses que mencionan los productos de la empresa. Sirve para saber cuánto se paga, quién gana, qué entidades compran más y dónde hay menos competencia. No es todo el gasto del Estado, solo lo que coincide con la búsqueda.</p>
+    <div class="seg" id="mseg" role="group" aria-label="Qué mirar" style="margin-bottom:12px"></div>
+    <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros del mercado">
+      <label class="f buscar">Buscar
+        <input type="search" id="mq" placeholder="Proveedor, entidad u objeto" autocomplete="off">
+      </label>
+      <label class="f">Departamento
+        <select id="mdep"><option value="">Todos</option></select>
+      </label>
+      <label class="f">Producto
+        <select id="mprod"><option value="">Todos</option></select>
+      </label>
+      <label class="f">Ordenar por
+        <select id="morden">
+          <option value="n">Más contratos</option>
+          <option value="total">Mayor valor total</option>
+        </select>
+      </label>
+    </div>
+    <p class="count" id="mcuenta" aria-live="polite"></p>
+    <ol class="lista" id="mlista"></ol>
   </div>
 
   <div id="vista-docs" role="tabpanel" aria-labelledby="tab-docs" hidden>
@@ -974,12 +999,127 @@ function pintarVenc() {
 const radarNorm = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 ['vq', 'vdep', 'vdias', 'vtipo'].forEach(id => $(id).addEventListener('input', () => { vencVistos = PAGINA; pintarVenc(); }));
 
-const TABS = ['radar', 'revisar', 'venc', 'docs', 'crit'];
+// ---- Mercado: quien gana, cuanto se paga, que entidades compran, donde hay menos competencia
+let mer = null, merTimer = null, merVer = 'ganadores', merVistos = PAGINA;
+const MER_VISTAS = [['ganadores', 'Ganadores'], ['entidades', 'Entidades'], ['regiones', 'Regiones'], ['productos', 'Productos']];
+function cargarMer() {
+  clearTimeout(merTimer);
+  fetch('/api/mercado').then(r => r.json()).then(d => {
+    mer = d;
+    const llenar = (id, valores, todos) => {
+      const sel = $(id), actual = sel.value;
+      sel.replaceChildren(new Option(todos, ''), ...valores.map(x => new Option(x, x)));
+      sel.value = valores.includes(actual) ? actual : '';
+    };
+    llenar('mdep', [...new Set(d.contratos.map(c => c.departamento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), 'Todos');
+    const frec = {}; d.contratos.forEach(c => c.coincidencias.forEach(t => { frec[t] = (frec[t] || 0) + 1; }));
+    llenar('mprod', Object.keys(frec).sort((a, b) => frec[b] - frec[a]), 'Todos');
+    pintarMer();
+    if (d.estado.calculando && !$('vista-mer').hidden) merTimer = setTimeout(cargarMer, 5000);
+  }).catch(() => { mer = { error: true }; pintarMer(); });
+}
+const mMediana = (a) => { const s = a.filter(x => x > 0).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+const mCuartil = (a, q) => { const s = a.filter(x => x > 0).sort((x, y) => x - y); return s.length ? s[Math.floor((s.length - 1) * q)] : 0; };
+const mTop = (lista, campo, max) => {
+  const cuenta = {}; lista.forEach(c => { if (c[campo]) cuenta[c[campo]] = (cuenta[c[campo]] || 0) + 1; });
+  return Object.entries(cuenta).sort((a, b) => b[1] - a[1]).slice(0, max);
+};
+function agruparMer(lista, vista) {
+  const grupos = new Map();
+  const meter = (clave, nombre, c) => {
+    if (!clave) return;
+    let g = grupos.get(clave); if (!g) { g = { nombre, contratos: [] }; grupos.set(clave, g); }
+    g.contratos.push(c);
+  };
+  lista.forEach(c => {
+    if (vista === 'ganadores') meter(c.nit || radarNorm(c.proveedor), c.proveedor, c);
+    else if (vista === 'entidades') meter(radarNorm(c.entidad), c.entidad, c);
+    else if (vista === 'regiones') meter(c.departamento || 'sin departamento', c.departamento || 'Sin departamento', c);
+    else c.coincidencias.forEach(t => meter(t, t, c));
+  });
+  return [...grupos.values()].map(g => {
+    const valores = g.contratos.map(c => c.valor || 0);
+    // El nombre mas usado: un mismo proveedor puede estar escrito de varias formas.
+    const nombre = vista === 'ganadores' ? (mTop(g.contratos, 'proveedor', 1)[0] || [g.nombre])[0] : g.nombre;
+    return { ...g, nombre, n: g.contratos.length, total: valores.reduce((a, b) => a + b, 0), mediana: mMediana(valores), valores };
+  });
+}
+function filaMer(g, vista) {
+  const li = el('li', 'card');
+  const sc = el('div', 'score'); sc.append(el('b', '', String(g.n)), el('small', '', g.n === 1 ? 'contrato' : 'contratos'));
+  const body = el('div');
+  const cabeza = el('div', 'cabeza'); const valor = el('div', 'valor');
+  valor.append(el('strong', '', pesos(g.total)), el('small', '', g.mediana ? `Valor típico ${pesos(g.mediana)}` : 'Sin valores publicados'));
+  cabeza.append(el('h2', '', vista === 'productos' ? g.nombre.charAt(0).toUpperCase() + g.nombre.slice(1) : g.nombre), valor);
+  body.append(cabeza);
+  const lineas = [];
+  const ents = new Set(g.contratos.map(c => c.entidad)), deps = new Set(g.contratos.map(c => c.departamento).filter(Boolean)), provs = new Set(g.contratos.map(c => c.nit || radarNorm(c.proveedor)));
+  if (vista === 'ganadores') {
+    if (g.contratos[0].nit) lineas.push(['NIT', g.contratos[0].nit]);
+    lineas.push(['Le vende a', `${plural(ents.size, 'entidad', 'entidades')}: ${mTop(g.contratos, 'entidad', 3).map(([n, k]) => `${n} (${k})`).join(', ')}${ents.size > 3 ? '…' : ''}`]);
+    lineas.push(['Departamentos', [...deps].slice(0, 5).join(', ') + (deps.size > 5 ? '…' : '')]);
+    lineas.push(['Productos', mTop(g.contratos.flatMap(c => c.coincidencias.map(t => ({ t }))), 't', 4).map(([n]) => n).join(', ')]);
+  } else if (vista === 'entidades') {
+    lineas.push(['Departamento', [...deps].join(', ') || '—']);
+    lineas.push(['Le compra a', `${plural(provs.size, 'proveedor', 'proveedores')}: ${mTop(g.contratos, 'proveedor', 3).map(([n, k]) => `${n} (${k})`).join(', ')}${provs.size > 3 ? '…' : ''}`]);
+  } else if (vista === 'regiones') {
+    const lider = mTop(g.contratos, 'proveedor', 1)[0];
+    lineas.push(['Competencia', `${plural(provs.size, 'proveedor distinto', 'proveedores distintos')} en ${plural(g.n, 'contrato', 'contratos')}${lider ? `. Más contratos: ${lider[0]} (${lider[1]})` : ''}`]);
+    lineas.push(['Entidades que compran', String(ents.size)]);
+  } else {
+    lineas.push(['Rango habitual', g.mediana ? `${pesos(mCuartil(g.valores, 0.25))} a ${pesos(mCuartil(g.valores, 0.75))} (la mitad de los contratos queda en ese rango)` : 'sin valores']);
+    lineas.push(['Más contratos', mTop(g.contratos, 'proveedor', 3).map(([n, k]) => `${n} (${k})`).join(', ')]);
+    lineas.push(['Compran', `${plural(ents.size, 'entidad', 'entidades')} en ${plural(deps.size, 'departamento', 'departamentos')}`]);
+  }
+  lineas.forEach(([k, v]) => { const p = el('p', 'hist'); p.append(el('b', '', k + ': '), document.createTextNode(v)); body.append(p); });
+  const det = el('details', 'req'); const sum = el('summary', '', `Ver contratos (${g.n})`); det.append(sum);
+  const cuerpo = el('div', 'cuerpo'); const ul = el('ul');
+  g.contratos.slice().sort((a, b) => (b.valor || 0) - (a.valor || 0)).slice(0, 8).forEach(c => {
+    const l = el('li'); l.append(document.createTextNode(`${c.firma} · ${c.entidad} · ${pesos(c.valor)} · ${vista === 'ganadores' ? '' : (c.proveedor || 'proveedor no publicado') + ' · '}${(c.objeto || '').slice(0, 110)}${(c.objeto || '').length > 110 ? '…' : ''} `));
+    if (c.url) { const a = el('a', 'go'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = 'SECOP'; l.append(a); }
+    ul.append(l);
+  });
+  cuerpo.append(ul); if (g.n > 8) cuerpo.append(el('p', 'nota', `Se muestran los 8 de mayor valor, de ${g.n}.`));
+  det.append(cuerpo); body.append(det);
+  li.append(sc, body); return li;
+}
+function pintarMer() {
+  const lista = $('mlista');
+  $('mseg').replaceChildren(...MER_VISTAS.map(([id, texto]) => {
+    const b = el('button', '', texto); b.type = 'button'; b.setAttribute('aria-pressed', String(merVer === id));
+    b.onclick = () => { merVer = id; merVistos = PAGINA; pintarMer(); }; return b;
+  }));
+  if (!mer) return;
+  if (mer.error) { lista.replaceChildren(estadoVacio('No se pudo cargar', 'Revise la conexión e intente de nuevo cambiando de pestaña y volviendo.')); $('mcuenta').textContent = ''; return; }
+  const e = mer.estado;
+  if (!e.listo) {
+    $('mcuenta').textContent = '';
+    lista.replaceChildren(e.error ? estadoVacio('No se pudo consultar SECOP', e.error + ' Vuelva a abrir esta pestaña en unos minutos.')
+      : estadoVacio('Consultando contratos en SECOP…', 'La primera vez tarda un par de minutos. Esta pantalla se actualiza sola.'));
+    return;
+  }
+  const q = radarNorm($('mq').value), dep = $('mdep').value, prod = $('mprod').value, orden = $('morden').value;
+  const f = mer.contratos.filter(c => (!dep || c.departamento === dep) && (!prod || c.coincidencias.includes(prod)) &&
+    (!q || radarNorm(c.proveedor + ' ' + c.entidad + ' ' + c.objeto).includes(q)));
+  const grupos = agruparMer(f, merVer).sort((a, b) => (b[orden] - a[orden]) || (b.total - a.total));
+  const nombres = { ganadores: 'proveedores', entidades: 'entidades', regiones: 'departamentos', productos: 'productos' };
+  $('mcuenta').textContent = `${grupos.length.toLocaleString('es-CO')} ${nombres[merVer]} · ${f.length.toLocaleString('es-CO')} contratos${e.calculando ? ' · actualizando datos…' : ` · datos de ${e.generado}`}${merVer === 'productos' ? ' · un contrato con varios productos cuenta en cada uno' : ''}`;
+  if (!grupos.length) { lista.replaceChildren(estadoVacio('Sin resultados con estos filtros', 'Quite algún filtro para ver más.')); return; }
+  const filas = grupos.slice(0, merVistos).map(g => filaMer(g, merVer));
+  if (grupos.length > merVistos) {
+    const li = el('li', 'mas'); const b = el('button', 'btn ghost', `Mostrar ${Math.min(PAGINA, grupos.length - merVistos)} más (quedan ${(grupos.length - merVistos).toLocaleString('es-CO')})`);
+    b.type = 'button'; b.onclick = () => { merVistos += PAGINA; pintarMer(); }; li.append(b); filas.push(li);
+  }
+  lista.replaceChildren(...filas);
+}
+['mq', 'mdep', 'mprod', 'morden'].forEach(id => $(id).addEventListener('input', () => { merVistos = PAGINA; pintarMer(); }));
+
+const TABS = ['radar', 'revisar', 'venc', 'mer', 'docs', 'crit'];
 function vista(nombre) {
   if (nombre === 'documentos') nombre = 'docs';
   if (!TABS.includes(nombre)) nombre = 'radar';
   const esRadar = ['radar', 'revisar'].includes(nombre);
-  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-venc').hidden = nombre !== 'venc'; $('vista-crit').hidden = nombre !== 'crit';
+  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-venc').hidden = nombre !== 'venc'; $('vista-mer').hidden = nombre !== 'mer'; $('vista-crit').hidden = nombre !== 'crit';
   $('ctlRadar').hidden = !esRadar;
   TABS.forEach(t => { const b = $('tab-' + t); b.setAttribute('aria-selected', String(t === nombre)); b.tabIndex = t === nombre ? 0 : -1; });
   if (esRadar) {
@@ -988,6 +1128,7 @@ function vista(nombre) {
     if (alertasViejas) { alertasViejas = false; cargar(); } else if (datos) { pintarKpis(); pintar(); }
   }
   if (nombre === 'venc') cargarVenc();
+  if (nombre === 'mer') cargarMer();
   if (nombre === 'docs' && !docs) cargarDocs();
   if (nombre === 'crit') cargarCrit();
   $('tab-' + nombre).scrollIntoView({ inline: 'center', block: 'nearest' });

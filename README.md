@@ -59,6 +59,11 @@ los guarda en `data/mercado.json`. Con eso arma la pestaña *Oportunidades futur
 (contratos que terminan en los próximos 6 meses y quién los tiene hoy) y la línea
 *Historial* de cada tarjeta (contratos de suministro o compraventa de esa entidad en
 los últimos 12 meses). Es una pista, no una garantía: un contrato puede prorrogarse.
+**Pestaña Mercado:** con esos mismos contratos (suministro y compraventa del último año)
+muestra quién gana (con NIT), qué entidades compran y a quién, en qué departamentos hay menos
+competencia y el rango de valores por producto. Se puede filtrar por departamento y producto.
+Los datos abiertos no traen teléfono ni correo de los proveedores, solo el NIT.
+
 **Posible renovación:** si una alerta es de una entidad que tenía un contrato de suministro
 de lo mismo (comparten algún término) que terminó en los últimos 4 meses o termina pronto, la
 tarjeta lo marca y el filtro *Renovación* permite verlas solas. Es una pista, no una

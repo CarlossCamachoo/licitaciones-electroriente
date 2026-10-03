@@ -29,13 +29,14 @@ import radar
 URL = "https://www.datos.gov.co/resource/jbjy-vk9h.json"
 RUTA = radar.RAIZ / "data" / "mercado.json"
 VIGENCIA = 12 * 3600      # segundos: los contratos no cambian minuto a minuto
+VERSION = 2               # sube si cambian los campos guardados: fuerza una descarga nueva
 MESES_HISTORIAL = 12
 DIAS_VENCIMIENTO = 180    # ventana de contratos que terminan pronto
 DIAS_RENOVACION_PASADA = 120  # un contrato terminado hace menos de esto aun cuenta
 
 COLUMNAS = ("id_contrato,nombre_entidad,departamento,objeto_del_contrato,"
             "tipo_de_contrato,valor_del_contrato,fecha_de_firma,"
-            "fecha_de_fin_del_contrato,proveedor_adjudicado,urlproceso")
+            "fecha_de_fin_del_contrato,proveedor_adjudicado,documento_proveedor,urlproceso")
 
 _candado = threading.Lock()
 _estado = {"calculando": False, "error": ""}
@@ -171,6 +172,7 @@ def _limpio(c, coincide, favorables):
         "firma": (c.get("fecha_de_firma") or "")[:10],
         "fin": (c.get("fecha_de_fin_del_contrato") or "")[:10],
         "proveedor": radar.limpiar(c.get("proveedor_adjudicado", "")),
+        "nit": re.sub(r"\D", "", str(c.get("documento_proveedor", "")))[:15],
         "url": radar.url_segura(c.get("urlproceso")),
         "coincidencias": coincide,
         # Suministro o compraventa: lo que Electroriente hace. El resto (obra,
@@ -187,7 +189,7 @@ def _construir():
         coincide = _aceptable(c, filtros)
         if coincide:
             contratos.append(_limpio(c, coincide, favorables))
-    datos = {"generado_ts": int(time.time()),
+    datos = {"version": VERSION, "generado_ts": int(time.time()),
              "generado": time.strftime("%Y-%m-%d %H:%M"),
              "contratos": contratos}
     RUTA.parent.mkdir(parents=True, exist_ok=True)
@@ -214,7 +216,8 @@ def datos_listos():
 
 
 def _vigente(datos):
-    return datos is not None and time.time() - datos["generado_ts"] < VIGENCIA
+    return (datos is not None and datos.get("version") == VERSION
+            and time.time() - datos["generado_ts"] < VIGENCIA)
 
 
 def refrescar_en_segundo_plano():
@@ -240,6 +243,18 @@ def estado():
     d = datos_listos()
     return {"listo": d is not None, "calculando": _estado["calculando"],
             "error": _estado["error"], "generado": d["generado"] if d else ""}
+
+
+def contratos_del_ano():
+    """Contratos de suministro o compraventa firmados en el ultimo ano."""
+    d = datos_listos()
+    if d is None:
+        return []
+    desde = (datetime.now() - timedelta(days=30 * MESES_HISTORIAL)).strftime("%Y-%m-%d")
+    return [{k: c[k] for k in ("entidad", "departamento", "objeto", "tipo", "valor",
+                               "firma", "fin", "proveedor", "nit", "url", "coincidencias")
+             if k in c}
+            for c in d["contratos"] if c.get("afin") and c["firma"] and c["firma"] >= desde]
 
 
 def _clave(entidad):
