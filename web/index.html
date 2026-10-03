@@ -910,7 +910,7 @@ function tarjetaVenc(c) {
     mas.onclick = () => { const a = desc.classList.toggle('corto'); mas.textContent = a ? 'Ver más' : 'Ver menos'; mas.setAttribute('aria-expanded', String(!a)); };
     body.append(mas);
   }
-  const p = el('p', 'hist'); p.append(el('b', '', 'Lo tiene hoy: '), document.createTextNode(c.proveedor || 'proveedor no publicado'));
+  const p = el('p', 'hist'); p.append(el('b', '', 'Proveedor actual: '), document.createTextNode(c.proveedor || 'proveedor no publicado'));
   body.append(p);
   const chips = el('div', 'chips');
   chips.append(el('span', 'why', 'Coincide por:'));
