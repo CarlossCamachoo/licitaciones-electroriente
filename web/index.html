@@ -73,7 +73,6 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .banner > .row { display: flex; gap: 4px 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; min-height: 40px; }
 .banner strong { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-weight: 500; font-size: .875rem; color: var(--text-2); }
 .banner strong svg { color: var(--accent); width: 16px; height: 16px; }
-.banner strong .bloq { color: var(--danger); font-weight: 600; }
 .banner.warn strong { color: var(--danger); font-weight: 600; }
 .banner ul { margin: 2px 0 10px; padding-left: 20px; font-size: .875rem; color: var(--text); }
 .banner li + li { margin-top: 4px; }
@@ -272,7 +271,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   </div>
 
   <div id="vista-radar" role="tabpanel">
-  <section class="banner" id="pend" hidden aria-label="Pendientes del proyecto"></section>
   <section class="banner warn" id="trunc" hidden role="status"></section>
 
   <section class="kpis" aria-label="Resumen" id="kpis" hidden></section>
@@ -730,26 +728,6 @@ function pintar() {
   lista.replaceChildren(...nodos);
 }
 
-async function pendientes() {
-  try {
-    const p = (await (await fetch('/api/pendientes')).json()).filter(x => !x.resuelto);
-    if (!p.length) return;
-    const bloq = p.filter(x => x.criticidad === 'bloqueante');
-    const b = $('pend'); b.hidden = false;
-    const row = el('div', 'row');
-    const s = el('strong'); s.append(svg('alert'), document.createTextNode(`${p.length} pendientes del proyecto`));
-    if (bloq.length) s.append(el('span', 'bloq', `${bloq.length} bloquean la fiabilidad de las alertas`));
-    const tg = el('button', 'link', 'Ver detalle'); tg.type = 'button';
-    tg.setAttribute('aria-expanded', 'false'); tg.setAttribute('aria-controls', 'pend-lista');
-    row.append(s, tg);
-    const ul = el('ul'); ul.id = 'pend-lista'; ul.hidden = true;
-    p.forEach(x => ul.append(el('li', '', `${x.criticidad.toUpperCase()}: ${x.titulo}. Falta: ${x.necesito}`)));
-    tg.onclick = () => { ul.hidden = !ul.hidden; tg.setAttribute('aria-expanded', String(!ul.hidden)); tg.textContent = ul.hidden ? 'Ver detalle' : 'Ocultar'; };
-    b.replaceChildren(row, ul);
-  } catch (_) { /* el panel funciona sin el aviso */ }
-}
-
-
 const NIVEL = { alta: 'Factibilidad alta', media: 'Factibilidad media', revisar: 'Por revisar' };
 const AYUDA_NIVEL = { alta: 'Qué tan probable es que Electroriente pueda suministrarlo: alta.', media: 'Qué tan probable es que Electroriente pueda suministrarlo: media.', revisar: 'Señal débil: no llega al puntaje de alerta, pero podría servir.' };
 const ESTADO = {
@@ -1188,7 +1166,6 @@ $('orden').addEventListener('change', () => { orden = $('orden').value; mostrado
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
 ['q', 'dep', 'pmin', 'pmax', 'aliado', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
-pendientes();
 cargar();
 vista(location.hash.slice(1) || 'radar');
 </script>
