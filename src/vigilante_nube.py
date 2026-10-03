@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """
-Vigilante en la nube: busca en SECOP y avisa al celular de las licitaciones
+Vigilante en la nube: busca en SECOP y avisa por correo de las licitaciones
 nuevas de Santander, aunque el computador este apagado.
 
 Lo ejecuta GitHub Actions cada 30 minutos (ver .github/workflows/vigilante.yml).
 Tambien se puede probar a mano:
 
-    NTFY_TOPIC=mi-tema python src/vigilante_nube.py            # busca y avisa
-    python src/vigilante_nube.py --sin-avisar                   # solo muestra
+    python src/vigilante_nube.py --sin-avisar                   # solo muestra lo que avisaria
+
+El aviso es una "issue" (un tema) que se crea en el repositorio de GitHub por cada
+licitacion nueva. GitHub manda un correo por cada issue nueva a quien sigue el
+repositorio (el dueño lo sigue por defecto) y tambien la muestra en su campana de
+GitHub. No hace falta configurar correo, contraseñas ni aplicaciones: solo usa el
+permiso que GitHub le da a cada ejecucion (GITHUB_TOKEN).
 
 Que cuenta como "nueva": una alerta (factibilidad alta o media) de una entidad
 del departamento de Santander cuyo id no esta en data/vistos_nube.json. Ese
 archivo lo conserva GitHub entre ejecuciones (cache). La primera vez no avisa de
-lo que ya existe: solo manda un mensaje de prueba para confirmar que el aviso llega.
-
-El tema de ntfy (NTFY_TOPIC) funciona como contrasena: quien lo conozca puede leer
-los avisos. Por eso va en un secreto de GitHub y no en el codigo.
+lo que ya existe: solo crea una issue "Vigilante activo" para confirmar que el aviso llega.
 """
 
 import argparse
@@ -33,7 +35,8 @@ DEPARTAMENTO = "Santander"
 NIVELES = ("alta", "media")
 MAX_AVISOS = 8          # si aparecen mas de golpe, se manda un resumen del resto
 VISTOS = radar.RAIZ / "data" / "vistos_nube.json"
-NTFY = "https://ntfy.sh"
+API = "https://api.github.com"
+ETIQUETA = "licitacion-santander"
 
 
 def alertas_de_santander():
@@ -65,30 +68,40 @@ def guardar_vistos(ids):
         json.dump({"vistos": sorted(ids)[-20000:], "actualizado": time.strftime("%Y-%m-%d %H:%M:%S")}, f)
 
 
-def avisar(tema, titulo, mensaje, enlace="", prioridad=3):
-    """Publica en ntfy con JSON (admite tildes en el titulo)."""
-    cuerpo = {"topic": tema, "title": titulo, "message": mensaje[:1000],
-              "priority": prioridad, "tags": ["bell"]}
-    if enlace.startswith("https://"):
-        cuerpo["click"] = enlace
-    requests.post(NTFY, json=cuerpo, timeout=20).raise_for_status()
+def avisar(titulo, cuerpo):
+    """Crea una issue en el repositorio: GitHub la manda por correo."""
+    repo, token = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_TOKEN"]
+    r = requests.post(f"{API}/repos/{repo}/issues", timeout=20,
+                      headers={"Authorization": f"Bearer {token}",
+                               "Accept": "application/vnd.github+json"},
+                      json={"title": titulo[:200], "body": cuerpo, "labels": [ETIQUETA]})
+    r.raise_for_status()
 
 
 def texto_alerta(r):
+    """(titulo, cuerpo en markdown) de una alerta."""
     valor = radar.pesos(r["valor_cop"]) if r["valor_cop"] else "sin valor publicado"
-    desc = " ".join(r["descripcion"].split())[:300]
-    cierre = f" · cierra {r['fecha_cierre']}" if r.get("fecha_cierre") else ""
-    return (f"Puntaje {r['puntaje']} · {valor}{cierre}\n{desc}",
-            f"Santander: {r['entidad']}"[:120])
+    desc = " ".join(r["descripcion"].split())[:600]
+    lineas = [f"**{r['entidad']}** · {r['departamento']}", "",
+              f"- Puntaje: **{r['puntaje']}** ({'factibilidad ' + r['nivel']})",
+              f"- Valor: {valor}",
+              f"- Publicado: {r['fecha_publicacion']}"]
+    if r.get("fecha_cierre"):
+        lineas.append(f"- Cierre: {r['fecha_cierre']}")
+    if r["coincidencias"]:
+        lineas.append("- Coincide por: " + ", ".join(r["coincidencias"][:8]))
+    lineas += ["", desc, ""]
+    if r["url"]:
+        lineas.append(f"[Abrir en SECOP]({r['url']})")
+    return f"Santander: {r['entidad']} · {valor}", "\n".join(lineas)
 
 
 def main():
     ap = argparse.ArgumentParser(description="Vigilante de licitaciones de Santander")
     ap.add_argument("--sin-avisar", action="store_true", help="solo muestra lo que avisaria")
     args = ap.parse_args()
-    tema = os.environ.get("NTFY_TOPIC", "").strip()
-    if not tema and not args.sin_avisar:
-        sys.exit("Falta NTFY_TOPIC (el tema de ntfy). Use --sin-avisar para probar sin avisar.")
+    if not args.sin_avisar and not (os.environ.get("GITHUB_TOKEN") and os.environ.get("GITHUB_REPOSITORY")):
+        sys.exit("Faltan GITHUB_TOKEN y GITHUB_REPOSITORY (los da GitHub Actions). Use --sin-avisar para probar.")
 
     encontradas = alertas_de_santander()
     vistos = leer_vistos()
@@ -100,19 +113,20 @@ def main():
 
     if not args.sin_avisar:
         if primera_vez:
-            avisar(tema, "Vigilante activo",
-                   f"Busco en SECOP cada 30 minutos y le aviso de licitaciones nuevas de Santander. "
-                   f"Hoy hay {len(encontradas)} en los ultimos {DIAS} dias; esas no se avisan.", prioridad=2)
+            avisar("Vigilante activo: avisará de licitaciones nuevas de Santander",
+                   f"Busco en SECOP cada 30 minutos (6:00 a 20:59, hora de Colombia) y creo una issue por cada "
+                   f"licitación nueva de Santander; GitHub se la envía por correo.\n\n"
+                   f"Hoy hay {len(encontradas)} alertas de Santander en los últimos {DIAS} días; esas no se avisan.")
         else:
             for r in nuevas[:MAX_AVISOS]:
-                mensaje, titulo = texto_alerta(r)
-                avisar(tema, titulo, mensaje, r["url"])
+                titulo, cuerpo = texto_alerta(r)
+                avisar(titulo, cuerpo)
             if len(nuevas) > MAX_AVISOS:
-                avisar(tema, f"Santander: {len(nuevas) - MAX_AVISOS} licitaciones nuevas mas",
+                avisar(f"Santander: {len(nuevas) - MAX_AVISOS} licitaciones nuevas más",
                        "Abra el panel para verlas.")
     else:
         for r in nuevas[:MAX_AVISOS]:
-            print(" -", texto_alerta(r)[1], "|", texto_alerta(r)[0].splitlines()[0])
+            print(" -", texto_alerta(r)[0])
 
     guardar_vistos(vistos | {r["id"] for r in encontradas})
 

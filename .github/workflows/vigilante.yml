@@ -1,7 +1,8 @@
 name: Vigilante de licitaciones de Santander
 
-# Busca en SECOP II cada 30 minutos y avisa al celular (ntfy) de las alertas nuevas de
-# Santander, aunque el computador de la empresa este apagado.
+# Busca en SECOP II cada 30 minutos y avisa por correo de las alertas nuevas de
+# Santander, aunque el computador de la empresa este apagado. El aviso es una issue en este
+# repositorio: GitHub la envia por correo al dueño y la muestra en su campana de GitHub.
 # Horario: 6:00 a 20:59 hora de Colombia (UTC-5) todos los dias = 11:00-23:59 y 00:00-01:59 UTC.
 # Cada ejecucion dura cerca de 1 minuto: unas 900 al mes, dentro del cupo gratuito (2.000 min)
 # de un repositorio privado.
@@ -16,6 +17,7 @@ concurrency:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   buscar:
@@ -37,4 +39,4 @@ jobs:
           restore-keys: vistos-
       - run: python src/vigilante_nube.py
         env:
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

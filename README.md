@@ -61,6 +61,14 @@ guardan en `data/notificaciones.json` hasta marcarlas como leídas. La primera v
 lo que ya existe, solo de lo que aparezca después. Si el computador está apagado o dormido, o el
 servidor cerrado, no consulta: al volver a encenderlo busca lo más reciente.
 
+**Aviso con el computador apagado:** `.github/workflows/vigilante.yml` es una tarea de GitHub
+Actions que corre cada 30 minutos (6:00 a 20:59, hora de Colombia) en los servidores de
+GitHub, aunque el Mac esté apagado. Ejecuta `src/vigilante_nube.py`: busca en SECOP y, por
+cada alerta nueva de Santander, crea una *issue* en el repositorio. GitHub la envía por
+correo y la muestra en su campana. No usa contraseñas ni aplicaciones: solo el permiso que
+GitHub da a cada ejecución. Gasta unos 900 minutos al mes del cupo gratuito de 2.000. Para
+probarla a mano: pestaña *Actions* del repositorio, «Vigilante…», «Run workflow».
+
 **Mercado:** el panel descarga una vez al día (cerca de 20 segundos, en segundo plano) los
 contratos firmados en SECOP II que mencionan los términos de `config/filtros.yaml` y
 los guarda en `data/mercado.json`. Con eso arma la pestaña *Oportunidades futuras*
