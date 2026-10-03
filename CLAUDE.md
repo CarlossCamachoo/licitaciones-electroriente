@@ -145,7 +145,8 @@ para revision manual. Muchas entidades publican el valor despues.
 
 **La busqueda de terminos es por palabra completa**, con lookahead y
 lookbehind, no por fragmento. Sin eso, "ups" coincide dentro de "grupos" y
-"obra" dentro de "obrar".
+"obra" dentro de "obrar". Cada palabra del termino acepta su plural ("obra"
+encuentra "obras"), via `radar._formas`.
 
 ---
 

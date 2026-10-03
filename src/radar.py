@@ -22,6 +22,7 @@ import sys
 import time
 import unicodedata
 from datetime import datetime, timedelta
+from functools import lru_cache
 from pathlib import Path
 
 import requests
@@ -47,13 +48,35 @@ def normalizar(texto):
     return re.sub(r"\s+", " ", texto.lower()).strip()
 
 
+def _formas(palabra):
+    """Singular y plural de una palabra (sin tildes): variador, variadores; cable, cables."""
+    formas = {palabra}
+    if len(palabra) >= 3:
+        formas |= {palabra + "s", palabra + "es"}
+    if len(palabra) >= 5 and palabra.endswith("es"):
+        formas.add(palabra[:-2])
+    if len(palabra) >= 4 and palabra.endswith("s"):
+        formas.add(palabra[:-1])
+    return sorted(formas, key=len, reverse=True)
+
+
+@lru_cache(maxsize=4096)
+def _patron(termino):
+    palabras = normalizar(termino).split(" ")
+    cuerpo = r"\s+".join(
+        "(?:" + "|".join(re.escape(f) for f in _formas(p)) + ")" if len(p) > 2 else re.escape(p)
+        for p in palabras)
+    return re.compile(r"(?<![a-z0-9])" + cuerpo + r"(?![a-z0-9])")
+
+
 def contiene(texto_norm, termino):
-    """Busca el termino como palabra, no como fragmento.
+    """Busca el termino como palabra, no como fragmento, y acepta singular y plural.
 
     Evita que 'ups' coincida dentro de 'grupos' o 'obra' dentro de 'obrar'.
+    Pero 'obra' si coincide con 'obras' y 'variador de velocidad' con
+    'variadores de velocidades': cada palabra del termino admite su plural.
     """
-    patron = r"(?<![a-z0-9])" + re.escape(normalizar(termino)) + r"(?![a-z0-9])"
-    return re.search(patron, texto_norm) is not None
+    return _patron(termino).search(texto_norm) is not None
 
 
 def limpiar(texto):

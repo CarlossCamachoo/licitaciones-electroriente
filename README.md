@@ -108,8 +108,9 @@ garantía.
 
 La búsqueda tolera tildes, plurales y errores de una letra («alumbrado públicos»,
 «breakers», «baja tención»): cada término se consulta en varias formas y luego se
-confirma en local. Ojo: esa tolerancia es solo del mercado; el radar de procesos sigue
-buscando palabra completa.
+confirma en local. El radar de procesos busca por palabra completa, pero cada palabra del
+término acepta su plural («luminaria» encuentra «luminarias», «variador de velocidad» encuentra
+«variadores de velocidad»); no tolera erratas ni fragmentos («ups» no coincide dentro de «grupos»).
 
 **Como app en el Mac:** `bash app/crear_app.sh` crea «Radar de Licitaciones»
 en `~/Applications` (con el icono de Electroriente). Al abrirla arranca el
