@@ -30,7 +30,7 @@ Es un radar hecho a la medida de una distribuidora de material eléctrico y auto
 - Interfaz en español colombiano.
 
 ## Capabilities and Constraints
-- Hoy: radar con puntaje y niveles de factibilidad, vistas Radar, Santander y Por revisar, filtro de puntaje, periodos de 3 a 90 días, subida de documentos de la empresa, cruce de documentos faltantes por alerta y pestaña de criterios.
+- Hoy: radar con puntaje y niveles de factibilidad, vistas Radar y Por revisar, filtro de puntaje, periodos de 3 a 90 días, subida de documentos de la empresa, cruce de documentos faltantes por alerta y pestaña de criterios.
 - No construido: lectura de pliegos, extracción de requisitos y plazos, y lectura del contenido de los documentos subidos.
 - La fecha de cierre de ofertas no viene en los datos abiertos de SECOP. Los códigos UNSPSC no son confiables en esos datos.
 - Pendientes bloqueantes: RUP vigente con códigos UNSPSC y validar el rango de cuantía. El mínimo de cuantía es 5 millones, decidido por el área; el resto del rango es un supuesto.

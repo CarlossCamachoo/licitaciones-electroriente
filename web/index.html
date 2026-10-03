@@ -255,7 +255,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 
   <div class="tabs" role="tablist" aria-label="Secciones">
     <button class="tab" role="tab" id="tab-radar" aria-selected="true" type="button">Radar</button>
-    <button class="tab" role="tab" id="tab-santander" aria-selected="false" type="button">Santander</button>
     <button class="tab" role="tab" id="tab-revisar" aria-selected="false" type="button">Por revisar</button>
     <button class="tab" role="tab" id="tab-docs" aria-selected="false" type="button">Documentos</button>
     <button class="tab" role="tab" id="tab-crit" aria-selected="false" type="button">Criterios</button>
@@ -282,7 +281,13 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     <label class="f">Puntaje máx.
       <input type="number" id="pmax" min="0" max="100" step="5" value="100" inputmode="numeric">
     </label>
-    <label class="chk"><input type="checkbox" id="soloAliado"> Solo con aliado</label>
+    <label class="f">Aliado
+      <select id="aliado">
+        <option value="">Con y sin aliado</option>
+        <option value="con">Con aliado</option>
+        <option value="sin">Sin aliado</option>
+      </select>
+    </label>
   </div>
 
   <main id="resultados" tabindex="-1">
@@ -416,8 +421,6 @@ function llenarDeps() {
 const MODOS = {
   radar: { f: r => r.nivel !== 'revisar',
     intro: 'Procesos que superan el umbral de alerta, de mejor a menor puntaje. Es la lista para trabajar primero.' },
-  santander: { f: r => r.departamento === 'Santander',
-    intro: 'Solo entidades de Santander, de la opción más factible a la menos factible. Incluye los "por revisar": en su territorio vale la pena mirar también lo dudoso.' },
   revisar: { f: r => r.nivel === 'revisar',
     intro: 'Señales más débiles: no llegan al umbral de alerta, pero podrían servir. Revíselos para decidir si podemos suministrar o aplicar, y para ver qué términos faltan en la búsqueda.' }
 };
@@ -461,7 +464,7 @@ function filtrar(conDecision = true) {
     (!conDecision || dv(r)) &&
     r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
-    (!$('soloAliado').checked || r.requiere_aliado) &&
+    (!$('aliado').value || (r.requiere_aliado ? $('aliado').value === 'con' : $('aliado').value === 'sin')) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
   // Por puntaje ya viene ordenado del servidor (a igualdad, el mas reciente).
   if (orden === 'valor') lista.sort((a, b) => (b.valor_cop || 0) - (a.valor_cop || 0) || b.puntaje - a.puntaje);
@@ -805,18 +808,17 @@ async function cargarCrit() {
   }
 }
 
-const TABS = ['radar', 'santander', 'revisar', 'docs', 'crit'];
+const TABS = ['radar', 'revisar', 'docs', 'crit'];
 function vista(nombre) {
   if (nombre === 'documentos') nombre = 'docs';
   if (!TABS.includes(nombre)) nombre = 'radar';
-  const esRadar = ['radar', 'santander', 'revisar'].includes(nombre);
+  const esRadar = ['radar', 'revisar'].includes(nombre);
   $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-crit').hidden = nombre !== 'crit';
   $('ctlRadar').hidden = !esRadar;
   TABS.forEach(t => $('tab-' + t).setAttribute('aria-selected', String(t === nombre)));
   if (esRadar) {
     if (modo !== nombre) { mostrados = PAGINA; animar = true; }
     modo = nombre; $('intro').textContent = MODOS[modo].intro;
-    $('dep').closest('label').hidden = modo === 'santander';
     if (alertasViejas) { alertasViejas = false; cargar(); } else if (datos) { pintarKpis(); pintar(); }
   }
   if (nombre === 'docs' && !docs) cargarDocs();
@@ -830,7 +832,7 @@ TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
-['q', 'dep', 'pmin', 'pmax', 'soloAliado'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+['q', 'dep', 'pmin', 'pmax', 'aliado'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 pendientes();
 cargar();
 vista(location.hash.slice(1) || 'radar');
