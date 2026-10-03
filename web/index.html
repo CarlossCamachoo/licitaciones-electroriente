@@ -51,7 +51,8 @@ label.f { display: flex; flex-direction: column; font-size: .6875rem; font-weigh
 select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px; background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23495057' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); }
 select, input[type=search], input[type=number] { font: 400 1rem var(--sans); min-height: 44px; padding-top: 0; padding-bottom: 0; padding-left: 12px; background-color: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; transition: border-color var(--t); }
 input[type=search], input[type=number] { padding-right: 12px; }
-input[type=search] { min-width: 200px; }
+label.buscar { flex: 1 1 360px; }
+label.buscar input { width: 100%; box-sizing: border-box; }
 input[type=number] { width: 96px; }
 .subir input[type=date] { font-size: 1rem; }
 .chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; transition: border-color var(--t); }
@@ -269,7 +270,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   <section class="docsres" id="docsres" aria-label="Estado de los documentos de la empresa" hidden></section>
 
   <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros">
-    <label class="f">Buscar
+    <label class="f buscar">Buscar
       <input type="search" id="q" placeholder="Entidad, objeto o término" autocomplete="off">
     </label>
     <label class="f">Departamento
@@ -282,7 +283,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
       <input type="number" id="pmax" min="0" max="100" step="5" value="100" inputmode="numeric">
     </label>
     <label class="chk"><input type="checkbox" id="soloAliado"> Solo con aliado</label>
-    <label class="chk"><input type="checkbox" id="soloMonto"> Solo con valor publicado</label>
   </div>
 
   <main id="resultados" tabindex="-1">
@@ -462,7 +462,6 @@ function filtrar(conDecision = true) {
     r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
     (!$('soloAliado').checked || r.requiere_aliado) &&
-    (!$('soloMonto').checked || r.valor_cop > 0) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
   // Por puntaje ya viene ordenado del servidor (a igualdad, el mas reciente).
   if (orden === 'valor') lista.sort((a, b) => (b.valor_cop || 0) - (a.valor_cop || 0) || b.puntaje - a.puntaje);
@@ -831,7 +830,7 @@ TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
-['q', 'dep', 'pmin', 'pmax', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+['q', 'dep', 'pmin', 'pmax', 'soloAliado'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 pendientes();
 cargar();
 vista(location.hash.slice(1) || 'radar');
