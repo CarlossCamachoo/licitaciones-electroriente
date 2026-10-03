@@ -6,42 +6,49 @@
 <title>Radar de Licitaciones</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Albert+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #F5F3EE; --surface: #FBFAF7; --muted: #ECE8DF; --border: #DDD8CC; --hair: #E6E1D6;
-  --text: #1E2A32; --text-2: #5A6670;
-  --primary: #2C5F63; --on-primary: #F5F3EE; --primary-soft: #E3EDEB;
-  --accent: #8A5A1B; --accent-soft: #F3E9D6;
-  --danger: #8E3A31; --danger-soft: #F4E3DF;
-  --ring: #2C5F63;
-  --serif: "Newsreader", Georgia, "Times New Roman", serif;
-  --sans: "Albert Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Paleta tomada de electroriente.com.co: azul marino, texto casi negro, fondo blanco */
+  --bg: #FFFFFF; --surface: #F6F7FB; --muted: #EEF0F7; --border: #D9DDEA; --hair: #E6E9F2;
+  --text: #212529; --text-2: #5B6272;
+  --primary: #011E91; --on-primary: #FFFFFF; --primary-soft: #E7EBFB;
+  --accent: #8A5200; --accent-soft: #FDF1D8;
+  --danger: #A12B2B; --danger-soft: #FBE8E6;
+  --ring: #011E91; --barra: #000775;
+  --serif: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --r: 12px; --t: 200ms; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14191C; --surface: #1A2125; --muted: #232B30; --border: #2D373D; --hair: #262F35;
-    --text: #E8E5DD; --text-2: #A3AEB4;
-    --primary: #8FC3BF; --on-primary: #12191B; --primary-soft: #1F3335;
-    --accent: #DBAE69; --accent-soft: #33291A;
-    --danger: #E3A39B; --danger-soft: #3A1F1C;
-    --ring: #8FC3BF;
+    --bg: #070B24; --surface: #0E1334; --muted: #151B44; --border: #232A5A; --hair: #1B2150;
+    --text: #E9ECF7; --text-2: #A5ADCB;
+    --primary: #8FA6FF; --on-primary: #060A28; --primary-soft: #17205A;
+    --accent: #F5B94B; --accent-soft: #3A2B0A;
+    --danger: #F0A8A0; --danger-soft: #3A1D22;
+    --ring: #8FA6FF;
   }
 }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 24px 20px 48px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 8px 20px 48px; }
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 6px; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--primary); color: var(--on-primary); padding: 8px 12px; border-radius: 6px; z-index: 10; }
 .skip:focus { left: 8px; }
 svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-end; justify-content: space-between; padding: 8px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-h1 { margin: 0; font: 500 clamp(2rem, 4vw, 2.75rem)/1.05 var(--serif); letter-spacing: -.02em; display: flex; align-items: center; gap: 14px; }
-h1 svg.i { color: var(--primary); width: 30px; height: 30px; stroke-width: 1.4; }
-.sub { color: var(--text-2); font-size: .875rem; margin: 8px 0 0; letter-spacing: .01em; }
+.barra { background: var(--barra); color: #fff; }
+.barra-in { max-width: 1040px; margin: 0 auto; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
+h1 { margin: 0; font: 600 clamp(1.5rem, 3vw, 1.875rem)/1.1 var(--sans); letter-spacing: -.02em; display: flex; align-items: center; gap: 12px; }
+h1 svg.i { width: 26px; height: 26px; stroke-width: 1.5; }
+.sub { color: rgba(255,255,255,.74); font-size: .875rem; margin: 6px 0 0; }
+.barra label.f { color: rgba(255,255,255,.76); }
+.barra select { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.3); border-radius: 999px; padding: 0 16px; }
+.barra select option { color: #212529; background: #fff; }
+.barra button.btn { background: #fff; color: var(--barra); border-color: #fff; }
+.barra :focus-visible { outline-color: #fff; }
 
 .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 label.f { display: flex; flex-direction: column; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); gap: 4px; }
@@ -51,7 +58,7 @@ input[type=number] { width: 96px; }
 .subir input[type=date] { font-size: 1rem; }
 .chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; transition: border-color var(--t); }
 .chk input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
-button.btn { transition: transform 120ms var(--ease-out), filter var(--t); font: 600 .9375rem var(--sans); min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+button.btn { transition: transform 120ms var(--ease-out), filter var(--t); font: 600 .9375rem var(--sans); min-height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 button.btn:disabled { opacity: .5; cursor: not-allowed; }
 button.btn:active, label.chk:active, button.link:active { transform: scale(0.97); }
 button.btn.ghost { background: transparent; color: var(--primary); }
@@ -59,7 +66,7 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0 0 28px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .kpi { padding: 18px 20px 16px 0; }
 .kpi + .kpi { padding-left: 20px; border-left: 1px solid var(--hair); }
-.kpi b { display: block; font: 500 2.5rem/1 var(--serif); letter-spacing: -.02em; }
+.kpi b { display: block; font: 600 2.5rem/1 var(--serif); letter-spacing: -.03em; color: var(--primary); }
 .kpi span { display: block; margin-top: 6px; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); }
 
 .banner { border: 1px solid var(--hair); background: var(--surface); border-radius: var(--r); padding: 4px 8px 4px 16px; margin-bottom: 16px; }
@@ -75,8 +82,8 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 
 .count { color: var(--text-2); font-size: .8125rem; letter-spacing: .02em; margin: 0; }
 .decide-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; margin: 20px 0 4px; }
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 3px; gap: 2px; }
-.seg button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 14px; border: 0; border-radius: 7px; background: none; color: var(--text-2); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: background var(--t), color var(--t); }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); padding: 3px; gap: 2px; }
+.seg button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--text-2); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: background var(--t), color var(--t); }
 .seg button b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .seg button[aria-pressed=true] { background: var(--primary-soft); color: var(--primary); }
 .docsres { margin: -8px 0 20px; }
@@ -100,7 +107,7 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 14px 0 4px; }
 .acciones .sp { flex: 1; }
-button.dec { font: 600 .875rem var(--sans); min-height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: transform 120ms var(--ease-out), border-color var(--t), background var(--t); }
+button.dec { font: 600 .875rem var(--sans); min-height: 40px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: transform 120ms var(--ease-out), border-color var(--t), background var(--t); }
 button.dec:active { transform: scale(0.97); }
 button.dec.si[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 button.dec.no[aria-pressed=true] { background: var(--muted); }
@@ -116,11 +123,11 @@ ol.lista { list-style: none; margin: 0; padding: 0; }
 .lista.anim .card:nth-child(2) { animation-delay: 40ms } .lista.anim .card:nth-child(3) { animation-delay: 80ms } .lista.anim .card:nth-child(4) { animation-delay: 120ms } .lista.anim .card:nth-child(n+5) { animation-delay: 160ms }
 @keyframes in { from { opacity: 0; transform: translateY(6px); } }
 .mas { display: flex; justify-content: center; padding: 24px 0 8px; }
-.score b { display: block; font: 400 3rem/.95 var(--serif); letter-spacing: -.03em; color: var(--primary); }
+.score b { display: block; font: 600 3rem/.95 var(--serif); letter-spacing: -.03em; color: var(--primary); }
 .score small { display: block; color: var(--text-2); font-size: .6875rem; letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
 .bar { height: 3px; border-radius: 2px; background: var(--muted); margin-top: 10px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--primary); }
-.card h2 { overflow-wrap: anywhere; margin: 0 0 4px; font: 500 1.375rem/1.25 var(--serif); letter-spacing: -.01em; }
+.card h2 { overflow-wrap: anywhere; margin: 0 0 4px; font: 600 1.25rem/1.3 var(--serif); letter-spacing: -.01em; color: var(--primary); }
 .meta { color: var(--text-2); font-size: .875rem; display: flex; flex-wrap: wrap; gap: 4px 20px; margin-bottom: 10px; }
 .meta span { display: inline-flex; align-items: center; gap: 6px; }
 .meta svg { width: 15px; height: 15px; }
@@ -134,7 +141,7 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
 
 .state { text-align: center; padding: 56px 16px; border: 1px dashed var(--border); border-radius: var(--r); list-style: none; }
 .state svg { width: 28px; height: 28px; color: var(--text-2); }
-.state h2 { margin: 10px 0 4px; font: 500 1.375rem var(--serif); }
+.state h2 { margin: 10px 0 4px; font: 600 1.375rem var(--serif); }
 .state p { margin: 0 auto 16px; color: var(--text-2); max-width: 52ch; }
 .skel { list-style: none; height: 110px; margin: 12px 0; border-radius: var(--r); background: linear-gradient(90deg, var(--muted), var(--surface), var(--muted)); background-size: 200% 100%; animation: sh 1.6s linear infinite; }
 @keyframes sh { to { background-position: -200% 0; } }
@@ -149,19 +156,19 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
   .controls > * { flex: 1 1 auto; }
 }
 
-.tabs { display: flex; gap: 4px; margin: -8px 0 24px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.tabs { display: flex; gap: 4px; margin: 0 0 24px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { flex: none; white-space: nowrap; font: 500 .9375rem var(--sans); min-height: 44px; padding: 0 16px; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-2); cursor: pointer; transition: color var(--t), border-color var(--t); }
 .tab[aria-selected=true] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 [hidden] { display: none !important; }
 
 .prog { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 4px 0 20px; }
-.prog .n { font: 500 2.5rem/1 var(--serif); letter-spacing: -.02em; }
+.prog .n { font: 600 2.5rem/1 var(--serif); letter-spacing: -.03em; color: var(--primary); }
 .prog .n small { font: 400 1rem var(--sans); color: var(--text-2); letter-spacing: 0; }
 .prog .bar { flex: 1 1 200px; margin: 0; height: 5px; }
 .nota-doc { color: var(--text-2); font-size: .875rem; max-width: 70ch; margin: 0 0 20px; }
 .grupo { margin-top: 28px; }
-.grupo h2 { font: 500 1.5rem/1.2 var(--serif); letter-spacing: -.01em; margin: 0; }
+.grupo h2 { font: 600 1.5rem/1.2 var(--serif); letter-spacing: -.01em; margin: 0; color: var(--primary); }
 .grupo > p { margin: 4px 0 8px; color: var(--text-2); font-size: .9375rem; }
 ul.docs { list-style: none; margin: 0; padding: 0; }
 .doc { padding: 16px 0; border-top: 1px solid var(--hair); }
@@ -219,8 +226,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 </head>
 <body>
 <a class="skip" href="#resultados">Saltar a los resultados</a>
-<div class="wrap">
-  <header>
+<header class="barra"><div class="barra-in">
     <div>
       <h1>
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg>
@@ -244,7 +250,8 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
         Actualizar
       </button>
     </div>
-  </header>
+  </div></header>
+<div class="wrap">
 
   <div class="tabs" role="tablist" aria-label="Secciones">
     <button class="tab" role="tab" id="tab-radar" aria-selected="true" type="button">Radar</button>
