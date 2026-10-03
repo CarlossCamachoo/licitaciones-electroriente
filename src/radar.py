@@ -232,6 +232,21 @@ def cargar_demo():
 # Evaluacion de un proceso
 # --------------------------------------------------------------------------
 
+def _descripcion_visible(proceso):
+    """Texto a mostrar. SECOP suele repetir el nombre dentro de la descripcion
+    (o al reves); se muestra una sola vez."""
+    nombre = limpiar(proceso.get("nombre_del_procedimiento", "")).strip()
+    desc = limpiar(proceso.get("descripci_n_del_procedimiento", "")).strip()
+    n, d = normalizar(nombre), normalizar(desc)
+    if not n or n == d or n in d:
+        texto = desc or nombre
+    elif d in n:
+        texto = nombre
+    else:
+        texto = f"{nombre}. {desc}"
+    return texto[:400]
+
+
 def evaluar(proceso, perfil, filtros, umbral=None):
     """Devuelve un dict con el veredicto, o None si no aplica.
 
@@ -353,7 +368,7 @@ def evaluar(proceso, perfil, filtros, umbral=None):
         "entidad": limpiar(proceso.get("entidad", "")),
         "departamento": departamento,
         "referencia": limpiar(proceso.get("referencia_del_proceso", "")),
-        "descripcion": limpiar(texto).strip()[:400],
+        "descripcion": _descripcion_visible(proceso),
         "modalidad": modalidad,
         "tipo_contrato": proceso.get("tipo_de_contrato", ""),
         "estado": proceso.get("estado_del_procedimiento", ""),
