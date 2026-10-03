@@ -62,12 +62,14 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .kpi b { display: block; font: 500 2.5rem/1 var(--serif); letter-spacing: -.02em; }
 .kpi span { display: block; margin-top: 6px; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); }
 
-.banner { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--r) var(--r) 0; padding: 14px 18px; margin-bottom: 20px; }
-.banner.warn { border-left-color: var(--danger); background: var(--danger-soft); }
-.banner > .row { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.banner strong { display: flex; gap: 10px; align-items: center; font-weight: 600; font-size: .9375rem; }
-.banner.warn strong { color: var(--danger); }
-.banner ul { margin: 10px 0 0; padding-left: 20px; font-size: .9375rem; color: var(--text); }
+.banner { border: 1px solid var(--hair); background: var(--surface); border-radius: var(--r); padding: 4px 8px 4px 16px; margin-bottom: 16px; }
+.banner.warn { background: var(--danger-soft); border-color: transparent; padding-top: 10px; padding-bottom: 10px; }
+.banner > .row { display: flex; gap: 4px 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; min-height: 40px; }
+.banner strong { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-weight: 500; font-size: .875rem; color: var(--text-2); }
+.banner strong svg { color: var(--accent); width: 16px; height: 16px; }
+.banner strong .bloq { color: var(--danger); font-weight: 600; }
+.banner.warn strong { color: var(--danger); font-weight: 600; }
+.banner ul { margin: 2px 0 10px; padding-left: 20px; font-size: .875rem; color: var(--text); }
 .banner li + li { margin-top: 4px; }
 .banner[hidden] { display: none; }
 
@@ -549,11 +551,10 @@ async function pendientes() {
     if (!p.length) return;
     const bloq = p.filter(x => x.criticidad === 'bloqueante');
     const b = $('pend'); b.hidden = false;
-    if (bloq.length) b.classList.add('warn');
     const row = el('div', 'row');
-    const s = el('strong'); s.append(svg('alert'),
-      document.createTextNode(`${p.length} pendientes sin resolver, ${bloq.length} bloqueantes`));
-    const tg = el('button', 'btn ghost', 'Ver detalle'); tg.type = 'button';
+    const s = el('strong'); s.append(svg('alert'), document.createTextNode(`${p.length} pendientes del proyecto`));
+    if (bloq.length) s.append(el('span', 'bloq', `${bloq.length} bloquean la fiabilidad de las alertas`));
+    const tg = el('button', 'link', 'Ver detalle'); tg.type = 'button';
     tg.setAttribute('aria-expanded', 'false'); tg.setAttribute('aria-controls', 'pend-lista');
     row.append(s, tg);
     const ul = el('ul'); ul.id = 'pend-lista'; ul.hidden = true;
