@@ -443,9 +443,10 @@ function antiguedad(f) {
 }
 // Fecha limite para ofertar. SECOP la publica en pocos procesos: si falta, se dice.
 function cierre(f) {
-  const el1 = el('small', 'cierre');
   const d = f ? new Date(f + 'T00:00:00') : null;
-  if (!d || isNaN(d)) { el1.classList.add('nd'); el1.textContent = 'Cierre no publicado: confírmelo en SECOP'; return el1; }
+  // Sin fecha publicada no se muestra nada.
+  if (!d || isNaN(d)) return document.createDocumentFragment();
+  const el1 = el('small', 'cierre');
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
   const dias = Math.round((d - hoy) / 86400000);
   const fecha = d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -456,12 +457,11 @@ function cierre(f) {
 // Cuantos proveedores distintos ya respondieron al proceso (dato de SECOP). Casi todos los
 // procesos abiertos muestran 0 porque SECOP publica ese conteo tarde: 0 no significa "nadie".
 function respondieron(n) {
-  if (n === null || n === undefined) return document.createDocumentFragment();
-  const s = el('small', 'resp' + (n === 0 ? ' cero' : ''));
-  s.textContent = n === 0 ? 'Proveedores que respondieron: pendiente' : n === 1 ? '1 proveedor ya respondió' : `${n} proveedores ya respondieron`;
-  s.title = n === 0
-    ? 'Pendiente: SECOP publica este conteo tarde, casi siempre cuando el proceso ya cerró. No significa que nadie haya respondido.'
-    : 'Proveedores distintos que ya enviaron su respuesta u oferta a este proceso, según SECOP. Menos proveedores significa menos competencia.';
+  // Sin respuestas reportadas por SECOP no se muestra nada.
+  if (!n) return document.createDocumentFragment();
+  const s = el('small', 'resp');
+  s.textContent = n === 1 ? '1 proveedor ya respondió' : `${n} proveedores ya respondieron`;
+  s.title = 'Proveedores distintos que ya enviaron su respuesta u oferta a este proceso, según SECOP. Menos proveedores significa menos competencia.';
   return s;
 }
 const pesos = (v) => v ? '$' + Math.round(v).toLocaleString('es-CO') + ' COP' : 'Sin valor publicado';
