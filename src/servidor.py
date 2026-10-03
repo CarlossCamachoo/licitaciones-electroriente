@@ -23,6 +23,7 @@ import requests
 import yaml
 
 import documentos as docs
+import mercado
 import radar
 
 WEB = radar.RAIZ / "web"
@@ -197,13 +198,20 @@ class Manejador(BaseHTTPRequestHandler):
             try:
                 datos = calcular(dias)
                 cats = docs.listar()
+                tabla = mercado.historial()
                 self._json(200, {**datos, "documentos_generales": docs.generales(cats),
+                                "mercado": mercado.estado(),
                                 "resultados": [
-                    {**r, "documentos": docs.requisitos(r, cats)}
+                    {**r, "documentos": docs.requisitos(r, cats),
+                     "historial": mercado.historial_de(r["entidad"], tabla)}
                     for r in datos["resultados"]]})
             except requests.RequestException:
                 self._json(502, {"error": "No se pudo consultar SECOP. "
                                           "Revise la conexion e intente de nuevo."})
+        elif url.path == "/api/vencimientos":
+            mercado.refrescar_en_segundo_plano()
+            self._json(200, {"estado": mercado.estado(),
+                             "contratos": mercado.vencimientos()})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
         elif url.path == "/api/documentos":
@@ -235,6 +243,7 @@ def main():
         sys.exit(1)
 
     servidor = ThreadingHTTPServer((HOST, args.puerto), Manejador)
+    mercado.refrescar_en_segundo_plano()
     print(f"Panel en http://{HOST}:{args.puerto}  (Ctrl+C para cerrar)")
     try:
         servidor.serve_forever()

@@ -141,6 +141,9 @@ ol.lista { list-style: none; margin: 0; padding: 0; }
 .why { font-size: .75rem; color: var(--text-2); margin-right: 4px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
 a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--primary); font-weight: 600; font-size: .9375rem; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color var(--t); }
 
+.hist { margin: 0 0 10px; font-size: .875rem; color: var(--text); max-width: 110ch; overflow-wrap: anywhere; }
+.hist b { font-weight: 600; }
+.hist.nd { color: var(--text-2); }
 .state { text-align: center; padding: 56px 16px; border: 1px dashed var(--border); border-radius: var(--r); list-style: none; }
 .state svg { width: 28px; height: 28px; color: var(--text-2); }
 .state h2 { margin: 10px 0 4px; font: 600 1.375rem var(--serif); }
@@ -259,6 +262,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   <div class="tabs" role="tablist" aria-label="Secciones" id="tablist">
     <button class="tab" role="tab" id="tab-radar" aria-selected="true" tabindex="0" type="button">Radar</button>
     <button class="tab" role="tab" id="tab-revisar" aria-selected="false" tabindex="-1" type="button">Por revisar</button>
+    <button class="tab" role="tab" id="tab-venc" aria-selected="false" tabindex="-1" type="button">Próximos vencimientos</button>
     <button class="tab" role="tab" id="tab-docs" aria-selected="false" tabindex="-1" type="button">Documentos</button>
     <button class="tab" role="tab" id="tab-crit" aria-selected="false" tabindex="-1" type="button">Criterios</button>
   </div>
@@ -309,6 +313,33 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     </div>
     <ol class="lista" id="lista"></ol>
   </main>
+  </div>
+
+  <div id="vista-venc" role="tabpanel" aria-labelledby="tab-venc" hidden>
+    <p class="intro">Contratos de lo que Electroriente vende que terminan pronto. Cuando uno termina, la entidad suele volver a contratar lo mismo: aquí puede ver con tiempo qué se viene y quién lo tiene hoy. Es una pista, no una garantía: la entidad puede prorrogar el contrato o no repetirlo.</p>
+    <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros de vencimientos">
+      <label class="f buscar">Buscar
+        <input type="search" id="vq" placeholder="Entidad, objeto o proveedor" autocomplete="off">
+      </label>
+      <label class="f">Departamento
+        <select id="vdep"><option value="">Todos</option></select>
+      </label>
+      <label class="f">Tipo de contrato
+        <select id="vtipo">
+          <option value="afin" selected>Suministro y compraventa</option>
+          <option value="todos">Todos los tipos</option>
+        </select>
+      </label>
+      <label class="f">Terminan en
+        <select id="vdias">
+          <option value="30">Los próximos 30 días</option>
+          <option value="90">Los próximos 3 meses</option>
+          <option value="180" selected>Los próximos 6 meses</option>
+        </select>
+      </label>
+    </div>
+    <p class="count" id="vcuenta" aria-live="polite"></p>
+    <ol class="lista" id="vlista"></ol>
   </div>
 
   <div id="vista-docs" role="tabpanel" aria-labelledby="tab-docs" hidden>
@@ -487,6 +518,20 @@ function filtrar(conDecision = true) {
   return lista;
 }
 
+// Lo que la entidad ya contrato de este tipo en el ultimo ano (contratos firmados en SECOP II).
+function historialDe(r) {
+  const h = r.historial, p = el('p', 'hist');
+  if (h) {
+    p.append(el('b', '', 'Historial, últimos 12 meses: '),
+      document.createTextNode(`${plural(h.n, 'contrato parecido', 'contratos parecidos')}, ${pesos(h.total)} en total${h.mediana ? `, valor típico ${pesos(h.mediana)}` : ''}. `));
+    if (h.proveedores.length) p.append(document.createTextNode('Le contrató a: ' + h.proveedores.map(x => `${x.nombre} (${x.n})`).join(', ') + '.'));
+  } else if (datos && datos.mercado && datos.mercado.listo) {
+    p.classList.add('nd');
+    p.textContent = 'Historial: no encontramos contratos parecidos de esta entidad en los últimos 12 meses.';
+  } else { p.hidden = true; }
+  return p;
+}
+
 function tarjeta(r) {
   const li = el('li', 'card' + (estadoDe(r) === 'descarta' ? ' descartada' : ''));
   li.dataset.id = idDe(r);
@@ -527,6 +572,8 @@ function tarjeta(r) {
     r.notas.forEach(t => n.append(el('span', 'chip nota', t)));
     body.append(n);
   }
+
+  body.append(historialDe(r));
 
   const acc = el('div', 'acciones');
   const marcar = (valor, texto, cls) => {
@@ -824,12 +871,93 @@ async function cargarCrit() {
   }
 }
 
-const TABS = ['radar', 'revisar', 'docs', 'crit'];
+// ---- Proximos vencimientos
+let venc = null, vencTimer = null, vencVistos = PAGINA;
+function cargarVenc() {
+  clearTimeout(vencTimer);
+  fetch('/api/vencimientos').then(r => r.json()).then(d => {
+    venc = d;
+    const deps = [...new Set(d.contratos.map(c => c.departamento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    const sel = $('vdep'), actual = sel.value;
+    sel.replaceChildren(new Option('Todos', ''), ...deps.map(x => new Option(x, x)));
+    sel.value = deps.includes(actual) ? actual : '';
+    pintarVenc();
+    if (d.estado.calculando && !$('vista-venc').hidden) vencTimer = setTimeout(cargarVenc, 5000);
+  }).catch(() => { venc = { error: true }; pintarVenc(); });
+}
+function estadoVacio(titulo, texto) {
+  const st = el('li', 'state'); st.append(el('h2', '', titulo), el('p', '', texto)); return st;
+}
+function tarjetaVenc(c) {
+  const li = el('li', 'card');
+  const sc = el('div', 'score');
+  sc.append(el('b', '', String(c.dias)), el('small', '', c.dias === 1 ? 'día' : 'días'));
+  const body = el('div');
+  const cabeza = el('div', 'cabeza');
+  const valor = el('div', 'valor');
+  valor.append(el('strong', c.valor ? '' : 'nulo', pesos(c.valor)));
+  const fin = new Date(c.fin + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  valor.append(el('small', 'cierre', `Termina ${fin}`));
+  cabeza.append(el('h2', '', c.entidad || 'Entidad sin nombre'), valor);
+  const meta = el('div', 'meta');
+  const m = (ic, t) => { const s = el('span'); s.append(svg(ic), document.createTextNode(t)); return s; };
+  meta.append(m('pin', c.departamento || 'Sin departamento'), m('doc', c.tipo || '—'));
+  const largo = (c.objeto || '').length > 170;
+  const desc = el('p', 'desc' + (largo ? ' corto' : ''), c.objeto);
+  body.append(cabeza, meta, desc);
+  if (largo) {
+    const mas = el('button', 'link mini', 'Ver más'); mas.type = 'button'; mas.setAttribute('aria-expanded', 'false');
+    mas.onclick = () => { const a = desc.classList.toggle('corto'); mas.textContent = a ? 'Ver más' : 'Ver menos'; mas.setAttribute('aria-expanded', String(!a)); };
+    body.append(mas);
+  }
+  const p = el('p', 'hist'); p.append(el('b', '', 'Lo tiene hoy: '), document.createTextNode(c.proveedor || 'proveedor no publicado'));
+  body.append(p);
+  const chips = el('div', 'chips');
+  chips.append(el('span', 'why', 'Coincide por:'));
+  c.coincidencias.slice(0, 6).forEach(t => chips.append(el('span', 'chip', t)));
+  body.append(chips);
+  if (c.url) {
+    const acc = el('div', 'acciones');
+    const a = el('a', 'go'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.append(document.createTextNode('Ver contrato en SECOP'), svg('ext'));
+    acc.append(a); body.append(acc);
+  }
+  li.append(sc, body);
+  return li;
+}
+function pintarVenc() {
+  const lista = $('vlista');
+  if (!venc) return;
+  if (venc.error) { lista.replaceChildren(estadoVacio('No se pudo cargar', 'Revise la conexión e intente de nuevo cambiando de pestaña y volviendo.')); $('vcuenta').textContent = ''; return; }
+  const e = venc.estado;
+  if (!e.listo) {
+    $('vcuenta').textContent = '';
+    lista.replaceChildren(e.error
+      ? estadoVacio('No se pudo consultar SECOP', e.error + ' Vuelva a abrir esta pestaña en unos minutos.')
+      : estadoVacio('Consultando contratos en SECOP…', 'La primera vez tarda un par de minutos. Esta pantalla se actualiza sola.'));
+    return;
+  }
+  const q = radarNorm($('vq').value), dep = $('vdep').value, dias = Number($('vdias').value), soloAfin = $('vtipo').value === 'afin';
+  const f = venc.contratos.filter(c => c.dias <= dias && (!soloAfin || c.afin) && (!dep || c.departamento === dep) &&
+    (!q || radarNorm(c.entidad + ' ' + c.objeto + ' ' + c.proveedor).includes(q)));
+  $('vcuenta').textContent = `${f.length.toLocaleString('es-CO')} contratos que terminan pronto` + (e.calculando ? ' · actualizando datos…' : ` · datos de ${e.generado}`);
+  if (!f.length) { lista.replaceChildren(estadoVacio('Sin contratos con estos filtros', 'Pruebe un plazo más largo o quite algún filtro.')); return; }
+  const filas = f.slice(0, vencVistos).map(tarjetaVenc);
+  if (f.length > vencVistos) {
+    const li = el('li', 'mas'); const b = el('button', 'btn ghost', `Mostrar ${Math.min(PAGINA, f.length - vencVistos)} más (quedan ${(f.length - vencVistos).toLocaleString('es-CO')})`);
+    b.type = 'button'; b.onclick = () => { vencVistos += PAGINA; pintarVenc(); }; li.append(b); filas.push(li);
+  }
+  lista.replaceChildren(...filas);
+}
+const radarNorm = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+['vq', 'vdep', 'vdias', 'vtipo'].forEach(id => $(id).addEventListener('input', () => { vencVistos = PAGINA; pintarVenc(); }));
+
+const TABS = ['radar', 'revisar', 'venc', 'docs', 'crit'];
 function vista(nombre) {
   if (nombre === 'documentos') nombre = 'docs';
   if (!TABS.includes(nombre)) nombre = 'radar';
   const esRadar = ['radar', 'revisar'].includes(nombre);
-  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-crit').hidden = nombre !== 'crit';
+  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-venc').hidden = nombre !== 'venc'; $('vista-crit').hidden = nombre !== 'crit';
   $('ctlRadar').hidden = !esRadar;
   TABS.forEach(t => { const b = $('tab-' + t); b.setAttribute('aria-selected', String(t === nombre)); b.tabIndex = t === nombre ? 0 : -1; });
   if (esRadar) {
@@ -837,6 +965,7 @@ function vista(nombre) {
     modo = nombre; $('intro').textContent = MODOS[modo].intro;
     if (alertasViejas) { alertasViejas = false; cargar(); } else if (datos) { pintarKpis(); pintar(); }
   }
+  if (nombre === 'venc') cargarVenc();
   if (nombre === 'docs' && !docs) cargarDocs();
   if (nombre === 'crit') cargarCrit();
   $('tab-' + nombre).scrollIntoView({ inline: 'center', block: 'nearest' });

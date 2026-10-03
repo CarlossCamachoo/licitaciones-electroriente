@@ -132,13 +132,13 @@ def avisar_pendientes(pendientes):
 # Consulta a SECOP
 # --------------------------------------------------------------------------
 
-def _pedir_pagina(parametros, cabeceras, intentos=4):
+def _pedir_pagina(parametros, cabeceras, intentos=4, url=None):
     """Una pagina de SECOP. Reintenta ante errores del servidor o de red:
     el servicio da 503 de forma intermitente y no vale perder una consulta
     de 20 segundos por un fallo pasajero."""
     for intento in range(1, intentos + 1):
         try:
-            respuesta = requests.get(API_PROCESOS, params=parametros,
+            respuesta = requests.get(url or API_PROCESOS, params=parametros,
                                      headers=cabeceras, timeout=TIEMPO_ESPERA)
             if respuesta.status_code >= 500 or respuesta.status_code == 429:
                 respuesta.raise_for_status()

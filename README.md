@@ -53,6 +53,13 @@ Muestra las alertas con filtros, resumen y el aviso de pendientes. Solo
 escucha en tu computador (127.0.0.1). Si el puerto está ocupado, avisa y no
 arranca. Guarda el resultado 10 minutos para no saturar SECOP.
 
+**Mercado:** el panel descarga una vez al día (cerca de 20 segundos, en segundo plano) los
+contratos firmados en SECOP II que mencionan los términos de `config/filtros.yaml` y
+los guarda en `data/mercado.json`. Con eso arma la pestaña *Próximos vencimientos*
+(contratos que terminan en los próximos 6 meses y quién los tiene hoy) y la línea
+*Historial* de cada tarjeta (contratos de suministro o compraventa de esa entidad en
+los últimos 12 meses). Es una pista, no una garantía: un contrato puede prorrogarse.
+
 **Como app en el Mac:** `bash app/crear_app.sh` crea «Radar de Licitaciones»
 en `~/Applications` (con el icono de Electroriente). Al abrirla arranca el
 panel si hace falta y lo muestra en su propia ventana de Chrome. Para que

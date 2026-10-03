@@ -8,3 +8,4 @@ __pycache__/
 data/salidas/
 data/revision*.json
 docs/empresa/
+data/mercado.json

@@ -30,7 +30,7 @@ Es un radar hecho a la medida de una distribuidora de material eléctrico y auto
 - Interfaz en español colombiano.
 
 ## Capabilities and Constraints
-- Hoy: radar con puntaje y niveles de factibilidad, vistas Radar y Por revisar, filtro de puntaje, periodos de 3 a 90 días, subida de documentos de la empresa, cruce de documentos faltantes por alerta y pestaña de criterios.
+- Hoy: radar con puntaje y niveles de factibilidad, vistas Radar y Por revisar, pestaña de próximos vencimientos (contratos de suministro que terminan pronto, de los datos abiertos de contratos) e historial de la entidad en cada tarjeta (contratos parecidos de los últimos 12 meses y a quién se los dio), filtro de puntaje, periodos de 3 a 90 días, subida de documentos de la empresa, cruce de documentos faltantes por alerta y pestaña de criterios.
 - No construido: lectura de pliegos, extracción de requisitos y plazos, y lectura del contenido de los documentos subidos.
 - La fecha de cierre de ofertas («Fecha de Recepción de Respuestas») viene en cerca del 5 % de los procesos de los datos abiertos. Si trae fecha pasada, el proceso se descarta aunque siga «Abierto»; si no la trae, la tarjeta dice que el cierre no está publicado. Los códigos UNSPSC no son confiables en esos datos.
 - Pendientes bloqueantes: RUP vigente con códigos UNSPSC y validar el rango de cuantía. El mínimo de cuantía es 5 millones, decidido por el área; el resto del rango es un supuesto.
