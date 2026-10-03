@@ -17,6 +17,7 @@ import socket
 import sys
 import threading
 import time
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -58,39 +59,54 @@ def puerto_libre(puerto):
 _candado_calculo = threading.Lock()
 
 
+PERIODOS = (3, 7, 15, 30)   # dias que ofrece el panel; 60 y 90 se quitaron: casi todo lo viejo es «regimen especial» sin cierre
+PERIODO_MAX = max(PERIODOS)
+
+
+def _construir_base():
+    """Una sola consulta a SECOP de los ultimos 30 dias; de ahi salen todos los periodos mas cortos."""
+    perfil, filtros = radar.cargar_config()
+    minimo = filtros["puntaje"]["umbral_revisar"]
+    total, truncado, paginas = radar.recorrer_secop(
+        PERIODO_MAX, excluir_modalidades=filtros.get("excluir_modalidad", []))
+    resultados, por_dia = [], {}
+    for pagina in paginas:
+        for p in pagina:
+            dia = (p.get("fecha_de_publicacion_del") or "")[:10]
+            por_dia[dia] = por_dia.get(dia, 0) + 1          # para contar «procesos revisados» de cada periodo
+            r = radar.evaluar(p, perfil, filtros, minimo)
+            if r:
+                resultados.append(r)
+    # Mejor puntaje primero; a igualdad, el mas reciente.
+    resultados.sort(key=lambda r: r["fecha_publicacion"], reverse=True)
+    resultados.sort(key=lambda r: r["puntaje"], reverse=True)
+    return {"resultados": resultados, "por_dia": por_dia, "truncado": truncado,
+            "umbral": filtros["puntaje"]["umbral_alerta"],
+            "generado": time.strftime("%Y-%m-%d %H:%M"), "generado_ts": int(time.time())}
+
+
+def _recortar(base, dias):
+    """Los datos de los ultimos `dias` dias a partir de la consulta de 30."""
+    corte = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%d")
+    return {"revisados": sum(n for d, n in base["por_dia"].items() if d >= corte),
+            "truncado": base["truncado"], "umbral": base["umbral"],
+            "generado": base["generado"], "generado_ts": base["generado_ts"], "dias": dias,
+            "resultados": [r for r in base["resultados"] if r["fecha_publicacion"] >= corte]}
+
+
 def calcular(dias, forzar=False):
+    """Alertas de los ultimos `dias` dias (3, 7, 15 o 30). Todos salen de la misma consulta de 30 dias,
+    guardada 30 minutos: cambiar de periodo no vuelve a llamar a SECOP."""
+    dias = min(max(1, dias), PERIODO_MAX)
     # Un solo calculo a la vez: si dos pestanas piden lo mismo, la segunda
     # espera y encuentra el resultado en cache en vez de repetir la descarga.
     with _candado_calculo:
-        guardado = _cache.get(dias)
-        if guardado and not forzar and time.time() - guardado["t"] < VIGENCIA_CACHE:
-            return guardado["datos"]
-
-        perfil, filtros = radar.cargar_config()
-        minimo = filtros["puntaje"]["umbral_revisar"]
-        total, truncado, paginas = radar.recorrer_secop(
-            dias, excluir_modalidades=filtros.get("excluir_modalidad", []))
-        resultados, revisados = [], 0
-        for pagina in paginas:
-            revisados += len(pagina)
-            resultados.extend(r for r in (radar.evaluar(p, perfil, filtros, minimo)
-                                          for p in pagina) if r)
-        # Mejor puntaje primero; a igualdad, el mas reciente.
-        resultados.sort(key=lambda r: r["fecha_publicacion"], reverse=True)
-        resultados.sort(key=lambda r: r["puntaje"], reverse=True)
-        datos = {
-            "revisados": revisados,
-            "truncado": truncado,
-            "umbral": filtros["puntaje"]["umbral_alerta"],
-            "generado": time.strftime("%Y-%m-%d %H:%M"),
-            "generado_ts": int(time.time()),
-            "dias": dias,
-            "resultados": resultados,
-        }
-        _cache[dias] = {"t": time.time(), "datos": datos}
-        if dias == DIAS_VIGILADOS:
-            notificaciones.registrar(resultados)
-        return datos
+        guardado = _cache.get("base")
+        if not guardado or forzar or time.time() - guardado["t"] >= VIGENCIA_CACHE:
+            base = _construir_base()
+            guardado = _cache["base"] = {"t": time.time(), "datos": base}
+            notificaciones.registrar(_recortar(base, DIAS_VIGILADOS)["resultados"])
+        return _recortar(guardado["datos"], dias)
 
 
 _vigilancia = {"ultima_ts": 0, "proxima_ts": 0, "error": ""}
@@ -286,12 +302,12 @@ class Manejador(BaseHTTPRequestHandler):
         elif url.path == "/api/alertas":
             q = parse_qs(url.query)
             try:
-                dias = max(1, min(90, int(q.get("dias", ["7"])[0])))
+                dias = max(1, min(PERIODO_MAX, int(q.get("dias", ["7"])[0])))
             except ValueError:
                 return self._json(400, {"error": "dias debe ser un numero"})
             # «Actualizar» pide una consulta nueva a SECOP (forzar=1), pero no mas de una por minuto.
             forzar = q.get("forzar", ["0"])[0] == "1"
-            guardado = _cache.get(dias)
+            guardado = _cache.get("base")
             if forzar and guardado and time.time() - guardado["t"] < 60:
                 forzar = False
             try:

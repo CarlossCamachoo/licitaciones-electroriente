@@ -22,7 +22,7 @@ Dos trabajos a la vez: buscar oportunidades y enseñar el proceso mientras se us
 Es un radar hecho a la medida de una distribuidora de material eléctrico y automatización industrial que suministra y asesora, pero instala a través de aliados. Cada resultado explica por qué entró ("Coincide por"), separa lo que puede suministrar de lo que requiere unión temporal, y muestra qué documentos faltan. Un buscador genérico de SECOP no conoce esas reglas del negocio.
 
 ## Operating Context
-- Fuente de datos: datos abiertos de SECOP II (Socrata), sin llave de API. Hasta unos 220.000 procesos en 90 días; la primera consulta tarda de segundos a un par de minutos.
+- Fuente de datos: datos abiertos de SECOP II (Socrata), sin llave de API. Unos 70.000 procesos revisados en 30 días (una sola consulta; 3, 7 y 15 días salen de ella); la primera consulta tarda de segundos a un par de minutos.
 - Se filtra y puntúa en local con reglas editables en archivos de configuración (`config/filtros.yaml`, `perfil.yaml`, `criterios.yaml`, `documentos.yaml`).
 - El panel es un servidor local en Python que escucha solo en 127.0.0.1.
 - Los documentos de la empresa se suben al panel y se guardan en el computador (`docs/empresa/`, fuera de git).
@@ -30,7 +30,7 @@ Es un radar hecho a la medida de una distribuidora de material eléctrico y auto
 - Interfaz en español colombiano.
 
 ## Capabilities and Constraints
-- Hoy: consulta automática a SECOP cada 30 minutos y campana de notificaciones para alertas nuevas de Santander, radar con puntaje y niveles de factibilidad (orden por puntaje, valor o fecha), vistas Radar y Por revisar, pestaña Mercado (ganadores, entidades, regiones y productos de los contratos de suministro del último año, con valores y competencia), pestaña Oportunidades futuras (contratos de suministro que terminan pronto, de los datos abiertos de contratos) e historial de la entidad en cada tarjeta (contratos parecidos de los últimos 12 meses y a quién se los dio), periodos de 3 a 90 días, subida de documentos de la empresa (el estado de cada uno se ve solo en la pestaña Documentos; el radar ya no lo recuerda) y pestaña de criterios.
+- Hoy: consulta automática a SECOP cada 30 minutos y campana de notificaciones para alertas nuevas de Santander, radar con puntaje y niveles de factibilidad (orden por puntaje, valor o fecha), vistas Radar y Por revisar, pestaña Mercado (ganadores, entidades, regiones y productos de los contratos de suministro del último año, con valores y competencia), pestaña Oportunidades futuras (contratos de suministro que terminan pronto, de los datos abiertos de contratos) e historial de la entidad en cada tarjeta (contratos parecidos de los últimos 12 meses y a quién se los dio), periodos de 3 a 30 días, subida de documentos de la empresa (el estado de cada uno se ve solo en la pestaña Documentos; el radar ya no lo recuerda) y pestaña de criterios.
 - No construido: lectura de pliegos, extracción de requisitos y plazos, y lectura del contenido de los documentos subidos.
 - La fecha de cierre de ofertas («Fecha de Recepción de Respuestas») viene en cerca del 5 % de los procesos de los datos abiertos. Si trae fecha pasada, el proceso se descarta aunque siga «Abierto»; si no la trae, la tarjeta dice que el cierre no está publicado. Los códigos UNSPSC no son confiables en esos datos.
 - Pendientes bloqueantes: RUP vigente con códigos UNSPSC y validar el rango de cuantía. El mínimo de cuantía es 5 millones, decidido por el área; el resto del rango es un supuesto.

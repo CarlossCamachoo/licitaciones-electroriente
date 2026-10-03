@@ -108,6 +108,15 @@ excluir:
   - "aguas lluvias"
   - "enlaces de datos"
 
+# Estados del procedimiento en los que ya no se puede presentar oferta (el proceso sigue «Abierto»
+# en los datos, pero esta cancelado, en evaluacion o con proveedor ya seleccionado).
+excluir_estado:
+  - "Cancelado"
+  - "Seleccionado"
+  - "Evaluación"
+  - "Adjudicado"
+  - "Desierto"
+
 # Modalidades que no aplican o no interesan por ahora
 excluir_modalidad:
   - "Contratación directa"   # suele venir con proveedor ya definido

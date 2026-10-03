@@ -291,6 +291,10 @@ def evaluar(proceso, perfil, filtros, umbral=None):
     if apertura and apertura != "Abierto":
         return None
 
+    # Cancelado, en evaluacion o ya con proveedor seleccionado: ya no reciben ofertas.
+    if proceso.get("estado_del_procedimiento", "") in filtros.get("excluir_estado", []):
+        return None
+
     # Fecha limite para presentar oferta ("recepcion de respuestas"). SECOP la
     # trae en pocos procesos (cerca del 5 %). Si ya paso, el proceso esta
     # vencido aunque siga marcado "Abierto". Si no viene, no se descarta.

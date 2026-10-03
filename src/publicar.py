@@ -15,8 +15,9 @@ publico) ni la campana. Si hay HOJA_URL y HOJA_TOKEN, lleva (cifrada) la direcci
 compartida del equipo, para copiar ahi los «Me interesa». Las decisiones "Me interesa / Descartar" se guardan en el
 navegador de cada persona.
 
-Cada ejecucion recalcula los periodos de 3 a 30 dias. Los de 60 y 90 dias, y los
-contratos del mercado, se recalculan solo una o dos veces al dia porque tardan mas.
+Cada ejecucion recalcula los periodos de 3 a 30 dias con una sola consulta a SECOP. Los de 60 y 90 dias
+se quitaron (casi todo lo viejo es «regimen especial» sin fecha de cierre). Los contratos del
+mercado se recalculan solo una vez al dia porque tardan mas.
 """
 
 import argparse
@@ -42,9 +43,6 @@ import radar
 import servidor
 
 ITERACIONES = 600000                # debe coincidir con web/estatico/shim.js
-PERIODOS_RAPIDOS = (3, 7, 15, 30)
-PERIODOS_PESADOS = (60, 90)
-REFRESCO_PESADOS = 20 * 3600        # segundos
 ACTIVOS = ["logo.webp", "favicon-32.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"]
 
 
@@ -114,8 +112,8 @@ def escribir_usuarios(datos_dir, usuarios, clave_datos):
     ruta.write_text(json.dumps(ranuras, separators=(",", ":")), encoding="utf-8")
 
 
-def respuesta_alertas(dias, tabla_mercado):
-    datos = servidor.calcular(dias, forzar=True)
+def respuesta_alertas(dias, tabla_mercado, forzar=False):
+    datos = servidor.calcular(dias, forzar=forzar)
     return {**datos, "mercado": mercado.estado(),
             "resultados": [
                 {**r, "documentos": None,
@@ -229,14 +227,13 @@ def main():
     asegurar_mercado()
     tabla = mercado.historial()
 
-    periodos = list(PERIODOS_RAPIDOS)
-    if ahora - manifiesto.get("pesados_ts", 0) > REFRESCO_PESADOS:
-        periodos += PERIODOS_PESADOS
-        manifiesto["pesados_ts"] = ahora
-    for d in periodos:
+    # Una sola consulta a SECOP (30 dias); 3, 7 y 15 dias salen de ella sin volver a llamar.
+    for d in (30,) + tuple(p for p in servidor.PERIODOS if p != 30):
         t = time.time()
-        (datos_dir / f"alertas_{d}.enc").write_bytes(cifrar(clave, respuesta_alertas(d, tabla)))
+        (datos_dir / f"alertas_{d}.enc").write_bytes(cifrar(clave, respuesta_alertas(d, tabla, forzar=(d == 30))))
         print(f"[publicar] alertas {d} dias: {time.time() - t:.0f} s", flush=True)
+    for viejo in (60, 90):                    # periodos que ya no se ofrecen
+        (datos_dir / f"alertas_{viejo}.enc").unlink(missing_ok=True)
 
     (datos_dir / "vencimientos.enc").write_bytes(cifrar(clave, {
         "estado": mercado.estado(), "contratos": mercado.vencimientos()}))

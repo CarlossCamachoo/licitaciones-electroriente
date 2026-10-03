@@ -66,14 +66,15 @@ Actions que corre cada 30 minutos (6:00 a 20:59, hora de Colombia) en los servid
 GitHub, aunque el Mac esté apagado. Ejecuta `src/vigilante_nube.py`: busca en SECOP y, por
 cada alerta nueva de Santander, crea una *issue* en el repositorio. GitHub la envía por
 correo y la muestra en su campana. No usa contraseñas ni aplicaciones: solo el permiso que
-GitHub da a cada ejecución. Gasta unos 900 minutos al mes del cupo gratuito de 2.000. Para
-probarla a mano: pestaña *Actions* del repositorio, «Vigilante…», «Run workflow».
+GitHub da a cada ejecución. El repositorio es público, así que los minutos de Actions no tienen
+límite. Para probarla a mano: pestaña *Actions* del repositorio, «Vigilante…», «Run workflow».
 
-**Web compartida con contraseña:** `.github/workflows/publicar.yml` genera cada 2 horas (6 a. m. a 6 p. m.)
+**Web compartida con contraseña:** `.github/workflows/publicar.yml` genera cada 30 minutos (6 a. m. a 10 p. m.)
 una versión estática del panel y la publica en el repositorio público `radar-licitaciones`
 (GitHub Pages). Los datos van cifrados (AES-256, clave derivada de la contraseña): el enlace es
-público, pero sin la contraseña no se lee nada. La contraseña es el secreto `CLAVE_WEB` del
-repositorio privado (mínimo 12 caracteres; se cambia con `gh secret set CLAVE_WEB` y relanzando
+público, pero sin la contraseña no se lee nada. Cada persona entra con su usuario (ver
+`docs/HOJA_EQUIPO.md`); `CLAVE_WEB` es la clave maestra interna del
+repositorio (mínimo 12 caracteres; se cambia con `gh secret set CLAVE_WEB` y relanzando
 la tarea). No incluye los documentos de la empresa ni la campana; las decisiones «Me interesa» y
 «Descartar» quedan en el navegador de cada persona. El código está en `src/publicar.py` y
 `web/estatico/`. Si la contraseña se filtra, se cambia el secreto y el sitio se vuelve a cifrar

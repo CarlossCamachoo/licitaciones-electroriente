@@ -3,16 +3,17 @@ name: Publicar la web compartida
 # Genera la version compartida del panel (con contrasena) y la publica en el repositorio
 # publico "radar-licitaciones" (GitHub Pages). Los datos van cifrados: el sitio es publico pero
 # sin la contrasena no se puede leer nada. No incluye los documentos de la empresa.
-# Horario: cada 2 horas, de 6:00 a. m. a 6:00 p. m. hora de Colombia (UTC-5) = 11, 13, 15, 17, 19, 21 y 23 UTC.
-# (Una ejecucion normal dura ~2 min; la que rehace mercado y periodos largos, una vez al dia, ~11 min.
-# Con el vigilante nocturno el total mensual queda dentro del cupo gratuito de 2.000 minutos.)
+# Horario: cada 30 minutos, de 6:00 a. m. a 10:00 p. m. hora de Colombia (UTC-5) = 11:00 a 02:59 UTC.
+# El repositorio es publico, asi que los minutos de Actions no tienen limite. Una ejecucion normal dura ~2 min
+# (una sola consulta a SECOP de 30 dias; 3, 7 y 15 salen de ella); el mercado se rehace una vez al dia (~10 min).
+# GitHub puede retrasar las ejecuciones programadas unos minutos cuando hay mucha carga.
 # La contrasena es el secreto CLAVE_WEB (se cambia con `gh secret set CLAVE_WEB`).
 # La hoja compartida del equipo (Google Sheets) usa los secretos HOJA_URL y HOJA_TOKEN.
 # Los usuarios de la web (uno por persona) vienen del secreto USUARIOS_WEB: se gestionan con src/usuarios_web.py.
 # Tambien se publica sola al subir cambios al codigo, la configuracion o la pantalla.
 on:
   schedule:
-    - cron: "0 11,13,15,17,19,21,23 * * *"
+    - cron: "*/30 0-2,11-23 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -39,6 +40,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # Los documentos de la empresa son privados: si alguno llegara a versionarse, la publicacion se detiene.
+      - name: Verificar que no hay documentos privados en el repositorio
+        run: |
+          if git ls-files | grep -E '^docs/empresa/|^config/(hoja|usuarios)\.|\.(pdf|docx?|xlsx?)$'; then
+            echo "Hay archivos privados versionados: retirelos antes de publicar." >&2; exit 1
+          fi
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

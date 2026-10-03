@@ -353,8 +353,6 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
           <option value="7" selected>Últimos 7 días</option>
           <option value="15">Últimos 15 días</option>
           <option value="30">Últimos 30 días</option>
-          <option value="60">Últimos 60 días</option>
-          <option value="90">Últimos 90 días</option>
         </select>
       </label>
       <button class="btn" id="actualizar" type="button">
@@ -615,8 +613,8 @@ async function refrescarSilencioso() {
   } catch (_) { /* la proxima vuelta lo intenta de nuevo */ }
   finally { refrescando = false; }
 }
-// El panel local consulta SECOP cada 30 min; la web compartida se publica cada 2 horas.
-const desactualizado = () => ultimaConsulta && Date.now() / 1000 - ultimaConsulta > (document.documentElement.hasAttribute('data-estatico') ? 7500 : 1800);
+// El panel local consulta SECOP cada 30 min; la web compartida se publica cada 30 min (con algo de retraso de GitHub).
+const desactualizado = () => ultimaConsulta && Date.now() / 1000 - ultimaConsulta > (document.documentElement.hasAttribute('data-estatico') ? 2700 : 1800);
 setInterval(() => { if (!document.hidden && desactualizado()) refrescarSilencioso(); }, 120000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { cargarNotif(); if (desactualizado()) refrescarSilencioso(); } });
 
@@ -693,7 +691,7 @@ async function cargar(forzar = false, manual = false) {
   const lista = $('lista');
   lista.replaceChildren(...[1, 2, 3].map(() => el('li', 'skel')));
   const d = +$('dias').value;
-  $('cuenta').textContent = estatico ? 'Actualizando…' : d >= 60 ? 'Consultando SECOP… con 60 o 90 días puede tardar unos 2 minutos.' : d >= 30 ? 'Consultando SECOP… puede tardar un minuto.' : 'Consultando SECOP… puede tardar unos 20 segundos.';
+  $('cuenta').textContent = estatico ? 'Actualizando…' : forzar ? 'Consultando SECOP… puede tardar unos 30 segundos.' : 'Cargando…';
   $('kpis').hidden = true; $('trunc').hidden = true;
   try {
     const url = `/api/alertas?dias=${$('dias').value}` + (forzar && !estatico ? '&forzar=1' : '');
@@ -702,7 +700,7 @@ async function cargar(forzar = false, manual = false) {
     if (!r.ok) throw new Error(j.error || 'Error inesperado');
     datos = j; mostrados = PAGINA; animar = true;
     ultimaConsulta = j.generado_ts; pintarConsulta();
-    if (manual && estatico && antes === j.generado_ts) avisar(`Ya tiene lo más reciente: los datos se publican cada 2 horas (última publicación ${hace(j.generado_ts)}).`);
+    if (manual && estatico && antes === j.generado_ts) avisar(`Ya tiene lo más reciente: los datos se publican cada 30 minutos (última publicación ${hace(j.generado_ts)}).`);
     llenarDeps();
     pintarKpis();
     if (j.truncado) {
