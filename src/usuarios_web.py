@@ -7,6 +7,7 @@ equipo sabe quien marco cada licitacion sin preguntarle el nombre.
     python3 src/usuarios_web.py agregar "Ana Pérez"            # crea usuario «ana» y una contrasena
     python3 src/usuarios_web.py agregar "Ana Pérez" --usuario aperez
     python3 src/usuarios_web.py clave ana                       # contrasena nueva para ana
+    python3 src/usuarios_web.py clave ana --clave "mi frase de 12+"   # o una elegida
     python3 src/usuarios_web.py quitar ana
     python3 src/usuarios_web.py publicar                        # solo sincronizar y publicar
 
@@ -41,6 +42,15 @@ def nombre_propio(texto):
     palabras = " ".join(texto.split()).lower().split(" ")
     return " ".join(p if (i and p in particulas) else re.sub(r"(^|[-'])(\w)", lambda m: m.group(1) + m.group(2).upper(), p)
                     for i, p in enumerate(palabras))
+
+
+def elegida(clave):
+    """Valida una contrasena elegida por la persona (None si no se pidio ninguna)."""
+    if clave is None:
+        return None
+    if len(clave) < 12 or "|" in clave or "\n" in clave:
+        sys.exit("La contrasena debe tener 12 o mas caracteres y no puede llevar «|».")
+    return clave
 
 
 def contrasena_nueva():
@@ -91,8 +101,8 @@ def main():
     ap = argparse.ArgumentParser(description="Usuarios de la web compartida")
     sub = ap.add_subparsers(dest="orden", required=True)
     sub.add_parser("listar")
-    p = sub.add_parser("agregar"); p.add_argument("nombre"); p.add_argument("--usuario")
-    p = sub.add_parser("clave"); p.add_argument("usuario")
+    p = sub.add_parser("agregar"); p.add_argument("nombre"); p.add_argument("--usuario"); p.add_argument("--clave", help="contrasena elegida (12 o mas caracteres); si no, se genera una")
+    p = sub.add_parser("clave"); p.add_argument("usuario"); p.add_argument("--clave", help="contrasena elegida (12 o mas caracteres); si no, se genera una")
     p = sub.add_parser("quitar"); p.add_argument("usuario")
     sub.add_parser("publicar")
     ap.add_argument("--sin-publicar", action="store_true", help="solo cambiar el archivo local")
@@ -114,12 +124,12 @@ def main():
             sys.exit("El usuario solo puede tener letras sin tilde, numeros, punto, guion y guion bajo (2 a 30).")
         if any(f[0] == usuario for f in usuarios):
             sys.exit(f"Ya existe el usuario «{usuario}». Use --usuario para elegir otro.")
-        clave = contrasena_nueva()
+        clave = elegida(args.clave) or contrasena_nueva()
         usuarios.append([usuario, nombre, clave])
         print(f"Usuario: {usuario}\nNombre:  {nombre}\nContraseña: {clave}")
     elif args.orden == "clave":
         fila = buscar(usuarios, args.usuario)
-        fila[2] = contrasena_nueva()
+        fila[2] = elegida(args.clave) or contrasena_nueva()
         print(f"Usuario: {fila[0]}\nContraseña nueva: {fila[2]}")
     elif args.orden == "quitar":
         fila = buscar(usuarios, args.usuario)

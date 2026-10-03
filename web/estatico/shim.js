@@ -58,6 +58,9 @@
     if (!buf) throw new Error('sin datos');
     return (await descifrar(k, buf)).ok === true;
   }
+  // Cerrar sesion: olvida la clave y el nombre de este navegador y vuelve a la pantalla de acceso.
+  window.radarSalir = () => { olvidarClave(); location.reload(); };
+
   // Ultima vez que alguien uso la pagina (se comparte entre pestañas del mismo navegador).
   function ultimaActividad() {
     try { return Number(localStorage.getItem(CLAVE_ACTIVIDAD)) || 0; } catch (_) { return 0; }
