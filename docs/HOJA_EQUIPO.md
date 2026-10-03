@@ -89,5 +89,10 @@ El mismo script de la hoja hace de intermediario para pedir a GitHub que publiqu
 Necesita un token de GitHub que solo pueda lanzar tareas de este repositorio (fine-grained, permiso
 *Actions: Read and write*, nada más). Se guarda **solo** en las propiedades del script de Google
 (Configuración del proyecto → Propiedades de la secuencia de comandos → `GH_TOKEN`), nunca en la web ni en el repositorio.
+El disparador se crea en el editor del script, página **Activadores → Agregar activador**: función
+`publicarProgramado`, implementación «Encabezado», fuente «Basado en el tiempo», «Cronómetro por minuto»,
+«Cada 30 minutos». (La función `instalarDisparador` hace lo mismo por código, pero el selector de funciones
+del editor a veces ejecuta otra función sin avisar; en la página Ejecuciones se ve cuál corrió.)
+
 El token vence (máximo un año): al vencer, el botón sigue funcionando leyendo lo ya publicado; se renueva
 creando otro y cambiando la propiedad.
