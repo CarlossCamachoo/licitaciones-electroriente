@@ -12,6 +12,7 @@ Antes de arrancar comprueba que el puerto este libre.
 import argparse
 import json
 import os
+import re
 import socket
 import sys
 import threading
@@ -133,6 +134,14 @@ def hoja_equipo():
     return {"url": url, "token": token} if url.startswith(("https://", "http://127.0.0.1")) and token else {}
 
 
+def nombre_propio(texto):
+    """Mayuscula inicial en cada palabra, salvo particulas («de», «del», «la», «y»...)."""
+    particulas = {"de", "del", "la", "las", "los", "y", "e", "van", "von"}
+    palabras = " ".join(str(texto or "").split()).lower().split(" ")
+    return " ".join(p if (i and p in particulas) else re.sub(r"(^|[-'])(\w)", lambda m: m.group(1) + m.group(2).upper(), p)
+                    for i, p in enumerate(palabras)).strip()
+
+
 def persona_local():
     """Nombre de quien usa este panel (config/hoja.yaml, clave `persona`), para no preguntarlo."""
     nombre = os.environ.get("HOJA_PERSONA", "")
@@ -142,7 +151,7 @@ def persona_local():
             nombre = str((yaml.safe_load(ruta.read_text(encoding="utf-8")) or {}).get("persona", "") or "")
         except (OSError, yaml.YAMLError):
             nombre = ""
-    return nombre.strip()[:60]
+    return nombre_propio(nombre)[:60]
 
 
 CAMPOS_HOJA = ("id", "estado", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",

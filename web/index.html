@@ -733,8 +733,12 @@ try { colaHoja = JSON.parse(localStorage.getItem('radar-hoja-cola') || '{}'); } 
 const guardarCola = () => { try { localStorage.setItem('radar-hoja-cola', JSON.stringify(colaHoja)); } catch (_) {} };
 // Nombre de quien marca: el de su usuario (web compartida) o el configurado en el panel local; solo si no hay
 // ninguno de los dos se le pregunta y se recuerda en este navegador.
-const personaFija = () => window.RADAR_USUARIO || (hojaCfg && hojaCfg.persona) || '';
-const personaGuardada = () => { try { return personaFija() || localStorage.getItem('radar-persona') || ''; } catch (_) { return personaFija(); } };
+// Siempre con mayuscula inicial en cada palabra («ana pérez» -> «Ana Pérez»), salvo «de», «del», «la», «y»...
+const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'van', 'von']);
+const nombrePropio = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().split(' ')
+  .map((p, i) => (i && PARTICULAS.has(p)) ? p : p.replace(/(^|[-'])(\p{L})/gu, (_, a, l) => a + l.toUpperCase())).join(' ');
+const personaFija = () => nombrePropio(window.RADAR_USUARIO || (hojaCfg && hojaCfg.persona) || '');
+const personaGuardada = () => { try { return personaFija() || nombrePropio(localStorage.getItem('radar-persona')); } catch (_) { return personaFija(); } };
 async function cargarHoja() {
   if (hojaCfg) return hojaCfg;
   try { const r = await fetch('/api/hoja'); const j = r.ok ? await r.json() : {}; hojaCfg = j && (j.servidor || j.url) ? j : { url: '' }; }
@@ -752,7 +756,7 @@ function pedirPersona() {
     const cerrar = (valor) => { if (listo) return; listo = true; d.close(); resolver(valor); };
     $('persona-form').onsubmit = (e) => {
       e.preventDefault();
-      const n = campo.value.trim().replace(/\s+/g, ' ');
+      const n = nombrePropio(campo.value);
       if (!n) { campo.focus(); return; }
       try { localStorage.setItem('radar-persona', n); } catch (_) {}
       pintarPersona(); cerrar(n);

@@ -35,6 +35,14 @@ def normalizar(texto):
     return "".join(c for c in t if unicodedata.category(c) != "Mn")
 
 
+def nombre_propio(texto):
+    """Mayuscula inicial en cada palabra, salvo particulas («de», «del», «la», «y»...)."""
+    particulas = {"de", "del", "la", "las", "los", "y", "e", "van", "von"}
+    palabras = " ".join(texto.split()).lower().split(" ")
+    return " ".join(p if (i and p in particulas) else re.sub(r"(^|[-'])(\w)", lambda m: m.group(1) + m.group(2).upper(), p)
+                    for i, p in enumerate(palabras))
+
+
 def contrasena_nueva():
     """Cuatro «palabras» pronunciables y dos digitos: facil de dictar, imposible de adivinar."""
     palabra = lambda: "".join(secrets.choice(CONSONANTES) + secrets.choice(VOCALES) for _ in range(3))
@@ -100,7 +108,7 @@ def main():
         return publicar()
 
     if args.orden == "agregar":
-        nombre = " ".join(args.nombre.split())
+        nombre = nombre_propio(args.nombre)
         usuario = normalizar(args.usuario or nombre.split()[0])
         if not re.fullmatch(r"[a-z0-9._-]{2,30}", usuario):
             sys.exit("El usuario solo puede tener letras sin tilde, numeros, punto, guion y guion bajo (2 a 30).")
