@@ -230,6 +230,29 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 .ayuda p { margin: 0; font-size: .875rem; line-height: 1.5; }
 .ayuda p + p { margin-top: 6px; color: var(--text-2); }
 @media (prefers-reduced-motion: reduce) { .ayuda { transition: none; transform: none; } }
+
+.barra-der { display: flex; align-items: flex-end; gap: 14px; margin-left: auto; }
+.campana-wrap { position: relative; }
+.campana { position: relative; width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--t); }
+.campana svg { width: 20px; height: 20px; }
+.campana[aria-expanded=true] { background: rgba(255,255,255,.24); }
+.aviso-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #fff; color: var(--danger); font: 700 .75rem/20px var(--sans); text-align: center; box-shadow: 0 0 0 2px var(--barra); font-variant-numeric: tabular-nums; }
+.notif { position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; width: min(440px, calc(100vw - 32px)); max-height: min(560px, 75vh); display: flex; flex-direction: column; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 14px 34px rgba(1, 30, 145, .18), 0 2px 8px rgba(33, 37, 41, .1); overflow: hidden; }
+.notif[hidden] { display: none; }
+.notif header { padding: 14px 16px 10px; border-bottom: 1px solid var(--hair); }
+.notif h2 { margin: 0; font: 600 1rem/1.3 var(--sans); color: var(--primary); }
+.notif header p { margin: 2px 0 0; font-size: .8125rem; color: var(--text-2); }
+.notif ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+.notif li { padding: 12px 16px; border-bottom: 1px solid var(--hair); }
+.notif li.nuevo { background: var(--primary-soft); }
+.notif li h3 { margin: 0; font: 600 .9375rem/1.3 var(--sans); color: var(--primary); overflow-wrap: anywhere; }
+.notif li .dato { margin: 2px 0 4px; font-size: .8125rem; color: var(--text-2); }
+.notif li p { margin: 0 0 6px; font-size: .875rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.notif li .acc { display: flex; gap: 14px; align-items: center; }
+.notif li .acc button.link, .notif li .acc a.go { min-height: 32px; padding: 0; font-size: .875rem; }
+.notif .vacio { padding: 28px 20px; text-align: center; color: var(--text-2); font-size: .875rem; }
+.notif footer { margin: 0; max-width: none; border-top: 1px solid var(--hair); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .75rem; color: var(--text-2); }
+.notif footer button.link { min-height: 32px; padding: 0; font-size: .8125rem; }
 </style>
 </head>
 <body>
@@ -242,6 +265,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
       <p class="sub">SECOP II · <span id="generado" title="Momento en que se consultó SECOP II por última vez">sin consultar</span></p>
       </div>
     </div>
+    <div class="barra-der">
     <div class="controls" id="ctlRadar" role="group" aria-label="Consulta">
       <label class="f">Periodo
         <select id="dias">
@@ -257,6 +281,14 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
         Actualizar
       </button>
+    </div>
+    <div class="campana-wrap">
+      <button class="campana" id="campana" type="button" aria-expanded="false" aria-controls="notif-panel" aria-label="Notificaciones">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+        <span class="aviso-n" id="campana-n" hidden></span>
+      </button>
+      <section class="notif" id="notif-panel" aria-label="Licitaciones nuevas de Santander" hidden></section>
+    </div>
     </div>
   </div></header>
 <div class="wrap">
@@ -471,6 +503,89 @@ function pintarConsulta() {
   $('generado').textContent = `última consulta a SECOP: ${fecha} (${hace(ultimaConsulta)})`;
 }
 setInterval(pintarConsulta, 30000);
+
+// ---- Actualizacion automatica: el servidor consulta SECOP cada 30 minutos y la pantalla
+// recoge el resultado nuevo sin parpadeo ni que nadie pulse Actualizar.
+let refrescando = false;
+async function refrescarSilencioso() {
+  if (refrescando || !datos) return;
+  refrescando = true;
+  try {
+    const r = await fetch(`/api/alertas?dias=${$('dias').value}`);
+    const j = await r.json();
+    if (!r.ok || j.generado_ts === ultimaConsulta) return;
+    datos = j; ultimaConsulta = j.generado_ts; animar = false;
+    pintarConsulta(); llenarDeps(); pintarKpis(); pintar();
+  } catch (_) { /* la proxima vuelta lo intenta de nuevo */ }
+  finally { refrescando = false; }
+}
+const desactualizado = () => ultimaConsulta && Date.now() / 1000 - ultimaConsulta > 1800;
+setInterval(() => { if (!document.hidden && desactualizado()) refrescarSilencioso(); }, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { cargarNotif(); if (desactualizado()) refrescarSilencioso(); } });
+
+// ---- Campana: licitaciones nuevas de Santander
+let notif = { items: [], sin_leer: 0 };
+async function cargarNotif() {
+  try {
+    const r = await fetch('/api/notificaciones'); if (!r.ok) return;
+    notif = await r.json(); pintarCampana();
+  } catch (_) { /* sin aviso: el panel funciona igual */ }
+}
+function pintarCampana() {
+  const n = notif.sin_leer, b = $('campana-n');
+  b.hidden = !n; b.textContent = n > 99 ? '99+' : String(n);
+  $('campana').setAttribute('aria-label', n ? `Notificaciones: ${plural(n, 'licitación nueva de Santander', 'licitaciones nuevas de Santander')}` : 'Notificaciones, ninguna nueva');
+  document.title = (n ? `(${n}) ` : '') + 'Radar de Licitaciones';
+  if (!$('notif-panel').hidden) pintarPanelNotif();
+}
+function verEnRadar(it) {
+  cerrarNotif(false);
+  vista('radar');
+  $('dep').value = ''; $('q').value = it.entidad; $('aliado').value = ''; $('renov').value = '';
+  ver = 'todas'; mostrados = PAGINA; animar = true; pintar();
+  window.scrollTo({ top: 0 });
+}
+function pintarPanelNotif() {
+  const box = $('notif-panel');
+  const head = el('header'); head.append(el('h2', '', 'Licitaciones nuevas de Santander'),
+    el('p', '', 'Alertas de entidades de Santander que aparecieron desde la última vez.'));
+  const lista = el('ul');
+  if (!notif.items.length) lista.append(el('li', 'vacio', 'Todavía no hay licitaciones nuevas de Santander. Cuando aparezca una, la verá aquí.'));
+  notif.items.forEach(it => {
+    const li = el('li', it.leida ? '' : 'nuevo');
+    li.append(el('h3', '', it.entidad));
+    li.append(el('div', 'dato', `Puntaje ${it.puntaje} · ${pesos(it.valor)} · detectada ${hace(it.detectado_ts)}`));
+    li.append(el('p', '', it.descripcion));
+    const acc = el('div', 'acc');
+    const ir = el('button', 'link', 'Ver en el Radar'); ir.type = 'button'; ir.onclick = () => verEnRadar(it);
+    acc.append(ir);
+    if (it.url) { const a = el('a', 'go'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.append(document.createTextNode('Abrir en SECOP'), svg('ext')); acc.append(a); }
+    li.append(acc); lista.append(li);
+  });
+  const pie = el('footer');
+  const prox = notif.proxima_ts ? Math.max(1, Math.round((notif.proxima_ts - Date.now() / 1000) / 60)) : null;
+  pie.append(el('span', '', notif.error ? notif.error : `Busca en SECOP cada ${notif.intervalo_min || 30} min${notif.ultima_ts ? ` · última ${hace(notif.ultima_ts)}` : ''}${prox ? ` · próxima en ${prox} min` : ''}`));
+  if (notif.sin_leer) { const m = el('button', 'link', 'Marcar todas como leídas'); m.type = 'button'; m.onclick = marcarLeidas; pie.append(m); }
+  box.replaceChildren(head, lista, pie);
+}
+async function marcarLeidas() {
+  try { await fetch('/api/notificaciones/leer', { method: 'POST', headers: API_POST }); } catch (_) {}
+  await cargarNotif();
+}
+function abrirNotif() {
+  const caja = $('notif-panel'); pintarPanelNotif(); caja.style.right = '0'; caja.hidden = false;
+  const izq = caja.getBoundingClientRect().left;       // si se sale por la izquierda, se corre hacia adentro
+  if (izq < 12) caja.style.right = (izq - 12) + 'px';
+ $('campana').setAttribute('aria-expanded', 'true'); cargarNotif(); }
+function cerrarNotif(devolverFoco = true) {
+  $('notif-panel').hidden = true; $('campana').setAttribute('aria-expanded', 'false');
+  if (devolverFoco) $('campana').focus();
+}
+$('campana').onclick = () => ($('notif-panel').hidden ? abrirNotif() : cerrarNotif());
+document.addEventListener('click', e => { if (!$('notif-panel').hidden && !e.target.closest('.campana-wrap')) cerrarNotif(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('notif-panel').hidden) cerrarNotif(); });
+setInterval(cargarNotif, 60000);
+cargarNotif();
 
 async function cargar() {
   const btn = $('actualizar');

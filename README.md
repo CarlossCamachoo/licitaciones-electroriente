@@ -53,6 +53,14 @@ Muestra las alertas con filtros y resumen. Solo
 escucha en tu computador (127.0.0.1). Si el puerto está ocupado, avisa y no
 arranca. Guarda el resultado 10 minutos para no saturar SECOP.
 
+**Consulta automática y campana:** mientras el panel esté encendido, el servidor consulta SECOP
+solo cada 30 minutos (últimos 7 días) y la pantalla recoge el resultado sin pulsar Actualizar.
+La campana de la barra avisa cuando aparece una alerta nueva (factibilidad alta o media) de una
+entidad del departamento de Santander (no incluye Norte de Santander). Las notificaciones se
+guardan en `data/notificaciones.json` hasta marcarlas como leídas. La primera vez no avisa de
+lo que ya existe, solo de lo que aparezca después. Si el computador está apagado o dormido, o el
+servidor cerrado, no consulta: al volver a encenderlo busca lo más reciente.
+
 **Mercado:** el panel descarga una vez al día (cerca de 20 segundos, en segundo plano) los
 contratos firmados en SECOP II que mencionan los términos de `config/filtros.yaml` y
 los guarda en `data/mercado.json`. Con eso arma la pestaña *Oportunidades futuras*

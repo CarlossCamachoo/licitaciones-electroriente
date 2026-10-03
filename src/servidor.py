@@ -25,12 +25,15 @@ import yaml
 import competencia
 import documentos as docs
 import mercado
+import notificaciones
 import radar
 
 WEB = radar.RAIZ / "web"
 HOST = "127.0.0.1"
 PUERTO_POR_DEFECTO = 8765
-VIGENCIA_CACHE = 600  # segundos: SECOP es lento, no se consulta en cada clic
+VIGENCIA_CACHE = 1800  # segundos: SECOP es lento; se consulta cada 30 minutos, no en cada clic
+INTERVALO_VIGILANCIA = 1800
+DIAS_VIGILADOS = 7      # periodo que se consulta solo y alimenta la campana
 
 # Archivos fijos de web/ que se sirven tal cual (logo, iconos, manifiesto).
 ESTATICOS = {
@@ -53,12 +56,12 @@ def puerto_libre(puerto):
 _candado_calculo = threading.Lock()
 
 
-def calcular(dias):
+def calcular(dias, forzar=False):
     # Un solo calculo a la vez: si dos pestanas piden lo mismo, la segunda
     # espera y encuentra el resultado en cache en vez de repetir la descarga.
     with _candado_calculo:
         guardado = _cache.get(dias)
-        if guardado and time.time() - guardado["t"] < VIGENCIA_CACHE:
+        if guardado and not forzar and time.time() - guardado["t"] < VIGENCIA_CACHE:
             return guardado["datos"]
 
         perfil, filtros = radar.cargar_config()
@@ -83,7 +86,25 @@ def calcular(dias):
             "resultados": resultados,
         }
         _cache[dias] = {"t": time.time(), "datos": datos}
+        if dias == DIAS_VIGILADOS:
+            notificaciones.registrar(resultados)
         return datos
+
+
+_vigilancia = {"ultima_ts": 0, "proxima_ts": 0, "error": ""}
+
+
+def vigilar():
+    """Consulta SECOP cada 30 minutos sin que nadie pulse Actualizar."""
+    while True:
+        try:
+            calcular(DIAS_VIGILADOS, forzar=True)
+            _vigilancia.update(ultima_ts=int(time.time()), error="")
+        except Exception as e:   # un fallo de red no debe matar la vigilancia
+            _vigilancia["error"] = "No se pudo consultar SECOP." if isinstance(e, requests.RequestException) else "Error inesperado."
+            sys.stderr.write(f"[vigilancia] {e!r}\n")
+        _vigilancia["proxima_ts"] = int(time.time()) + INTERVALO_VIGILANCIA
+        time.sleep(INTERVALO_VIGILANCIA)
 
 
 def pendientes():
@@ -172,6 +193,9 @@ class Manejador(BaseHTTPRequestHandler):
                 entrada = docs.guardar(q.get("doc", [""])[0], nombre,
                                        self.headers.get("X-Vence", ""), cuerpo)
                 self._json(201, entrada)
+            elif url.path == "/api/notificaciones/leer":
+                notificaciones.marcar_leidas()
+                self._json(200, {"ok": True})
             elif url.path == "/api/eliminar":
                 docs.eliminar(q.get("id", [""])[0])
                 self._json(200, {"ok": True})
@@ -221,6 +245,9 @@ class Manejador(BaseHTTPRequestHandler):
             self._json(200, {"estado": mercado.estado(),
                              "contratos": mercado.contratos_del_ano(),
                              "competencia": competencia.para_mercado()})
+        elif url.path == "/api/notificaciones":
+            self._json(200, {**notificaciones.listar(), **_vigilancia,
+                             "intervalo_min": INTERVALO_VIGILANCIA // 60})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
         elif url.path == "/api/documentos":
@@ -254,6 +281,7 @@ def main():
     servidor = ThreadingHTTPServer((HOST, args.puerto), Manejador)
     mercado.refrescar_en_segundo_plano()
     competencia.refrescar_en_segundo_plano()
+    threading.Thread(target=vigilar, daemon=True).start()
     print(f"Panel en http://{HOST}:{args.puerto}  (Ctrl+C para cerrar)")
     try:
         servidor.serve_forever()
