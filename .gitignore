@@ -11,3 +11,5 @@ docs/empresa/
 data/mercado.json
 data/competencia.json
 data/notificaciones.json
+data/ntfy_topic.txt
+data/vistos_nube.json
