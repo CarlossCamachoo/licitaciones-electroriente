@@ -11,7 +11,7 @@ cambia su *Estado*. Las columnas *Seguimiento* y *Comentarios* son del equipo y 
   `config/hoja.yaml`, que está fuera de git.
 - Cada persona escribe su nombre la primera vez que marca algo. Se guarda en su navegador.
 - Si no hay conexión, el aviso espera en una cola y se reintenta cada minuto.
-- La web compartida (con contraseña) **todavía no** escribe en la hoja: ver «Pendiente».
+- La web compartida (con contraseña) también escribe en la hoja: ver «Web compartida».
 
 ## Instalación (una sola vez)
 
@@ -33,8 +33,17 @@ Abrir la dirección `/exec` en el navegador debe mostrar «La hoja del radar est
 Hay que crear una **nueva versión** en *Implementar → Administrar implementaciones → Editar → Nueva versión*.
 La dirección no cambia.
 
-## Pendiente
+## Web compartida
 
-Que la web compartida también escriba en la hoja exige poner la dirección y la clave de la hoja dentro
-de la web pública (cifradas con la contraseña del equipo). Está sin hacer a propósito: es una decisión
-de seguridad que debe tomar el dueño del proyecto.
+La web compartida escribe en la misma hoja. Para eso su dirección y clave viajan **cifradas con la
+contraseña de la web** (archivo `data/hoja.enc`, que sale de los secretos de GitHub `HOJA_URL` y
+`HOJA_TOKEN`). Autorizado por el dueño del proyecto.
+
+El riesgo es que quien tenga la contraseña de la web puede sacar esa clave y escribir en la hoja. Está
+acotado así: el script solo acepta ids de proceso reales de SECOP (`CO1.XXX.123456`), enlaces de
+`community.secop.gov.co`, estados válidos, y no más de 120 escrituras por hora; la clave no da lectura
+de la hoja ni acceso a la cuenta de Google; y la hoja guarda historial de versiones.
+
+Si cambia la contraseña de la web, cambia el cifrado y quien ya no deba tener acceso lo pierde. Si
+sospecha de un uso indebido, cambie la clave: genere una nueva, edite `TOKEN` en el script de Google,
+publique una versión nueva y actualice los secretos (`gh secret set HOJA_TOKEN`) y `config/hoja.yaml`.

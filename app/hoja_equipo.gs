@@ -16,6 +16,14 @@ const N_RADAR = 14;   // las primeras 14 columnas las escribe el radar
 const COL = (nombre) => COLUMNAS.indexOf(nombre) + 1;
 const SEGUIMIENTO = ['Por estudiar', 'Preparando oferta', 'Presentada', 'Ganada', 'Perdida', 'Descartada'];
 
+// Validaciones: la clave puede estar en manos de todo el equipo, asi que el script solo acepta lo que
+// parece una licitacion real de SECOP y limita cuantas filas se pueden escribir por hora.
+const ID_VALIDO = /^CO1\.[A-Z0-9]+\.\d{3,12}$/;
+const ENLACE_VALIDO = /^https:\/\/community\.secop\.gov\.co\//;
+const ESTADOS = ['interesa', 'descarta', ''];
+const FACTIBILIDAD = ['Alta', 'Media', 'Por revisar'];
+const MAX_POR_HORA = 120;
+
 function hoja_() {
   const libro = ID_LIBRO ? SpreadsheetApp.openById(ID_LIBRO) : SpreadsheetApp.getActiveSpreadsheet();
   let h = libro.getSheetByName(NOMBRE_HOJA);
@@ -45,6 +53,14 @@ function texto_(valor, largo) {
   return /^[=+\-@]/.test(t) ? ' ' + t : t;
 }
 
+function dentroDelLimite_() {
+  const cache = CacheService.getScriptCache();
+  const clave = 'n_' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHH');
+  const n = Number(cache.get(clave) || 0) + 1;
+  cache.put(clave, String(n), 3700);
+  return n <= MAX_POR_HORA;
+}
+
 // Abrir la direccion publicada en el navegador comprueba que la hoja esta activa.
 function doGet() {
   hoja_();
@@ -57,7 +73,10 @@ function doPost(e) {
     cerrojo.waitLock(20000);
     const d = JSON.parse(e.postData.contents);
     if (d.token !== TOKEN) return salida_({ ok: false, error: 'clave' });
-    if (!d.id) return salida_({ ok: false, error: 'sin id' });
+    if (!ID_VALIDO.test(String(d.id || ''))) return salida_({ ok: false, error: 'id no valido' });
+    const estado = d.estado == null ? '' : String(d.estado);
+    if (ESTADOS.indexOf(estado) < 0) return salida_({ ok: false, error: 'estado no valido' });
+    if (!dentroDelLimite_()) return salida_({ ok: false, error: 'demasiadas solicitudes' });
     const h = hoja_();
     const id = texto_(d.id, 120);
     const filas = Math.max(h.getLastRow() - 1, 0);
@@ -66,10 +85,13 @@ function doPost(e) {
     const ahora = Utilities.formatDate(new Date(), 'America/Bogota', 'yyyy-MM-dd HH:mm');
     const persona = texto_(d.persona, 60);
 
-    if (d.estado === 'interesa') {
+    if (estado === 'interesa') {
       const url = String(d.url || '');
+      const valor = Number(d.valor);
+      const puntaje = Math.min(100, Math.max(0, Number(d.puntaje) || 0));
+      const factibilidad = FACTIBILIDAD.indexOf(String(d.factibilidad)) >= 0 ? String(d.factibilidad) : '';
       const fila = [ahora, persona, 'Me interesa', texto_(d.entidad, 200), texto_(d.objeto, 600),
-        Number(d.valor) || '', texto_(d.cierre, 20), Number(d.puntaje) || 0, texto_(d.factibilidad, 20),
+        valor > 0 && valor < 1e13 ? valor : '', texto_(d.cierre, 20), puntaje, factibilidad,
         texto_(d.departamento, 60), texto_(d.modalidad, 80), texto_(d.tipo, 60), '', id];
       let n;
       if (i >= 0) {
@@ -81,13 +103,13 @@ function doPost(e) {
         h.getRange(n, COL('Seguimiento')).setValue('Por estudiar');
       }
       // Enlace como texto enriquecido (no como formula): funciona igual en cualquier idioma de la hoja.
-      if (/^https:\/\//.test(url)) {
+      if (ENLACE_VALIDO.test(url)) {
         h.getRange(n, COL('Enlace')).setRichTextValue(
           SpreadsheetApp.newRichTextValue().setText('Abrir en SECOP').setLinkUrl(url).build());
       }
     } else if (i >= 0) {
       // La quitaron o la descartaron: la fila se conserva y cambia su estado.
-      const que = d.estado === 'descarta' ? 'Descartada' : 'Quitada';
+      const que = estado === 'descarta' ? 'Descartada' : 'Quitada';
       h.getRange(i + 2, COL('Fecha'), 1, 1).setValue(ahora);
       h.getRange(i + 2, COL('Estado'), 1, 1).setValue(que + (persona ? ' por ' + persona : ''));
     }

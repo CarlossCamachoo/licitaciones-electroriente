@@ -7,6 +7,7 @@ name: Publicar la web compartida
 # (Una ejecucion normal dura ~2 min; la que rehace mercado y periodos largos, una vez al dia, ~11 min.
 # Con el vigilante nocturno el total mensual queda dentro del cupo gratuito de 2.000 minutos.)
 # La contrasena es el secreto CLAVE_WEB (se cambia con `gh secret set CLAVE_WEB`).
+# La hoja compartida del equipo (Google Sheets) usa los secretos HOJA_URL y HOJA_TOKEN.
 # Tambien se publica sola al subir cambios al codigo, la configuracion o la pantalla.
 on:
   schedule:
@@ -65,6 +66,8 @@ jobs:
       - name: Generar la web cifrada
         env:
           CLAVE_WEB: ${{ secrets.CLAVE_WEB }}
+          HOJA_URL: ${{ secrets.HOJA_URL }}
+          HOJA_TOKEN: ${{ secrets.HOJA_TOKEN }}
         run: python src/publicar.py --destino sitio
       - name: Publicar
         run: |

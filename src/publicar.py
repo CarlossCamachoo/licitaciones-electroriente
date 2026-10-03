@@ -11,7 +11,8 @@ La contrasena nunca se guarda: llega por la variable de entorno CLAVE_WEB.
 
 Que incluye: Radar, Por revisar, Oportunidades futuras, Mercado y Criterios.
 Que NO incluye, a proposito: los documentos de la empresa (no deben quedar en un sitio
-publico) ni la campana. Las decisiones "Me interesa / Descartar" se guardan en el
+publico) ni la campana. Si hay HOJA_URL y HOJA_TOKEN, lleva (cifrada) la direccion de la hoja
+compartida del equipo, para copiar ahi los «Me interesa». Las decisiones "Me interesa / Descartar" se guardan en el
 navegador de cada persona.
 
 Cada ejecucion recalcula los periodos de 3 a 30 dias. Los de 60 y 90 dias, y los
@@ -96,7 +97,7 @@ def armar_pagina(destino):
          '<meta name="theme-color" content="#000775">\n<meta name="robots" content="noindex, nofollow">\n'
          '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; '
          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; "
-         "script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; "
+         "script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; "
          "base-uri 'none'; form-action 'none'\">"),
         # La pestaña de documentos no existe en la web compartida.
         ('id="tab-docs" aria-selected="false" tabindex="-1" type="button"',
@@ -148,6 +149,14 @@ def main():
     armar_pagina(destino)
     # check.enc deja comprobar la contrasena sin descargar nada pesado.
     (datos_dir / "check.enc").write_bytes(cifrar(clave, {"ok": True}))
+    # Hoja compartida del equipo (autorizado por el dueño del proyecto): su direccion y clave viajan
+    # cifradas con la contrasena, como todo lo demas. El script de la hoja solo acepta ids y enlaces
+    # reales de SECOP y limita las filas por hora (app/hoja_equipo.gs).
+    hoja_url, hoja_token = os.environ.get("HOJA_URL", ""), os.environ.get("HOJA_TOKEN", "")
+    if hoja_url.startswith("https://script.google.com/") and hoja_token:
+        (datos_dir / "hoja.enc").write_bytes(cifrar(clave, {"url": hoja_url, "token": hoja_token}))
+    else:
+        (datos_dir / "hoja.enc").unlink(missing_ok=True)
     if args.solo_pagina:
         return
 
