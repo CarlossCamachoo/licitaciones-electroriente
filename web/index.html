@@ -473,6 +473,7 @@ function filtrar(conDecision = true) {
 
 function tarjeta(r) {
   const li = el('li', 'card' + (estadoDe(r) === 'descarta' ? ' descartada' : ''));
+  li.dataset.id = idDe(r);
   const sc = el('div', 'score');
   sc.append(el('b', '', String(r.puntaje)), el('small', '', 'de 100'));
   const bar = el('div', 'bar'); const i = el('i'); i.style.width = r.puntaje + '%'; bar.append(i); sc.append(bar);
@@ -542,7 +543,12 @@ function filaHecha(r, nuevo, antes) {
   li.append(el('span', '', nuevo === 'interesa' ? 'Guardada en Me interesan:' : nuevo === 'descarta' ? 'Descartada:' : 'Vuelve a Sin decidir:'),
             el('strong', '', r.entidad || 'Entidad sin nombre'));
   const u = el('button', 'link', 'Deshacer'); u.type = 'button';
-  u.onclick = () => { decidir(r, antes); pintar(); };
+  u.onclick = () => {
+    decidir(r, antes); pintar();
+    // La lista se redibuja: el foco vuelve a la tarjeta restaurada (o, si no esta a la vista, al selector).
+    const tarjeta = [...$('lista').querySelectorAll('.card')].find(c => c.dataset.id === idDe(r));
+    (tarjeta ? tarjeta.querySelector('.dec') : $('seg').querySelector('[aria-pressed=true]')).focus();
+  };
   li.append(u);
   return li;
 }
