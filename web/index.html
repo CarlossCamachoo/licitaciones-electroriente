@@ -71,7 +71,24 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .banner li + li { margin-top: 4px; }
 .banner[hidden] { display: none; }
 
-.count { color: var(--text-2); font-size: .8125rem; letter-spacing: .02em; margin: 20px 0 4px; }
+.count { color: var(--text-2); font-size: .8125rem; letter-spacing: .02em; margin: 0; }
+.decide-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; margin: 20px 0 4px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 3px; gap: 2px; }
+.seg button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 14px; border: 0; border-radius: 7px; background: none; color: var(--text-2); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: background var(--t), color var(--t); }
+.seg button b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed=true] { background: var(--primary-soft); color: var(--primary); }
+.top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 14px 0 4px; }
+.acciones .sp { flex: 1; }
+button.dec { font: 600 .875rem var(--sans); min-height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: transform 120ms var(--ease-out), border-color var(--t), background var(--t); }
+button.dec:active { transform: scale(0.97); }
+button.dec.si[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+button.dec.no[aria-pressed=true] { background: var(--muted); }
+.card.descartada { opacity: .55; }
+.hecho { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 12px 0; border-bottom: 1px solid var(--hair); color: var(--text-2); font-size: .9375rem; list-style: none; }
+.hecho strong { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+.desc.corto { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+button.link.mini { min-height: 32px; padding: 0 2px; margin-bottom: 8px; }
 ol.lista { list-style: none; margin: 0; padding: 0; }
 .card { display: grid; grid-template-columns: 84px 1fr; gap: 24px; padding: 24px 0; border-bottom: 1px solid var(--hair); }
 .lista.anim .card { animation: in 300ms var(--ease-out) both; }
@@ -169,6 +186,8 @@ ol.pasos { max-width: 72ch; padding-left: 20px; }
 ol.pasos li { margin: 6px 0; }
 footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width: 70ch; border-top: 1px solid var(--border); margin-top: 24px; }
 @media (hover: hover) and (pointer: fine) {
+  .seg button:hover { color: var(--text); }
+  button.dec:hover { border-color: var(--text-2); }
   select:hover, input[type=search]:hover, input[type=number]:hover { border-color: var(--text-2); }
   .chk:hover { border-color: var(--text-2); }
   button.btn:hover { filter: brightness(1.1); }
@@ -238,8 +257,11 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     <label class="chk"><input type="checkbox" id="soloMonto"> Solo con valor publicado</label>
   </div>
 
-  <main id="resultados" aria-live="polite" tabindex="-1">
-    <p class="count" id="cuenta"></p>
+  <main id="resultados" tabindex="-1">
+    <div class="decide-bar">
+      <div class="seg" id="seg" role="group" aria-label="Ver según su decisión"></div>
+      <p class="count" id="cuenta" aria-live="polite"></p>
+    </div>
     <ol class="lista" id="lista"></ol>
   </main>
   </div>
@@ -372,11 +394,26 @@ function pintarKpis() {
   k.replaceChildren(...data.map(([n, t]) => { const d = el('div', 'kpi'); d.append(el('b', '', String(n)), el('span', '', t)); return d; }));
 }
 
-function filtrar() {
+let decisiones = {};
+try { decisiones = JSON.parse(localStorage.getItem('radar-decisiones') || '{}'); } catch (_) {}
+let ver = 'pendientes';
+const idDe = (r) => r.id || (r.entidad + '|' + r.referencia);
+const estadoDe = (r) => decisiones[idDe(r)] || '';
+function decidir(r, valor) {
+  const k = idDe(r);
+  if (valor) decisiones[k] = valor; else delete decisiones[k];
+  try { localStorage.setItem('radar-decisiones', JSON.stringify(decisiones)); } catch (_) {}
+}
+const VISTAS = [['pendientes', 'Sin decidir', r => !estadoDe(r)], ['interesa', 'Me interesan', r => estadoDe(r) === 'interesa'],
+                ['descarta', 'Descartadas', r => estadoDe(r) === 'descarta'], ['todas', 'Todas', () => true]];
+
+function filtrar(conDecision = true) {
   const q = $('q').value.trim().toLowerCase(), dep = $('dep').value;
   const num = (id, def) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : def; };
   const pmin = num('pmin', 0), pmax = num('pmax', 100);
+  const dv = VISTAS.find(v => v[0] === ver)[2];
   return base().filter(r =>
+    (!conDecision || dv(r)) &&
     r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
     (!$('soloAliado').checked || r.requiere_aliado) &&
@@ -385,49 +422,101 @@ function filtrar() {
 }
 
 function tarjeta(r) {
-  const li = el('li', 'card');
+  const li = el('li', 'card' + (estadoDe(r) === 'descarta' ? ' descartada' : ''));
   const sc = el('div', 'score');
   sc.append(el('b', '', String(r.puntaje)), el('small', '', 'de 100'));
   const bar = el('div', 'bar'); const i = el('i'); i.style.width = r.puntaje + '%'; bar.append(i); sc.append(bar);
 
   const body = el('div');
-  body.append(el('h2', '', r.entidad || 'Entidad sin nombre'));
+  const top = el('div', 'top');
+  top.append(el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel));
+  if (r.requiere_aliado) top.append(el('span', 'chip aliado', 'Requiere aliado'));
+  if (estadoDe(r) === 'interesa') top.append(el('span', 'chip ok', 'Me interesa'));
+  body.append(top, el('h2', '', r.entidad || 'Entidad sin nombre'));
   const meta = el('div', 'meta');
   const m = (ic, t) => { const s = el('span'); s.append(svg(ic), document.createTextNode(t)); return s; };
   meta.append(m('pin', r.departamento || 'Sin departamento'), m('cal', r.fecha_publicacion || '—'),
               m('cash', pesos(r.valor_cop)), m('doc', r.modalidad || '—'));
-  body.append(meta, el('p', 'desc', r.descripcion));
+  const largo = (r.descripcion || '').length > 170;
+  const desc = el('p', 'desc' + (largo ? ' corto' : ''), r.descripcion);
+  body.append(meta, desc);
+  if (largo) {
+    const mas = el('button', 'link mini', 'Ver más'); mas.type = 'button'; mas.setAttribute('aria-expanded', 'false');
+    mas.onclick = () => { const a = desc.classList.toggle('corto'); mas.textContent = a ? 'Ver más' : 'Ver menos'; mas.setAttribute('aria-expanded', String(!a)); };
+    body.append(mas);
+  }
 
   const chips = el('div', 'chips');
-  chips.append(el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel));
   chips.append(el('span', 'why', 'Coincide por:'));
   r.coincidencias.slice(0, 8).forEach(c => chips.append(el('span', 'chip', c)));
-  if (r.requiere_aliado) chips.append(el('span', 'chip aliado', 'Requiere aliado'));
+  if (r.coincidencias.length > 8) chips.append(el('span', 'chip nota', `+${r.coincidencias.length - 8}`));
   body.append(chips);
   if (r.notas.length) {
     const n = el('div', 'chips');
     r.notas.forEach(t => n.append(el('span', 'chip nota', t)));
     body.append(n);
   }
+
+  const acc = el('div', 'acciones');
+  const marcar = (valor, texto, cls) => {
+    const b = el('button', 'dec ' + cls, texto); b.type = 'button';
+    b.setAttribute('aria-pressed', String(estadoDe(r) === valor));
+    b.onclick = () => {
+      const antes = estadoDe(r), nuevo = antes === valor ? '' : valor;
+      decidir(r, nuevo);
+      if (ver !== 'todas' && ver !== (nuevo || 'pendientes')) { li.replaceWith(filaHecha(r, nuevo, antes)); pintarConteos(); }
+      else { pintar(); }
+    };
+    return b;
+  };
+  acc.append(marcar('interesa', 'Me interesa', 'si'), marcar('descarta', 'Descartar', 'no'), el('span', 'sp'));
   if (r.url) {
     const a = el('a', 'go'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
     a.append(document.createTextNode('Abrir en SECOP'), svg('ext'));
-    body.append(a);
+    acc.append(a);
   }
+  body.append(acc);
   const bd = bloqueDocs(r); if (bd) body.append(bd);
   li.append(sc, body);
   return li;
 }
 
+// Tras decidir, la tarjeta no desaparece de golpe: deja una fila con "Deshacer".
+function filaHecha(r, nuevo, antes) {
+  const li = el('li', 'hecho');
+  li.append(el('span', '', nuevo === 'interesa' ? 'Guardada en Me interesan:' : nuevo === 'descarta' ? 'Descartada:' : 'Vuelve a Sin decidir:'),
+            el('strong', '', r.entidad || 'Entidad sin nombre'));
+  const u = el('button', 'link', 'Deshacer'); u.type = 'button';
+  u.onclick = () => { decidir(r, antes); pintar(); };
+  li.append(u);
+  return li;
+}
+
+function pintarConteos() {
+  if (!datos) return;
+  const previa = filtrar(false);
+  $('seg').replaceChildren(...VISTAS.map(([id, texto, fn]) => {
+    const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(ver === id));
+    b.append(document.createTextNode(texto), el('b', '', String(previa.filter(fn).length)));
+    b.onclick = () => { ver = id; mostrados = PAGINA; animar = true; pintar(); };
+    return b;
+  }));
+}
+
 function pintar() {
   if (!datos) return;
   const f = filtrar(), lista = $('lista');
+  pintarConteos();
   const total = base().length;
   $('cuenta').textContent = `${f.length.toLocaleString('es-CO')} de ${plural(total, 'proceso', 'procesos')}`;
   if (!f.length) {
     const st = el('li', 'state');
-    st.append(svg('search'), el('h2', '', 'Sin alertas con estos filtros'),
-      el('p', '', total
+    const sinPendientes = ver === 'pendientes' && total && !filtrar(false).filter(VISTAS[0][2]).length && filtrar(false).length;
+    st.append(svg('search'), el('h2', '', sinPendientes ? 'Todo decidido por ahora' : ver === 'interesa' ? 'Aún no ha marcado ninguna' : ver === 'descarta' ? 'No hay descartadas' : 'Sin alertas con estos filtros'),
+      el('p', '', sinPendientes ? 'No quedan procesos sin decidir con estos filtros. Mire "Me interesan" o cambie el periodo.'
+        : ver === 'interesa' ? 'Use "Me interesa" en una tarjeta para guardarla aquí.'
+        : ver === 'descarta' ? 'Las tarjetas que descarte quedan aquí por si cambia de opinión.'
+        : total
         ? 'Quita algún filtro para ver más resultados.'
         : modo === 'radar' ? `Ningún proceso superó el umbral de ${datos.umbral} puntos. Prueba un periodo más largo o revisa config/filtros.yaml.` : 'No hay procesos en esta vista para el periodo elegido. Prueba un periodo más largo.'));
     lista.replaceChildren(st);

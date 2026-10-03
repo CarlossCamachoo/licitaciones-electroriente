@@ -362,6 +362,7 @@ def evaluar(proceso, perfil, filtros, umbral=None):
              "media" if puntaje >= niveles["media"] else "revisar")
 
     return {
+        "id": limpiar(proceso.get("id_del_proceso", "")),
         "puntaje": puntaje,
         "nivel": nivel,
         "requiere_aliado": requiere_aliado,
