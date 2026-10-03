@@ -45,14 +45,14 @@ criterios:
     estado: activo
 
   - titulo: "Proceso todavía abierto"
-    como: "Solo se muestran procesos con estado de apertura 'Abierto' (los cerrados se descartan)."
-    por_que: "Un proceso cerrado ya no admite ofertas."
+    como: "Solo se muestran procesos con estado de apertura 'Abierto' y, si SECOP publica la fecha de cierre, que no haya pasado ya. Los cerrados y los vencidos se descartan."
+    por_que: "Un proceso cerrado o con la fecha de cierre vencida ya no admite ofertas."
     estado: activo
 
   - titulo: "Fecha de cierre y plazo restante"
-    como: "Los datos abiertos de SECOP no traen la fecha de cierre de ofertas. Hay que abrir el proceso para verla."
+    como: "SECOP publica la fecha de cierre de ofertas solo en una parte de los procesos (cerca del 5 %). Cuando la trae, la tarjeta la muestra con los días que faltan y se marca en rojo si quedan 3 días o menos. Cuando no la trae, la tarjeta no dice nada: ábralo en SECOP para verla."
     por_que: "Con menos de 5 días hábiles, una primera oferta difícilmente alcanza."
-    estado: sin_datos
+    estado: activo
 
   - titulo: "Códigos UNSPSC"
     como: "No se usan para puntuar: en los datos abiertos la mayoría de procesos trae el código como 'UNSPECIFIED' o con códigos poco confiables."
