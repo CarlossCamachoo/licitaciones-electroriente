@@ -284,6 +284,8 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 .equipo-linea svg.i { width: 16px; height: 16px; color: var(--primary); }
 .equipo-linea b { font-weight: 600; color: var(--primary); }
 .equipo-linea .seg-estado { color: var(--text-2); }
+.equipo-linea.descarte { background: var(--muted); }
+.equipo-linea.descarte svg.i, .equipo-linea.descarte b { color: var(--text-2); }
 .usuario-menu button.btn.ghost { background: transparent; color: var(--primary); border-color: var(--primary); }
 .usuario-menu :focus-visible { outline-color: var(--ring); }
 .um-salir { width: 100%; justify-content: center; }
@@ -776,8 +778,8 @@ function decidir(r, valor) {
   const k = idDe(r), antes = decisiones[k] || '';
   if (valor) decisiones[k] = valor; else delete decisiones[k];
   try { localStorage.setItem('radar-decisiones', JSON.stringify(decisiones)); } catch (_) {}
-  // La hoja del equipo solo se entera de lo que empieza o deja de ser «Me interesa».
-  if (valor === 'interesa' || antes === 'interesa') sincronizarHoja(r, valor);
+  // La hoja del equipo se entera de lo que empieza o deja de ser «Me interesa» o «Descartar».
+  if (valor === 'interesa' || antes === 'interesa' || valor === 'descarta' || antes === 'descarta') sincronizarHoja(r, valor, antes);
 }
 
 // ---- Hoja compartida del equipo -------------------------------------------------------------
@@ -851,14 +853,15 @@ async function vaciarColaHoja() {
     }
   } finally { enviandoHoja = false; }
 }
-async function sincronizarHoja(r, valor) {
+async function sincronizarHoja(r, valor, antes) {
   const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
   let persona = personaGuardada();
   if (valor === 'interesa' && !persona) {
     persona = await pedirPersona();
     if (!persona) { avisar('Marcada solo en este navegador: falta su nombre para compartirla con el equipo.', true); return; }
   }
-  colaHoja[idDe(r)] = { id: idDe(r), estado: valor, persona, entidad: r.entidad || '', objeto: (r.descripcion || '').slice(0, 600),
+  if (!persona && (valor === 'descarta' || antes === 'descarta')) return;   // sin nombre no se comparte un descarte
+  colaHoja[idDe(r)] = { id: idDe(r), estado: valor, antes: antes || '', persona, entidad: r.entidad || '', objeto: (r.descripcion || '').slice(0, 600),
     valor: r.valor_cop || '', cierre: r.fecha_cierre || '', puntaje: r.puntaje,
     factibilidad: ({ alta: 'Alta', media: 'Media', revisar: 'Por revisar' })[r.nivel] || r.nivel || '',
     departamento: r.departamento || '', modalidad: r.modalidad || '', tipo: r.tipo_contrato || '', url: r.url || '' };
@@ -886,7 +889,7 @@ function pintarSaludo() {
   }
 }
 // ---- Lo que marco el equipo: se lee de la hoja de Google y se muestra en cada tarjeta --------------
-let equipoMarcas = {}, equipoFirma = '';
+let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '';
 const primerNombre = (n) => String(n).trim().split(' ')[0];
 const unirNombres = (l) => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1];
 function lineaEquipo(m) {
@@ -905,6 +908,17 @@ function lineaEquipo(m) {
   if (m.seguimiento) p.append(el('span', 'seg-estado', '· ' + m.seguimiento));
   return p;
 }
+function lineaDescartes(m) {
+  const nombres = String(m.persona || '').split(',').map(s => s.trim()).filter(Boolean);
+  const yo = personaFija().toLowerCase();
+  const otros = nombres.filter(n => n.toLowerCase() !== yo);
+  if (!otros.length) return null;                      // solo usted: ya lo ve en su propia tarjeta
+  const p = el('p', 'equipo-linea descarte'); p.append(svg('users'));
+  const t = el('span');
+  t.append(el('b', '', unirNombres(otros.map(primerNombre))), document.createTextNode(otros.length > 1 ? ' la descartaron' : ' la descartó'));
+  p.append(t);
+  return p;
+}
 async function cargarEquipo() {
   const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
   try {
@@ -914,10 +928,12 @@ async function cargarEquipo() {
           body: JSON.stringify({ accion: 'equipo', token: cfg.token }) });
     const res = await resp.json();
     if (!res.ok || !Array.isArray(res.filas)) return;
-    const firma = JSON.stringify(res.filas);
+    const descartes = Array.isArray(res.descartes) ? res.descartes : [];
+    const firma = JSON.stringify([res.filas, descartes]);
     if (firma === equipoFirma) return;                 // nada cambio: no se redibuja
     equipoFirma = firma;
     equipoMarcas = Object.fromEntries(res.filas.map(f => [f.id, f]));
+    equipoDescartes = Object.fromEntries(descartes.map(f => [f.id, f]));
     $('equipo-filtro').hidden = false;
     if (datos) pintar();
   } catch (_) { /* se intenta de nuevo en la proxima vuelta */ }
@@ -1073,6 +1089,8 @@ function tarjeta(r) {
   }
   const marca = equipoMarcas[idDe(r)];
   if (marca) body.append(lineaEquipo(marca));
+  const dEq = equipoDescartes[idDe(r)], lineaD = dEq && lineaDescartes(dEq);
+  if (lineaD) body.append(lineaD);
   body.append(acc);
   li.append(sc, body);
   return li;

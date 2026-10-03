@@ -170,7 +170,7 @@ def persona_local():
     return nombre_propio(nombre)[:60]
 
 
-CAMPOS_HOJA = ("accion", "id", "estado", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
+CAMPOS_HOJA = ("accion", "id", "estado", "antes", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
                "factibilidad", "departamento", "modalidad", "tipo", "url")
 
 

@@ -104,4 +104,4 @@ muestra en cada tarjeta: «Ana la marcó · Preparando oferta», o «Usted y Ana
 la misma licitación, los nombres se suman en la hoja («Ana, Carlos»). Hay un filtro **Equipo** (marcadas por el
 equipo / que nadie ha marcado). Se actualiza al abrir, al volver a la pestaña, cada 3 minutos y al marcar algo.
 El resumen se guarda 30 segundos en la memoria del script para no leer la hoja en cada consulta.
-Solo muestra los «Me interesa»: el «Descartar» sigue siendo personal.
+Muestra los «Me interesa» (con su Seguimiento) y también los «Descartar»: estos viven en la pestaña «Descartadas» de la misma hoja (fecha, persona, entidad, objeto, id) y en la tarjeta aparece «Ana la descartó». Si la persona se arrepiente, su nombre sale de esa pestaña y, si ya nadie la descarta, la fila se borra.

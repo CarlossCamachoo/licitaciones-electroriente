@@ -12,6 +12,8 @@ const NOMBRE_HOJA = 'Me interesan';
 const COLUMNAS = ['Fecha', 'Persona', 'Estado', 'Entidad', 'Objeto', 'Valor (COP)', 'Cierre', 'Puntaje',
   'Factibilidad', 'Departamento', 'Modalidad', 'Tipo de contrato', 'Enlace', 'Id del proceso',
   'Seguimiento', 'Comentarios'];
+const HOJA_DESCARTES = 'Descartadas';
+const COL_DESCARTES = ['Fecha', 'Persona', 'Entidad', 'Objeto', 'Id del proceso'];
 const N_RADAR = 14;   // las primeras 14 columnas las escribe el radar
 const COL = (nombre) => COLUMNAS.indexOf(nombre) + 1;
 const SEGUIMIENTO = ['Por estudiar', 'Preparando oferta', 'Presentada', 'Ganada', 'Perdida', 'Descartada'];
@@ -41,6 +43,52 @@ function hoja_() {
       SpreadsheetApp.newDataValidation().requireValueInList(SEGUIMIENTO, true).setAllowInvalid(true).build());
   }
   return h;
+}
+
+// Pestaña «Descartadas»: quien descarto cada licitacion, para que el equipo no pierda tiempo revisandola de nuevo.
+function hojaDescartes_() {
+  const libro = ID_LIBRO ? SpreadsheetApp.openById(ID_LIBRO) : SpreadsheetApp.getActiveSpreadsheet();
+  let h = libro.getSheetByName(HOJA_DESCARTES);
+  if (!h) {
+    h = libro.insertSheet(HOJA_DESCARTES);
+    h.getRange(1, 1, 1, COL_DESCARTES.length).setValues([COL_DESCARTES])
+      .setFontWeight('bold').setBackground('#000775').setFontColor('#FFFFFF').setVerticalAlignment('middle');
+    h.setFrozenRows(1);
+    [130, 140, 240, 520, 150].forEach((a, i) => h.setColumnWidth(i + 1, a));
+    h.getRange(2, 4, 998, 1).setWrap(true);
+  }
+  return h;
+}
+
+function leerDescartes_() {
+  const h = hojaDescartes_();
+  const n = Math.max(h.getLastRow() - 1, 0);
+  return { h, filas: n ? h.getRange(2, 1, n, COL_DESCARTES.length).getValues() : [] };
+}
+
+function nombresDe_(texto) { return String(texto || '').split(',').map(x => x.trim()).filter(Boolean); }
+
+// Anota (o quita) a una persona en la fila de ese proceso; la fila se borra cuando ya nadie la descarta.
+function marcarDescarte_(id, persona, ahora, d, quitar) {
+  if (!persona) return;
+  const { h, filas } = leerDescartes_();
+  const i = filas.findIndex(f => String(f[4]) === id);
+  const minus = (x) => x.toLowerCase();
+  if (quitar) {
+    if (i < 0) return;
+    const resto = nombresDe_(filas[i][1]).filter(x => minus(x) !== minus(persona));
+    if (resto.length) h.getRange(i + 2, 1, 1, 2).setValues([[ahora, resto.join(', ')]]);
+    else h.deleteRow(i + 2);
+    return;
+  }
+  if (i >= 0) {
+    const nombres = nombresDe_(filas[i][1]);
+    if (nombres.map(minus).indexOf(minus(persona)) < 0) nombres.push(persona);
+    h.getRange(i + 2, 1, 1, 2).setValues([[ahora, nombres.join(', ')]]);
+  } else {
+    h.getRange(h.getLastRow() + 1, 1, 1, COL_DESCARTES.length)
+      .setValues([[ahora, persona, texto_(d.entidad, 200), texto_(d.objeto, 600), id]]);
+  }
 }
 
 function salida_(obj) {
@@ -120,7 +168,9 @@ function equipo_() {
     .filter(f => f[COL('Estado') - 1] === 'Me interesa' && f[COL('Id del proceso') - 1])
     .map(f => ({ id: String(f[COL('Id del proceso') - 1]), persona: String(f[COL('Persona') - 1]),
       seguimiento: String(f[COL('Seguimiento') - 1] || ''), fecha: hora(f[COL('Fecha') - 1]) }));
-  const r = { ok: true, filas: lista };
+  const descartes = leerDescartes_().filas
+    .filter(f => f[4]).map(f => ({ id: String(f[4]), persona: String(f[1]) }));
+  const r = { ok: true, filas: lista, descartes: descartes };
   try { cache.put('equipo', JSON.stringify(r), 30); } catch (err) { /* demasiado grande para la memoria: se lee cada vez */ }
   return r;
 }
@@ -144,6 +194,11 @@ function doPost(e) {
     const i = ids.indexOf(id);
     const ahora = Utilities.formatDate(new Date(), 'America/Bogota', 'yyyy-MM-dd HH:mm');
     const persona = texto_(d.persona, 60);
+    const antes = String(d.antes || '');   // lo que habia decidido esa persona: 'interesa', 'descarta' o ''
+
+    // Si la persona tenia la licitacion descartada y ya no, se quita de la pestaña Descartadas.
+    if (antes === 'descarta' && estado !== 'descarta') marcarDescarte_(id, persona, ahora, d, true);
+    if (estado === 'descarta') marcarDescarte_(id, persona, ahora, d, false);
 
     if (estado === 'interesa') {
       const url = String(d.url || '');
@@ -174,7 +229,7 @@ function doPost(e) {
         h.getRange(n, COL('Enlace')).setRichTextValue(
           SpreadsheetApp.newRichTextValue().setText('Abrir en SECOP').setLinkUrl(url).build());
       }
-    } else if (i >= 0) {
+    } else if (i >= 0 && antes === 'interesa') {
       // La quitaron o la descartaron: la fila se conserva y cambia su estado.
       const que = estado === 'descarta' ? 'Descartada' : 'Quitada';
       h.getRange(i + 2, COL('Fecha'), 1, 1).setValue(ahora);
