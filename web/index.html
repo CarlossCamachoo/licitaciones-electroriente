@@ -215,6 +215,7 @@ ul.docs { list-style: none; margin: 0; padding: 0; }
 button.link { font: 600 .875rem var(--sans); min-height: 44px; padding: 0 8px; background: none; border: 0; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 button.link.peligro { color: var(--danger); }
 .err { color: var(--danger); font-size: .875rem; margin: 6px 0 0; }
+.chip.nueva { background: var(--accent); color: #fff; font-weight: 600; }
 .chip.ok { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .chip.aviso { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 details.req { margin: 6px 0 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
@@ -414,6 +415,12 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
       <select id="renov">
         <option value="">Todos</option>
         <option value="si">Posibles renovaciones</option>
+      </select>
+    </label>
+    <label class="f">Novedad
+      <select id="novedad">
+        <option value="">Todas</option>
+        <option value="nuevas">Nuevas desde su última visita</option>
       </select>
     </label>
     <label class="f" id="equipo-filtro" hidden>Equipo
@@ -650,7 +657,7 @@ function pintarCampana() {
 function verEnRadar(it) {
   cerrarNotif(false);
   vista('radar');
-  $('dep').value = ''; $('q').value = it.entidad; $('renov').value = ''; $('equipo').value = '';
+  $('dep').value = ''; $('q').value = it.entidad; $('renov').value = ''; $('novedad').value = ''; $('equipo').value = '';
   ver = 'todas'; mostrados = PAGINA; animar = true; pintar();
   window.scrollTo({ top: 0 });
 }
@@ -961,6 +968,34 @@ async function iniciarHoja() {
   setInterval(() => { if (Object.keys(colaHoja).length) vaciarColaHoja(); }, 60000);
   $('persona-cambiar').onclick = () => pedirPersona();
 }
+// ---- Novedades: lo que aparecio despues de la ultima vez que esta persona uso la pagina ------------------
+// Cada navegador recuerda cuando vio por primera vez cada proceso. «Su última visita» es la ultima actividad
+// anterior a esta sesion (una sesion = una pestaña abierta; recargarla no cuenta como visita nueva).
+const vistosClave = 'radar-vistos', visitaClave = 'radar-ultima-visita';
+let vistos = {}, corteVisita = null;
+try { vistos = JSON.parse(localStorage.getItem(vistosClave) || '{}'); } catch (_) {}
+try {
+  corteVisita = sessionStorage.getItem('radar-corte');
+  if (corteVisita === null) {
+    corteVisita = localStorage.getItem(visitaClave) || '0';          // '0' = primera vez: nada se marca como nuevo
+    sessionStorage.setItem('radar-corte', corteVisita);
+  }
+} catch (_) { corteVisita = '0'; }
+corteVisita = +corteVisita || 0;
+function registrarVistos() {
+  const ahora = Date.now(); let cambio = false;
+  datos.resultados.forEach(r => { const k = idDe(r); if (!vistos[k]) { vistos[k] = ahora; cambio = true; } });
+  // Se guardan solo los ids vigentes de los ultimos 45 dias para que la lista no crezca sin fin.
+  if (cambio) {
+    const limite = ahora - 45 * 86400000;
+    Object.keys(vistos).forEach(k => { if (vistos[k] < limite) delete vistos[k]; });
+    try { localStorage.setItem(vistosClave, JSON.stringify(vistos)); } catch (_) {}
+  }
+  try { localStorage.setItem(visitaClave, String(ahora)); } catch (_) {}
+}
+const esNueva = (r) => corteVisita > 0 && (vistos[idDe(r)] || 0) > corteVisita && !estadoDe(r);
+document.addEventListener('visibilitychange', () => { if (document.hidden) try { localStorage.setItem(visitaClave, String(Date.now())); } catch (_) {} });
+
 const VISTAS = [['pendientes', 'Sin decidir', r => !estadoDe(r)], ['interesa', 'Me interesan', r => estadoDe(r) === 'interesa'],
                 ['descarta', 'Descartadas', r => estadoDe(r) === 'descarta'], ['todas', 'Todas', () => true]];
 
@@ -971,6 +1006,7 @@ function filtrar(conDecision = true) {
     (!conDecision || dv(r)) &&
     (!dep || r.departamento === dep) &&
     (!$('renov').value || r.renovacion) &&
+    ($('novedad').value !== 'nuevas' || esNueva(r)) &&
     ($('equipo').value === 'marcadas' ? !!equipoMarcas[idDe(r)] : $('equipo').value === 'libres' ? !equipoMarcas[idDe(r)] : true) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
   // Los que no publican valor van siempre al final, sea cual sea el sentido.
@@ -1036,6 +1072,7 @@ function tarjeta(r) {
   { const c = el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel); c.title = AYUDA_NIVEL[r.nivel] || ''; top.append(c); }
   if (r.renovacion) { const c = el('span', 'chip renov', 'Posible renovación'); c.title = 'Esta entidad ya tenía un contrato de lo mismo que terminó hace poco o termina pronto. Este proceso puede ser su reemplazo.'; top.append(c); }
   if (r.requiere_aliado) { const c = el('span', 'chip aliado', 'Requiere aliado'); c.title = 'Obra con montaje: Electroriente suministra, pero instalar requiere un aliado (unión temporal o consorcio).'; top.append(c); }
+  if (esNueva(r)) { const c = el('span', 'chip nueva', 'Nueva'); c.title = 'Apareció después de su última visita.'; top.append(c); }
   if (estadoDe(r) === 'interesa') top.append(el('span', 'chip ok', 'Me interesa'));
   const cabeza = el('div', 'cabeza');
   const valor = el('div', 'valor');
@@ -1127,6 +1164,7 @@ function pintarConteos() {
 
 function pintar() {
   if (!datos) return;
+  registrarVistos();
   const f = filtrar(), lista = $('lista');
   pintarConteos();
   const total = base().length;
@@ -1609,7 +1647,7 @@ document.addEventListener('keydown', e => {
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = () => cargar(true, true);
 $('dias').onchange = () => cargar();
-['q', 'dep', 'renov', 'equipo'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+['q', 'dep', 'renov', 'novedad', 'equipo'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 cargar();
 vista(location.hash.slice(1) || 'radar');
 iniciarHoja();
