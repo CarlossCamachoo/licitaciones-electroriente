@@ -15,8 +15,11 @@ una sola vez al dia y se guarda en data/mercado.json.
 import json
 import os
 import threading
+import re
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from difflib import SequenceMatcher
 from datetime import datetime, timedelta
 
 import requests
@@ -38,21 +41,70 @@ _estado = {"calculando": False, "error": ""}
 _memoria = {"t": 0, "datos": None}
 
 
-# La busqueda de texto de Socrata (`$q`) es rapida pero distingue tildes:
-# 'iluminacion' y 'iluminación' son busquedas distintas. Se consultan las dos.
-CON_TILDE = {"electrico": "eléctrico", "electricos": "eléctricos", "electrica": "eléctrica",
-             "electricas": "eléctricas", "iluminacion": "iluminación",
-             "automatizacion": "automatización", "proteccion": "protección",
-             "protecciones": "protecciones", "instalacion": "instalación",
-             "energia": "energía", "subestacion": "subestación", "tension": "tensión",
-             "publico": "público", "automatico": "automático", "calidad": "calidad",
-             "eficiencia": "eficiencia", "velocidad": "velocidad"}
+# La busqueda de texto de Socrata (`$q`) es rapida pero literal: distingue
+# tildes, plurales y errores de ortografia ('iluminacion', 'iluminación',
+# 'iluminaciones' y 'iluminasion' son busquedas distintas). Por eso cada termino
+# se consulta en varias formas; despues se confirma en local con una
+# comparacion tolerante (ver _coincide).
+VOCALES = "aeiou"
+CON_TILDE = str.maketrans("aeiou", "áéíóú")
+
+
+def _con_tilde(w):
+    """Pone la tilde donde suele ir: -cion, -sion, -ia, y las esdrujulas en -ico/-ica."""
+    for fin in ("cion", "sion"):
+        if w.endswith(fin):
+            return w[:-3] + "ión"
+    if len(w) > 4 and w.endswith("ia"):
+        return w[:-2] + "ía"
+    if w.endswith(("ico", "ica", "icos", "icas")):
+        pos = [k for k, c in enumerate(w) if c in VOCALES]
+        if len(pos) >= 3:
+            k = pos[-3]
+            return w[:k] + w[k].translate(CON_TILDE) + w[k + 1:]
+    return w
+
+
+def _formas(w):
+    """Formas de una palabra a consultar: plural, con tilde y errores comunes."""
+    base = {w}
+    if len(w) > 3 and not w.endswith("s"):
+        base.add(w + ("es" if w[-1] not in VOCALES else "s"))
+    if len(w) >= 6:                      # errores de ortografia frecuentes
+        for a, b in (("cion", "sion"), ("sion", "cion"), ("b", "v"), ("v", "b"), ("z", "s")):
+            if a in w:
+                base.add(w.replace(a, b))
+    return base | {_con_tilde(f) for f in base}
 
 
 def _variantes(termino):
-    t = radar.normalizar(termino)
-    con = " ".join(CON_TILDE.get(w, w) for w in t.split())
-    return [t] if con == t else [t, con]
+    """Consultas para un termino: se varia una palabra a la vez (las demas quedan
+    como estan) y, ademas, todas con tilde. Acotado para no saturar SECOP."""
+    palabras = radar.normalizar(termino).split()
+    consultas = {" ".join(palabras), " ".join(_con_tilde(w) for w in palabras)}
+    for k, w in enumerate(palabras):
+        if len(w) <= 3:                  # 'de', 'a', 'plc'...: se dejan tal cual
+            continue
+        for f in _formas(w):
+            consultas.add(" ".join(palabras[:k] + [f] + palabras[k + 1:]))
+    return sorted(consultas)
+
+
+def _igual(tok, w):
+    """Palabra del texto vs palabra del termino: igual, plural o error de 1 letra."""
+    if tok == w or tok in (w + "s", w + "es"):
+        return True
+    if len(w) < 7 or abs(len(tok) - len(w)) > 1 or tok[0] != w[0]:
+        return False
+    return SequenceMatcher(None, tok, w).ratio() >= 0.85
+
+
+def _coincide(tokens, termino):
+    """El termino aparece como palabras seguidas, tolerando plurales y erratas."""
+    palabras = radar.normalizar(termino).split()
+    n = len(palabras)
+    return any(all(_igual(tokens[i + k], palabras[k]) for k in range(n))
+               for i in range(len(tokens) - n + 1))
 
 
 def _consultar(consulta, donde):
@@ -73,6 +125,7 @@ def _descargar(filtros):
     ano o que terminan en la ventana de vencimientos. Sin duplicados."""
     consultas = sorted({v for g in filtros["incluir"].values()
                         for t in g["terminos"] for v in _variantes(t)})
+    print(f"[mercado] {len(consultas)} consultas a SECOP", file=sys.stderr)
     hoy = datetime.now()
     desde = (hoy - timedelta(days=30 * MESES_HISTORIAL)).strftime("%Y-%m-%dT00:00:00")
     ini = hoy.strftime("%Y-%m-%dT00:00:00")
@@ -93,8 +146,9 @@ def _aceptable(c, filtros):
     texto = radar.normalizar(c.get("objeto_del_contrato", ""))
     if not texto or any(radar.contiene(texto, t) for t in filtros.get("excluir", [])):
         return None
+    tokens = re.findall(r"[a-z0-9]+", texto)
     coincide = sorted({t for g in filtros["incluir"].values()
-                       for t in g["terminos"] if radar.contiene(texto, t)})
+                       for t in g["terminos"] if _coincide(tokens, t)})
     if not coincide:
         return None
     aj = filtros.get("ajustes_contrato", {}).get("desfavorables", {})

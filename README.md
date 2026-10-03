@@ -59,6 +59,10 @@ los guarda en `data/mercado.json`. Con eso arma la pestaña *Próximos vencimien
 (contratos que terminan en los próximos 6 meses y quién los tiene hoy) y la línea
 *Historial* de cada tarjeta (contratos de suministro o compraventa de esa entidad en
 los últimos 12 meses). Es una pista, no una garantía: un contrato puede prorrogarse.
+La búsqueda tolera tildes, plurales y errores de una letra («alumbrado públicos»,
+«breakers», «baja tención»): cada término se consulta en varias formas y luego se
+confirma en local. Ojo: esa tolerancia es solo del mercado; el radar de procesos sigue
+buscando palabra completa.
 
 **Como app en el Mac:** `bash app/crear_app.sh` crea «Radar de Licitaciones»
 en `~/Applications` (con el icono de Electroriente). Al abrirla arranca el
