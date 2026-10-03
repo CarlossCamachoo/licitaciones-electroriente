@@ -314,23 +314,10 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     <label class="f">Departamento
       <select id="dep"><option value="">Todos</option></select>
     </label>
-    <label class="f">Puntaje mín.
-      <input type="number" id="pmin" min="0" max="100" step="5" value="5" inputmode="numeric">
-    </label>
-    <label class="f">Puntaje máx.
-      <input type="number" id="pmax" min="0" max="100" step="5" value="100" inputmode="numeric">
-    </label>
     <label class="f">Renovación
       <select id="renov">
         <option value="">Todos</option>
         <option value="si">Posibles renovaciones</option>
-      </select>
-    </label>
-    <label class="f">Aliado
-      <select id="aliado">
-        <option value="">Todos</option>
-        <option value="con">Con aliado</option>
-        <option value="sin">Sin aliado</option>
       </select>
     </label>
   </div>
@@ -341,9 +328,11 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
       <div class="der">
         <label class="ord">Ordenar por
           <select id="orden">
-            <option value="puntaje">Mejor puntaje primero</option>
-            <option value="valor">Mayor valor primero</option>
-            <option value="recientes">Publicadas más recientemente</option>
+            <option value="puntaje">Mayor puntaje</option>
+            <option value="puntaje_asc">Menor puntaje</option>
+            <option value="valor">Mayor valor</option>
+            <option value="valor_asc">Menor valor</option>
+            <option value="recientes">Más reciente</option>
           </select>
         </label>
         <p class="count" id="cuenta" aria-live="polite"></p>
@@ -541,7 +530,7 @@ function pintarCampana() {
 function verEnRadar(it) {
   cerrarNotif(false);
   vista('radar');
-  $('dep').value = ''; $('q').value = it.entidad; $('aliado').value = ''; $('renov').value = '';
+  $('dep').value = ''; $('q').value = it.entidad; $('renov').value = '';
   ver = 'todas'; mostrados = PAGINA; animar = true; pintar();
   window.scrollTo({ top: 0 });
 }
@@ -663,19 +652,23 @@ const VISTAS = [['pendientes', 'Sin decidir', r => !estadoDe(r)], ['interesa', '
 
 function filtrar(conDecision = true) {
   const q = $('q').value.trim().toLowerCase(), dep = $('dep').value;
-  const num = (id, def) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : def; };
-  const pmin = num('pmin', 0), pmax = num('pmax', 100);
   const dv = VISTAS.find(v => v[0] === ver)[2];
   const lista = base().filter(r =>
     (!conDecision || dv(r)) &&
-    r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
     (!$('renov').value || r.renovacion) &&
-    (!$('aliado').value || (r.requiere_aliado ? $('aliado').value === 'con' : $('aliado').value === 'sin')) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
-  // Por puntaje ya viene ordenado del servidor (a igualdad, el mas reciente).
-  if (orden === 'valor') lista.sort((a, b) => (b.valor_cop || 0) - (a.valor_cop || 0) || b.puntaje - a.puntaje);
-  else if (orden === 'recientes') lista.sort((a, b) => (b.fecha_publicacion || '').localeCompare(a.fecha_publicacion || '') || b.puntaje - a.puntaje);
+  // Los que no publican valor van siempre al final, sea cual sea el sentido.
+  const sinValor = (a, b) => (!a.valor_cop) - (!b.valor_cop);
+  const reciente = (a, b) => (b.fecha_publicacion || '').localeCompare(a.fecha_publicacion || '');
+  const ordenes = {
+    puntaje: (a, b) => b.puntaje - a.puntaje || reciente(a, b),
+    puntaje_asc: (a, b) => a.puntaje - b.puntaje || reciente(a, b),
+    valor: (a, b) => sinValor(a, b) || (b.valor_cop - a.valor_cop) || b.puntaje - a.puntaje,
+    valor_asc: (a, b) => sinValor(a, b) || (a.valor_cop - b.valor_cop) || b.puntaje - a.puntaje,
+    recientes: (a, b) => reciente(a, b) || b.puntaje - a.puntaje
+  };
+  lista.sort(ordenes[orden] || ordenes.puntaje);
   return lista;
 }
 
@@ -1280,7 +1273,7 @@ document.addEventListener('keydown', e => {
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
-['q', 'dep', 'pmin', 'pmax', 'aliado', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+['q', 'dep', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 cargar();
 vista(location.hash.slice(1) || 'radar');
 </script>
