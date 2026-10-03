@@ -694,13 +694,21 @@ async function cargar(forzar = false, manual = false) {
   $('cuenta').textContent = estatico ? 'Actualizando…' : forzar ? 'Consultando SECOP… puede tardar unos 30 segundos.' : 'Cargando…';
   $('kpis').hidden = true; $('trunc').hidden = true;
   try {
+    // Web compartida: «Actualizar» pide a GitHub una publicacion nueva (la hoja de Google hace de intermediario)
+    // y espera hasta 3 minutos a que aparezcan los datos nuevos.
+    const lanzada = manual && estatico && (await pedirPublicacion()) === 'lanzada';
+    if (lanzada) $('cuenta').textContent = 'Buscando en SECOP… la lista nueva estará lista en 1 o 2 minutos.';
     const url = `/api/alertas?dias=${$('dias').value}` + (forzar && !estatico ? '&forzar=1' : '');
-    const r = await fetch(url);
-    const j = await r.json();
+    let r, j;
+    for (let intento = 0; ; intento++) {
+      r = await fetch(url); j = await r.json();
+      if (!r.ok || !lanzada || j.generado_ts !== antes || intento >= 12) break;
+      await new Promise(res => setTimeout(res, 15000));
+    }
     if (!r.ok) throw new Error(j.error || 'Error inesperado');
     datos = j; mostrados = PAGINA; animar = true;
     ultimaConsulta = j.generado_ts; pintarConsulta();
-    if (manual && estatico && antes === j.generado_ts) avisar(`Ya tiene lo más reciente: los datos se publican cada 30 minutos (última publicación ${hace(j.generado_ts)}).`);
+    if (manual && estatico && !lanzada && antes === j.generado_ts) avisar(`Ya tiene lo más reciente: los datos se publican cada 30 minutos (última publicación ${hace(j.generado_ts)}).`);
     llenarDeps();
     pintarKpis();
     if (j.truncado) {
@@ -863,6 +871,18 @@ function pintarSaludo() {
     document.addEventListener('click', e => { if (!$('usuario-menu').hidden && !e.target.closest('.usuario-wrap')) abrir(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('usuario-menu').hidden) { abrir(false); boton.focus(); } });
   }
+}
+// Pide a GitHub (por medio del script de la hoja, que guarda el permiso) una publicacion nueva de la web.
+// Devuelve 'lanzada' (o ya habia una en curso) o 'no' (no disponible: se lee lo ya publicado).
+async function pedirPublicacion() {
+  const cfg = await cargarHoja();
+  if (!cfg.url || cfg.servidor) return 'no';
+  try {
+    const resp = await fetch(cfg.url, { method: 'POST', redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ accion: 'actualizar', token: cfg.token }) });
+    const res = await resp.json();
+    return res.ok ? 'lanzada' : 'no';          // tambien si ya habia una en curso: se espera a que termine
+  } catch (_) { return 'no'; }
 }
 async function iniciarHoja() {
   const cfg = await cargarHoja(); pintarSaludo();

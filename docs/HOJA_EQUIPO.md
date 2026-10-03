@@ -77,3 +77,17 @@ nadie la usa para entrar, no hay que avisar a nadie.
 
 La web compara su versión con `version.txt` al volver a la pestaña y cada 5 minutos. Si hay una nueva,
 muestra «Hay una versión nueva de la web» con un botón Actualizar.
+
+## Publicar la web al instante y con puntualidad
+
+El mismo script de la hoja hace de intermediario para pedir a GitHub que publique la web:
+- **Botón «Actualizar» en la web compartida:** pide una publicación nueva (como mucho una cada 3 minutos) y
+  espera 1 o 2 minutos a que aparezcan los datos nuevos, sin recargar.
+- **Disparador cada 30 minutos** (`publicarProgramado`, de 6 a. m. a 10 p. m. hora de Colombia): es más
+  puntual que el horario de GitHub, que a veces se retrasa casi una hora. El horario de GitHub queda de respaldo.
+
+Necesita un token de GitHub que solo pueda lanzar tareas de este repositorio (fine-grained, permiso
+*Actions: Read and write*, nada más). Se guarda **solo** en las propiedades del script de Google
+(Configuración del proyecto → Propiedades de la secuencia de comandos → `GH_TOKEN`), nunca en la web ni en el repositorio.
+El token vence (máximo un año): al vencer, el botón sigue funcionando leyendo lo ya publicado; se renueva
+creando otro y cambiando la propiedad.

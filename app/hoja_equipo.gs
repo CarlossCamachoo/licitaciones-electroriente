@@ -67,12 +67,53 @@ function doGet() {
   return salida_({ ok: true, mensaje: 'La hoja del radar está activa.' });
 }
 
+// ---- Publicacion de la web --------------------------------------------------------------------
+// Pide a GitHub que genere la web de nuevo (GitHub Actions, workflow_dispatch). El permiso es un token de
+// GitHub solo para Actions de este repositorio; vive en las propiedades del script (Configuracion del
+// proyecto > Propiedades de la secuencia de comandos > GH_TOKEN) y nunca viaja a la web.
+const REPO = 'CarlossCamachoo/licitaciones-electroriente';
+const FLUJO = 'publicar.yml';
+
+function lanzarPublicacion_() {
+  const t = PropertiesService.getScriptProperties().getProperty('GH_TOKEN');
+  if (!t) return { ok: false, error: 'sin permiso de GitHub' };
+  const r = UrlFetchApp.fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/' + FLUJO + '/dispatches', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+    payload: JSON.stringify({ ref: 'main' }) });
+  return { ok: r.getResponseCode() === 204, codigo: r.getResponseCode() };
+}
+
+// Lo pide quien pulsa «Actualizar» en la web: como mucho una publicacion cada 3 minutos.
+function actualizarWeb_() {
+  const cache = CacheService.getScriptCache();
+  if (cache.get('ultima_publicacion')) return { ok: true, ya: true };
+  const r = lanzarPublicacion_();
+  if (r.ok) cache.put('ultima_publicacion', '1', 180);
+  return r;
+}
+
+// Disparador de tiempo, cada 30 minutos: publica de 6 a. m. a 10 p. m. hora de Colombia. Es mas puntual que el
+// horario de GitHub, que a veces se retrasa casi una hora.
+function publicarProgramado() {
+  const hora = Number(Utilities.formatDate(new Date(), 'America/Bogota', 'H'));
+  if (hora >= 6 && hora < 22) lanzarPublicacion_();
+}
+
+// Ejecutar una sola vez desde el editor: crea (o reemplaza) el disparador de tiempo.
+function instalarDisparador() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'publicarProgramado')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('publicarProgramado').timeBased().everyMinutes(30).create();
+}
+
 function doPost(e) {
   const cerrojo = LockService.getScriptLock();
   try {
     cerrojo.waitLock(20000);
     const d = JSON.parse(e.postData.contents);
     if (d.token !== TOKEN) return salida_({ ok: false, error: 'clave' });
+    if (d.accion === 'actualizar') return salida_(actualizarWeb_());
     if (!ID_VALIDO.test(String(d.id || ''))) return salida_({ ok: false, error: 'id no valido' });
     const estado = d.estado == null ? '' : String(d.estado);
     if (ESTADOS.indexOf(estado) < 0) return salida_({ ok: false, error: 'estado no valido' });
