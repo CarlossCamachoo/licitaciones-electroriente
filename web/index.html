@@ -264,6 +264,17 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 .ayuda p + p { margin-top: 6px; color: var(--text-2); }
 @media (prefers-reduced-motion: reduce) { .ayuda { transition: none; transform: none; } }
 
+.toast { position: fixed; z-index: 60; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translateX(-50%); max-width: min(520px, calc(100vw - 32px)); padding: 12px 18px; border-radius: 12px; background: var(--barra); color: #fff; font-size: .9375rem; box-shadow: 0 10px 28px rgba(1, 30, 145, .25); }
+.toast.error { background: var(--danger); }
+.toast[hidden] { display: none; }
+.count.persona b { color: var(--text); font-weight: 600; }
+.count.persona button.link.mini { margin: 0; min-height: 32px; }
+dialog#persona-dialog { width: min(440px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--border); border-radius: 16px; color: var(--text); box-shadow: 0 14px 34px rgba(1, 30, 145, .18); }
+dialog#persona-dialog::backdrop { background: rgba(0, 7, 117, .35); }
+dialog#persona-dialog h2 { margin: 0 0 8px; font: 600 1.25rem/1.3 var(--sans); color: var(--primary); }
+dialog#persona-dialog p { margin: 0 0 16px; color: var(--text-2); font-size: .9375rem; }
+dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-height: 44px; padding: 0 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.dlg-acc { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .barra-der { display: flex; align-items: flex-end; gap: 14px; margin-left: auto; }
 .campana-wrap { position: relative; }
 .campana { position: relative; width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background var(--t); }
@@ -383,6 +394,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
           </select>
         </label>
         <p class="count" id="cuenta" aria-live="polite"></p>
+        <p class="count persona" id="persona-linea" hidden>Marcando como <b id="persona-nombre-vista"></b> · <button class="link mini" id="persona-cambiar" type="button">Cambiar</button></p>
       </div>
     </div>
     <ol class="lista" id="lista"></ol>
@@ -466,6 +478,20 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 </div>
 
 <div class="ayuda" id="ayuda" role="tooltip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="persona-dialog" aria-labelledby="persona-titulo">
+  <form id="persona-form" method="dialog">
+    <h2 id="persona-titulo">¿Quién está marcando?</h2>
+    <p>Su nombre aparecerá en la hoja del equipo junto a cada licitación que marque como «Me interesa». Se guarda solo en este navegador.</p>
+    <label class="f">Su nombre
+      <input id="persona-nombre" type="text" maxlength="60" autocomplete="name" required>
+    </label>
+    <div class="dlg-acc">
+      <button type="button" class="btn ghost" id="persona-cancelar">Cancelar</button>
+      <button type="submit" class="btn">Guardar y continuar</button>
+    </div>
+  </form>
+</dialog>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -690,9 +716,93 @@ let ver = 'pendientes', orden = 'puntaje';
 const idDe = (r) => r.id || (r.entidad + '|' + r.referencia);
 const estadoDe = (r) => decisiones[idDe(r)] || '';
 function decidir(r, valor) {
-  const k = idDe(r);
+  const k = idDe(r), antes = decisiones[k] || '';
   if (valor) decisiones[k] = valor; else delete decisiones[k];
   try { localStorage.setItem('radar-decisiones', JSON.stringify(decisiones)); } catch (_) {}
+  // La hoja del equipo solo se entera de lo que empieza o deja de ser «Me interesa».
+  if (valor === 'interesa' || antes === 'interesa') sincronizarHoja(r, valor);
+}
+
+// ---- Hoja compartida del equipo -------------------------------------------------------------
+// Cada «Me interesa» se copia a una hoja de Google Sheets que ve todo el equipo. La direccion y la
+// clave de la hoja llegan de /api/hoja (panel local: config/hoja.yaml; web compartida: cifradas).
+// Si no hay conexion, el aviso queda en una cola y se reintenta.
+let hojaCfg = null, enviandoHoja = false, toastTimer = null;
+let colaHoja = {};
+try { colaHoja = JSON.parse(localStorage.getItem('radar-hoja-cola') || '{}'); } catch (_) {}
+const guardarCola = () => { try { localStorage.setItem('radar-hoja-cola', JSON.stringify(colaHoja)); } catch (_) {} };
+const personaGuardada = () => { try { return localStorage.getItem('radar-persona') || ''; } catch (_) { return ''; } };
+async function cargarHoja() {
+  if (hojaCfg) return hojaCfg;
+  try { const r = await fetch('/api/hoja'); const j = r.ok ? await r.json() : {}; hojaCfg = j && (j.servidor || j.url) ? j : { url: '' }; }
+  catch (_) { return { url: '' }; }
+  return hojaCfg;
+}
+function avisar(texto, error = false) {
+  const t = $('toast'); t.textContent = texto; t.classList.toggle('error', error); t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, error ? 6000 : 3500);
+}
+function pedirPersona() {
+  return new Promise(resolver => {
+    const d = $('persona-dialog'), campo = $('persona-nombre'); campo.value = personaGuardada();
+    let listo = false;
+    const cerrar = (valor) => { if (listo) return; listo = true; d.close(); resolver(valor); };
+    $('persona-form').onsubmit = (e) => {
+      e.preventDefault();
+      const n = campo.value.trim().replace(/\s+/g, ' ');
+      if (!n) { campo.focus(); return; }
+      try { localStorage.setItem('radar-persona', n); } catch (_) {}
+      pintarPersona(); cerrar(n);
+    };
+    $('persona-cancelar').onclick = () => cerrar('');
+    d.oncancel = (e) => { e.preventDefault(); cerrar(''); };
+    d.showModal(); campo.focus(); campo.select();
+  });
+}
+function pintarPersona() {
+  const n = personaGuardada();
+  $('persona-linea').hidden = !(hojaCfg && (hojaCfg.servidor || hojaCfg.url) && n);
+  $('persona-nombre-vista').textContent = n;
+}
+async function vaciarColaHoja() {
+  if (enviandoHoja) return; enviandoHoja = true;
+  try {
+    const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
+    for (const id of Object.keys(colaHoja)) {
+      const item = colaHoja[id];
+      try {
+        // En el panel local el servidor reenvia a la hoja (la clave no sale de ahi).
+        const resp = cfg.servidor
+          ? await fetch('/api/hoja', { method: 'POST', headers: API_POST, body: JSON.stringify(item) })
+          : await fetch(cfg.url, { method: 'POST', redirect: 'follow',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...item, token: cfg.token }) });
+        const res = await resp.json();
+        if (!res.ok) throw new Error(res.error || 'rechazada');
+        if (colaHoja[id] === item) delete colaHoja[id];
+        guardarCola();
+        avisar(item.estado === 'interesa' ? 'Guardada en la hoja del equipo.' : 'Hoja del equipo actualizada.');
+      } catch (_) { avisar('No se pudo guardar en la hoja del equipo. Se reintentará.', true); break; }
+    }
+  } finally { enviandoHoja = false; }
+}
+async function sincronizarHoja(r, valor) {
+  const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
+  let persona = personaGuardada();
+  if (valor === 'interesa' && !persona) {
+    persona = await pedirPersona();
+    if (!persona) { avisar('Marcada solo en este navegador: falta su nombre para compartirla con el equipo.', true); return; }
+  }
+  colaHoja[idDe(r)] = { id: idDe(r), estado: valor, persona, entidad: r.entidad || '', objeto: (r.descripcion || '').slice(0, 600),
+    valor: r.valor_cop || '', cierre: r.fecha_cierre || '', puntaje: r.puntaje,
+    factibilidad: ({ alta: 'Alta', media: 'Media', revisar: 'Por revisar' })[r.nivel] || r.nivel || '',
+    departamento: r.departamento || '', modalidad: r.modalidad || '', tipo: r.tipo_contrato || '', url: r.url || '' };
+  guardarCola(); vaciarColaHoja();
+}
+async function iniciarHoja() {
+  const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
+  pintarPersona(); vaciarColaHoja();
+  setInterval(() => { if (Object.keys(colaHoja).length) vaciarColaHoja(); }, 60000);
+  $('persona-cambiar').onclick = () => pedirPersona();
 }
 const VISTAS = [['pendientes', 'Sin decidir', r => !estadoDe(r)], ['interesa', 'Me interesan', r => estadoDe(r) === 'interesa'],
                 ['descarta', 'Descartadas', r => estadoDe(r) === 'descarta'], ['todas', 'Todas', () => true]];
@@ -1340,6 +1450,7 @@ $('dias').onchange = cargar;
 ['q', 'dep', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 cargar();
 vista(location.hash.slice(1) || 'radar');
+iniciarHoja();
 </script>
 </body>
 </html>

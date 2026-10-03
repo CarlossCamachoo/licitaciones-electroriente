@@ -11,6 +11,7 @@ Antes de arrancar comprueba que el puerto este libre.
 
 import argparse
 import json
+import os
 import socket
 import sys
 import threading
@@ -117,6 +118,41 @@ def pendientes():
              "resuelto": bool(p.get("resuelto"))} for p in lista]
 
 
+def hoja_equipo():
+    """Direccion y clave de la hoja compartida del equipo (Google Sheets), o {} si no esta configurada.
+
+    Salen de las variables HOJA_URL y HOJA_TOKEN o de config/hoja.yaml (fuera de git)."""
+    url, token = os.environ.get("HOJA_URL", ""), os.environ.get("HOJA_TOKEN", "")
+    ruta = radar.RAIZ / "config" / "hoja.yaml"
+    if not (url and token) and ruta.exists():
+        try:
+            d = yaml.safe_load(ruta.read_text(encoding="utf-8")) or {}
+            url, token = str(d.get("url", "")), str(d.get("token", ""))
+        except (OSError, yaml.YAMLError):
+            url = token = ""
+    return {"url": url, "token": token} if url.startswith(("https://", "http://127.0.0.1")) and token else {}
+
+
+CAMPOS_HOJA = ("id", "estado", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
+               "factibilidad", "departamento", "modalidad", "tipo", "url")
+
+
+def enviar_a_hoja(item):
+    """Reenvia a la hoja del equipo (Google Sheets) un «Me interesa» o su cambio. Devuelve {ok: bool}."""
+    cfg = hoja_equipo()
+    if not cfg or not isinstance(item, dict):
+        return {"ok": False, "error": "La hoja del equipo no esta configurada."}
+    carga = {k: item.get(k, "") for k in CAMPOS_HOJA}
+    carga["token"] = cfg["token"]
+    try:
+        r = requests.post(cfg["url"], data=json.dumps(carga).encode("utf-8"), timeout=30,
+                          headers={"Content-Type": "text/plain;charset=utf-8"})
+        resultado = r.json()
+    except (requests.RequestException, ValueError):
+        return {"ok": False, "error": "No se pudo hablar con la hoja."}
+    return {"ok": bool(resultado.get("ok")), "error": resultado.get("error") or ""}
+
+
 def criterios():
     """Criterios explicados, terminos de busqueda y cuantas veces acerto cada uno."""
     with open(radar.RAIZ / "config" / "criterios.yaml", encoding="utf-8") as f:
@@ -181,6 +217,18 @@ class Manejador(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         q = parse_qs(url.query)
         try:
+            if url.path == "/api/hoja":
+                try:
+                    largo = int(self.headers.get("Content-Length", ""))
+                except ValueError:
+                    return self._json(411, {"error": "Falta el tamaño."})
+                if largo > 20000:
+                    return self._json(413, {"error": "Demasiado grande."})
+                try:
+                    item = json.loads(self.rfile.read(largo))
+                except ValueError:
+                    return self._json(400, {"error": "Datos no validos."})
+                return self._json(200, enviar_a_hoja(item))
             if url.path == "/api/subir":
                 try:
                     largo = int(self.headers.get("Content-Length", ""))
@@ -254,6 +302,9 @@ class Manejador(BaseHTTPRequestHandler):
             self._json(200, docs.listar())
         elif url.path == "/api/criterios":
             self._json(200, criterios())
+        elif url.path == "/api/hoja":
+            # Solo dice si hay hoja configurada: la direccion y la clave no salen del servidor.
+            self._json(200, {"servidor": True} if hoja_equipo() else {})
         elif url.path == "/api/archivo":
             try:
                 datos, tipo, ext = docs.abrir(parse_qs(url.query).get("id", [""])[0])
