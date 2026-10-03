@@ -5,6 +5,8 @@
   'use strict';
   const fetchReal = window.fetch.bind(window);
   const ITERACIONES = 600000;
+  const INACTIVIDAD_MS = 6 * 3600 * 1000;   // pasado este tiempo sin tocar la pagina, vuelve a pedir la contrasena
+  const CLAVE_ACTIVIDAD = 'radar-actividad';
   let clave = null, abrir;
   const listo = new Promise(r => { abrir = r; });
   const aBytes = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -50,14 +52,38 @@
     if (!buf) throw new Error('sin datos');
     return (await descifrar(k, buf)).ok === true;
   }
+  // Ultima vez que alguien uso la pagina (se comparte entre pestañas del mismo navegador).
+  function ultimaActividad() {
+    try { return Number(localStorage.getItem(CLAVE_ACTIVIDAD)) || 0; } catch (_) { return 0; }
+  }
+  function marcarActividad() { try { localStorage.setItem(CLAVE_ACTIVIDAD, String(Date.now())); } catch (_) {} }
+  function olvidarClave() {
+    for (const almacen of [sessionStorage, localStorage]) { try { almacen.removeItem('radar-clave'); } catch (_) {} }
+    try { localStorage.removeItem(CLAVE_ACTIVIDAD); } catch (_) {}
+  }
+  const vencida = () => Date.now() - ultimaActividad() > INACTIVIDAD_MS;
+  // Con la pagina abierta: se cuenta como actividad tocar, teclear o desplazarse (se anota a lo sumo cada 30 s).
+  // Si pasan 6 horas sin nada, se borra la clave y se recarga para mostrar la pantalla de acceso.
+  function vigilarInactividad() {
+    let ultimo = 0;
+    const tocar = () => { const t = Date.now(); if (t - ultimo > 30000) { ultimo = t; marcarActividad(); } };
+    ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(ev => addEventListener(ev, tocar, { passive: true, capture: true }));
+    const revisar = () => { if (vencida()) { olvidarClave(); location.reload(); } };
+    setInterval(revisar, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
+    addEventListener('focus', revisar);
+    tocar();
+  }
   async function entrarCon(k, recordar) {
     clave = k;
     const exportada = aB64(await crypto.subtle.exportKey('raw', k));
     try { (recordar ? localStorage : sessionStorage).setItem('radar-clave', exportada); } catch (_) {}
     document.getElementById('acceso').hidden = true;
+    vigilarInactividad();
     abrir();
   }
   async function claveGuardada() {
+    if (vencida()) { olvidarClave(); return null; }
     for (const almacen of [sessionStorage, localStorage]) {
       try {
         const g = almacen.getItem('radar-clave'); if (!g) continue;
@@ -74,7 +100,7 @@
     const campo = document.getElementById('acceso-clave'), error = document.getElementById('acceso-error');
     const boton = document.getElementById('acceso-entrar');
     const guardada = await claveGuardada();
-    if (guardada) { clave = guardada; caja.hidden = true; abrir(); return; }
+    if (guardada) { clave = guardada; caja.hidden = true; vigilarInactividad(); abrir(); return; }
     campo.focus();
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
