@@ -158,7 +158,7 @@ COLUMNAS = ("entidad,departamento_entidad,referencia_del_proceso,"
             "modalidad_de_contratacion,tipo_de_contrato,estado_del_procedimiento,"
             "fase,precio_base,valor_total_adjudicacion,fecha_de_publicacion_del,"
             "urlproceso,estado_de_apertura_del_proceso,id_del_proceso,"
-            "fecha_de_recepcion_de")
+            "fecha_de_recepcion_de,proveedores_unicos_con")
 HILOS = 3
 
 
@@ -385,6 +385,10 @@ def evaluar(proceso, perfil, filtros, umbral=None):
         "valor_cop": valor,
         "fecha_publicacion": (proceso.get("fecha_de_publicacion_del") or "")[:10],
         "fecha_cierre": fecha_cierre,
+        # Proveedores distintos que ya respondieron al proceso (oferta o, en las
+        # solicitudes de informacion, su respuesta). None si SECOP no lo trae.
+        "respondieron": (int(a_numero(proceso["proveedores_unicos_con"]))
+                         if proceso.get("proveedores_unicos_con") not in (None, "") else None),
         "url": url_segura(proceso.get("urlproceso")),
         "coincidencias": sorted(set(coincidencias)),
         "notas": notas,

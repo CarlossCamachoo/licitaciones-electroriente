@@ -106,6 +106,8 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .valor small.cierre { margin-top: 2px; font-weight: 600; color: var(--text); }
 .valor small.cierre.nd { font-weight: 400; color: var(--text-2); }
 .valor small.cierre.pronto { color: var(--danger); }
+.valor small.resp { margin-top: 2px; font-weight: 600; color: var(--text); }
+.valor small.resp.cero { font-weight: 400; color: var(--text-2); }
 .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 14px 0 4px; }
 .acciones .sp { flex: 1; }
@@ -445,6 +447,17 @@ function cierre(f) {
   if (dias <= 3) el1.classList.add('pronto');
   return el1;
 }
+// Cuantos proveedores distintos ya respondieron al proceso (dato de SECOP). Casi todos los
+// procesos abiertos muestran 0 porque SECOP publica ese conteo tarde: 0 no significa "nadie".
+function respondieron(n) {
+  if (n === null || n === undefined) return document.createDocumentFragment();
+  const s = el('small', 'resp' + (n === 0 ? ' cero' : ''));
+  s.textContent = n === 0 ? 'SECOP aún no reporta respuestas' : n === 1 ? '1 proveedor ya respondió' : `${n} proveedores ya respondieron`;
+  s.title = n === 0
+    ? 'SECOP suele publicar este conteo tarde: casi todos los procesos abiertos aparecen en 0. No significa que nadie haya respondido.'
+    : 'Proveedores distintos que ya enviaron su respuesta u oferta a este proceso, según SECOP. Menos proveedores significa menos competencia.';
+  return s;
+}
 const pesos = (v) => v ? '$' + Math.round(v).toLocaleString('es-CO') + ' COP' : 'Sin valor publicado';
 
 let datos = null, ultimaConsulta = null;
@@ -600,7 +613,7 @@ function tarjeta(r) {
   const cabeza = el('div', 'cabeza');
   const valor = el('div', 'valor');
   const v = el('strong', r.valor_cop ? '' : 'nulo', pesos(r.valor_cop));
-  valor.append(v, el('small', '', antiguedad(r.fecha_publicacion)), cierre(r.fecha_cierre));
+  valor.append(v, el('small', '', antiguedad(r.fecha_publicacion)), cierre(r.fecha_cierre), respondieron(r.respondieron));
   cabeza.append(el('h2', '', r.entidad || 'Entidad sin nombre'), valor);
   body.append(top, cabeza);
   const meta = el('div', 'meta');
