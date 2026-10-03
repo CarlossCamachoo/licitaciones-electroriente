@@ -126,8 +126,11 @@ lista separada.
 
 ## Decisiones de diseno que conviene respetar
 
-**El filtrado se hace en local, no en el servidor.** Se descarga por fecha y
-se filtra por contenido en el codigo. Es mas facil de auditar y de ajustar
+**El filtrado por contenido se hace en local, no en el servidor.** Se descarga
+por fecha y se filtra por contenido en el codigo. Unica excepcion: en el
+servidor se descartan dos cosas estructurales (procesos no abiertos y
+contratacion directa), porque sin eso 60 o 90 dias (hasta 220.000 procesos)
+no caben. Por eso "procesos revisados" ya no cuenta la contratacion directa. Es mas facil de auditar y de ajustar
 que una consulta remota compleja.
 
 **Cada resultado explica por que entro.** El campo "Coincide por" muestra el

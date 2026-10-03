@@ -31,7 +31,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 API_PROCESOS = "https://www.datos.gov.co/resource/p6dx-8zbt.json"
 TIEMPO_ESPERA = 60
 TAMANO_PAGINA = 5000
-LIMITE_POR_DEFECTO = 50000
+LIMITE_POR_DEFECTO = 300000
 
 
 # --------------------------------------------------------------------------
@@ -152,37 +152,71 @@ def _pedir_pagina(parametros, cabeceras, intentos=4):
             time.sleep(2 * intento)
 
 
-def consultar_secop(dias, limite=LIMITE_POR_DEFECTO):
-    """Trae procesos publicados en los ultimos N dias, paginando.
+# Solo las columnas que el radar usa: baja la descarga a menos de la mitad.
+COLUMNAS = ("entidad,departamento_entidad,referencia_del_proceso,"
+            "nombre_del_procedimiento,descripci_n_del_procedimiento,"
+            "modalidad_de_contratacion,tipo_de_contrato,estado_del_procedimiento,"
+            "fase,precio_base,valor_total_adjudicacion,fecha_de_publicacion_del,"
+            "urlproceso,estado_de_apertura_del_proceso,id_del_proceso")
+HILOS = 3
 
-    Se filtra por fecha en el servidor para no descargar de mas.
-    El filtrado por contenido se hace despues, en local, porque es
-    mas facil de auditar y de ajustar.
 
-    Devuelve (procesos, truncado). Si truncado es True, habia mas
-    procesos que el limite y el resultado esta incompleto.
+def _literal(texto):
+    return "'" + str(texto).replace("'", "''") + "'"
+
+
+def recorrer_secop(dias, limite=LIMITE_POR_DEFECTO, excluir_modalidades=()):
+    """Prepara la descarga de los procesos de los ultimos N dias.
+
+    Devuelve (total, truncado, paginas): `paginas` es un generador que
+    entrega lista tras lista de procesos, en orden, sin acumularlos todos
+    en memoria (90 dias son unos 220.000 procesos).
+
+    Solo se descartan en el servidor dos cosas estructurales, no de
+    contenido: procesos cuyo estado de apertura no es "Abierto" y las
+    modalidades excluidas (contratacion directa). Sin esto, 60 o 90 dias
+    no caben. Todo el filtrado por contenido sigue siendo local.
     """
     desde = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%dT00:00:00.000")
+    donde = (f"fecha_de_publicacion_del > '{desde}' AND "
+             "(estado_de_apertura_del_proceso = 'Abierto' "
+             "OR estado_de_apertura_del_proceso IS NULL)")
+    if excluir_modalidades:
+        lista = ", ".join(_literal(m) for m in excluir_modalidades)
+        donde += (" AND (modalidad_de_contratacion IS NULL "
+                  f"OR modalidad_de_contratacion NOT IN ({lista}))")
     cabeceras = {}
     token = os.environ.get("SOCRATA_APP_TOKEN")  # opcional, evita limites de uso
     if token:
         cabeceras["X-App-Token"] = token
 
-    procesos = []
-    while len(procesos) < limite:
-        parametros = {
-            "$where": f"fecha_de_publicacion_del > '{desde}'",
-            "$limit": min(TAMANO_PAGINA, limite - len(procesos)),
-            "$offset": len(procesos),
+    cuenta = _pedir_pagina({"$select": "count(*) as n", "$where": donde}, cabeceras)
+    existentes = int(cuenta[0]["n"]) if cuenta else 0
+    total = min(existentes, limite)
+
+    def pagina(desplazamiento):
+        return _pedir_pagina({
+            "$select": COLUMNAS, "$where": donde,
+            "$limit": min(TAMANO_PAGINA, total - desplazamiento),
+            "$offset": desplazamiento,
             # id_del_proceso como desempate: sin orden estable la paginacion
             # puede repetir o saltarse filas.
             "$order": "fecha_de_publicacion_del DESC, id_del_proceso",
-        }
-        pagina = _pedir_pagina(parametros, cabeceras)
-        procesos.extend(pagina)
-        if len(pagina) < parametros["$limit"]:
-            return procesos, False
-    return procesos, True
+        }, cabeceras)
+
+    def generar():
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(HILOS) as pool:
+            # map entrega en orden aunque las paginas lleguen desordenadas
+            yield from pool.map(pagina, range(0, total, TAMANO_PAGINA))
+
+    return total, existentes > limite, generar()
+
+
+def consultar_secop(dias, limite=LIMITE_POR_DEFECTO, excluir_modalidades=()):
+    """Version simple: junta todo en una lista. Devuelve (procesos, truncado)."""
+    total, truncado, paginas = recorrer_secop(dias, limite, excluir_modalidades)
+    return [p for pag in paginas for p in pag], truncado
 
 
 def cargar_demo():
@@ -400,7 +434,8 @@ def main():
     else:
         print(f"Consultando SECOP II, ultimos {args.dias} dias...")
         try:
-            procesos, truncado = consultar_secop(args.dias, args.limite)
+            procesos, truncado = consultar_secop(
+                args.dias, args.limite, filtros.get("excluir_modalidad", []))
         except requests.RequestException as e:
             print(f"\nError al consultar SECOP: {e}", file=sys.stderr)
             print("Revisa la conexion. Los datos abiertos no requieren llave.",

@@ -13,6 +13,7 @@ import argparse
 import json
 import socket
 import sys
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -37,29 +38,40 @@ def puerto_libre(puerto):
         return s.connect_ex((HOST, puerto)) != 0
 
 
-def calcular(dias):
-    clave = dias
-    guardado = _cache.get(clave)
-    if guardado and time.time() - guardado["t"] < VIGENCIA_CACHE:
-        return guardado["datos"]
+_candado_calculo = threading.Lock()
 
-    perfil, filtros = radar.cargar_config()
-    procesos, truncado = radar.consultar_secop(dias)
-    minimo = filtros["puntaje"]["umbral_revisar"]
-    resultados = [r for r in (radar.evaluar(p, perfil, filtros, minimo)
-                              for p in procesos) if r]
-    # Mejor puntaje primero; a igualdad, el mas reciente.
-    resultados.sort(key=lambda r: r["fecha_publicacion"], reverse=True)
-    resultados.sort(key=lambda r: r["puntaje"], reverse=True)
-    datos = {
-        "revisados": len(procesos),
-        "truncado": truncado,
-        "umbral": filtros["puntaje"]["umbral_alerta"],
-        "generado": time.strftime("%Y-%m-%d %H:%M"),
-        "resultados": resultados,
-    }
-    _cache[clave] = {"t": time.time(), "datos": datos}
-    return datos
+
+def calcular(dias):
+    # Un solo calculo a la vez: si dos pestanas piden lo mismo, la segunda
+    # espera y encuentra el resultado en cache en vez de repetir la descarga.
+    with _candado_calculo:
+        guardado = _cache.get(dias)
+        if guardado and time.time() - guardado["t"] < VIGENCIA_CACHE:
+            return guardado["datos"]
+
+        perfil, filtros = radar.cargar_config()
+        minimo = filtros["puntaje"]["umbral_revisar"]
+        total, truncado, paginas = radar.recorrer_secop(
+            dias, excluir_modalidades=filtros.get("excluir_modalidad", []))
+        resultados, revisados = [], 0
+        for pagina in paginas:
+            revisados += len(pagina)
+            resultados.extend(r for r in (radar.evaluar(p, perfil, filtros, minimo)
+                                          for p in pagina) if r)
+        # Mejor puntaje primero; a igualdad, el mas reciente.
+        resultados.sort(key=lambda r: r["fecha_publicacion"], reverse=True)
+        resultados.sort(key=lambda r: r["puntaje"], reverse=True)
+        datos = {
+            "revisados": revisados,
+            "truncado": truncado,
+            "umbral": filtros["puntaje"]["umbral_alerta"],
+            "generado": time.strftime("%Y-%m-%d %H:%M"),
+            "generado_ts": int(time.time()),
+            "dias": dias,
+            "resultados": resultados,
+        }
+        _cache[dias] = {"t": time.time(), "datos": datos}
+        return datos
 
 
 def pendientes():

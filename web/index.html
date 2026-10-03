@@ -180,7 +180,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg>
         Radar de Licitaciones
       </h1>
-      <p class="sub">Electroriente S.A.S. · SECOP II · <span id="generado">sin consultar</span></p>
+      <p class="sub">Electroriente S.A.S. · SECOP II · <span id="generado" title="Momento en que se consultó SECOP II por última vez">sin consultar</span></p>
     </div>
     <div class="controls" id="ctlRadar" role="group" aria-label="Consulta">
       <label class="f">Periodo
@@ -189,6 +189,8 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
           <option value="7" selected>Últimos 7 días</option>
           <option value="15">Últimos 15 días</option>
           <option value="30">Últimos 30 días</option>
+          <option value="60">Últimos 60 días</option>
+          <option value="90">Últimos 90 días</option>
         </select>
       </label>
       <button class="btn" id="actualizar" type="button">
@@ -281,14 +283,31 @@ function el(tag, cls, text) {
 }
 const pesos = (v) => v ? '$' + Math.round(v).toLocaleString('es-CO') + ' COP' : 'Sin valor publicado';
 
-let datos = null;
+let datos = null, ultimaConsulta = null;
+
+function hace(ts) {
+  const m = Math.floor((Date.now() / 1000 - ts) / 60);
+  if (m < 1) return 'hace menos de un minuto';
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `hace ${h} h` : `hace ${Math.floor(h / 24)} d`;
+}
+function pintarConsulta() {
+  if (!ultimaConsulta) return;
+  const f = new Date(ultimaConsulta * 1000);
+  const fecha = f.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) + ', ' +
+                f.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  $('generado').textContent = `última consulta a SECOP: ${fecha} (${hace(ultimaConsulta)})`;
+}
+setInterval(pintarConsulta, 30000);
 
 async function cargar() {
   const btn = $('actualizar');
   btn.disabled = true;
   const lista = $('lista');
   lista.replaceChildren(...[1, 2, 3].map(() => el('li', 'skel')));
-  $('cuenta').textContent = 'Consultando SECOP… puede tardar unos 20 segundos la primera vez.';
+  const d = +$('dias').value;
+  $('cuenta').textContent = d >= 60 ? 'Consultando SECOP… con 60 o 90 días puede tardar unos 2 minutos la primera vez.' : d >= 30 ? 'Consultando SECOP… puede tardar un minuto la primera vez.' : 'Consultando SECOP… puede tardar unos 20 segundos la primera vez.';
   $('kpis').hidden = true; $('trunc').hidden = true;
   try {
     const url = `/api/alertas?dias=${$('dias').value}`;
@@ -296,7 +315,7 @@ async function cargar() {
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || 'Error inesperado');
     datos = j;
-    $('generado').textContent = 'consultado ' + j.generado;
+    ultimaConsulta = j.generado_ts; pintarConsulta();
     llenarDeps();
     pintarKpis();
     if (j.truncado) {
