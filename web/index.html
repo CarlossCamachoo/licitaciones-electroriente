@@ -53,7 +53,7 @@ label.f { display: flex; flex-direction: column; font-size: .6875rem; font-weigh
 select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px; background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23495057' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); }
 select, input[type=search], input[type=number] { font: 400 1rem var(--sans); min-height: 44px; padding-top: 0; padding-bottom: 0; padding-left: 12px; background-color: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; transition: border-color var(--t); }
 input[type=search], input[type=number] { padding-right: 12px; }
-label.buscar { flex: 1 1 360px; }
+label.buscar { flex: 1 1 280px; }
 label.buscar input { width: 100%; box-sizing: border-box; }
 input[type=number] { width: 96px; }
 .subir input[type=date] { font-size: 1rem; }
@@ -280,6 +280,10 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 .usuario-menu[hidden] { display: none; }
 .um-saludo { margin: 0; font: 600 1.125rem/1.3 var(--sans); color: var(--primary); overflow-wrap: anywhere; }
 .um-nota { margin: 4px 0 14px; font-size: .8125rem; line-height: 1.5; color: var(--text-2); }
+.equipo-linea { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--primary-soft); color: var(--text); font-size: .875rem; width: fit-content; max-width: 100%; }
+.equipo-linea svg.i { width: 16px; height: 16px; color: var(--primary); }
+.equipo-linea b { font-weight: 600; color: var(--primary); }
+.equipo-linea .seg-estado { color: var(--text-2); }
 .usuario-menu button.btn.ghost { background: transparent; color: var(--primary); border-color: var(--primary); }
 .usuario-menu :focus-visible { outline-color: var(--ring); }
 .um-salir { width: 100%; justify-content: center; }
@@ -410,6 +414,13 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
         <option value="si">Posibles renovaciones</option>
       </select>
     </label>
+    <label class="f" id="equipo-filtro" hidden>Equipo
+      <select id="equipo">
+        <option value="">Todos</option>
+        <option value="marcadas">Marcadas por el equipo</option>
+        <option value="libres">Que nadie ha marcado</option>
+      </select>
+    </label>
   </div>
 
   <main id="resultados" tabindex="-1">
@@ -534,7 +545,8 @@ const ICON = {
   doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
   ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
-  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'
+  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.9 0 5 2.1 5 5.8"/>'
 };
 function svg(name) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -636,7 +648,7 @@ function pintarCampana() {
 function verEnRadar(it) {
   cerrarNotif(false);
   vista('radar');
-  $('dep').value = ''; $('q').value = it.entidad; $('renov').value = '';
+  $('dep').value = ''; $('q').value = it.entidad; $('renov').value = ''; $('equipo').value = '';
   ver = 'todas'; mostrados = PAGINA; animar = true; pintar();
   window.scrollTo({ top: 0 });
 }
@@ -834,6 +846,7 @@ async function vaciarColaHoja() {
         if (colaHoja[id] === item) delete colaHoja[id];
         guardarCola();
         avisar(item.estado === 'interesa' ? 'Guardada en la hoja del equipo.' : 'Hoja del equipo actualizada.');
+        cargarEquipo();
       } catch (_) { avisar('No se pudo guardar en la hoja del equipo. Se reintentará.', true); break; }
     }
   } finally { enviandoHoja = false; }
@@ -872,6 +885,44 @@ function pintarSaludo() {
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('usuario-menu').hidden) { abrir(false); boton.focus(); } });
   }
 }
+// ---- Lo que marco el equipo: se lee de la hoja de Google y se muestra en cada tarjeta --------------
+let equipoMarcas = {}, equipoFirma = '';
+const primerNombre = (n) => String(n).trim().split(' ')[0];
+const unirNombres = (l) => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1];
+function lineaEquipo(m) {
+  const nombres = String(m.persona || '').split(',').map(s => s.trim()).filter(Boolean);
+  const yo = personaFija().toLowerCase();
+  const otros = nombres.filter(n => n.toLowerCase() !== yo), conmigo = otros.length !== nombres.length;
+  const quien = otros.map(primerNombre);
+  const p = el('p', 'equipo-linea'); p.append(svg('users'));
+  const t = el('span');
+  if (conmigo && !otros.length) t.append(document.createTextNode('Usted la marcó en la hoja del equipo'));
+  else {
+    const b = el('b', '', unirNombres(quien));
+    t.append(conmigo ? document.createTextNode('Usted y ') : '', b, document.createTextNode(conmigo || otros.length > 1 ? ' la marcaron' : ' la marcó'));
+  }
+  p.append(t);
+  if (m.seguimiento) p.append(el('span', 'seg-estado', '· ' + m.seguimiento));
+  return p;
+}
+async function cargarEquipo() {
+  const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
+  try {
+    const resp = cfg.servidor
+      ? await fetch('/api/hoja', { method: 'POST', headers: API_POST, body: JSON.stringify({ accion: 'equipo' }) })
+      : await fetch(cfg.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ accion: 'equipo', token: cfg.token }) });
+    const res = await resp.json();
+    if (!res.ok || !Array.isArray(res.filas)) return;
+    const firma = JSON.stringify(res.filas);
+    if (firma === equipoFirma) return;                 // nada cambio: no se redibuja
+    equipoFirma = firma;
+    equipoMarcas = Object.fromEntries(res.filas.map(f => [f.id, f]));
+    $('equipo-filtro').hidden = false;
+    if (datos) pintar();
+  } catch (_) { /* se intenta de nuevo en la proxima vuelta */ }
+}
+
 // Pide a GitHub (por medio del script de la hoja, que guarda el permiso) una publicacion nueva de la web.
 // Devuelve 'lanzada' (o ya habia una en curso) o 'no' (no disponible: se lee lo ya publicado).
 async function pedirPublicacion() {
@@ -888,6 +939,9 @@ async function iniciarHoja() {
   const cfg = await cargarHoja(); pintarSaludo();
   if (!cfg.servidor && !cfg.url) return;
   pintarPersona(); vaciarColaHoja();
+  cargarEquipo();
+  setInterval(() => { if (!document.hidden) cargarEquipo(); }, 180000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) cargarEquipo(); });
   setInterval(() => { if (Object.keys(colaHoja).length) vaciarColaHoja(); }, 60000);
   $('persona-cambiar').onclick = () => pedirPersona();
 }
@@ -901,6 +955,7 @@ function filtrar(conDecision = true) {
     (!conDecision || dv(r)) &&
     (!dep || r.departamento === dep) &&
     (!$('renov').value || r.renovacion) &&
+    ($('equipo').value === 'marcadas' ? !!equipoMarcas[idDe(r)] : $('equipo').value === 'libres' ? !equipoMarcas[idDe(r)] : true) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
   // Los que no publican valor van siempre al final, sea cual sea el sentido.
   const sinValor = (a, b) => (!a.valor_cop) - (!b.valor_cop);
@@ -1016,6 +1071,8 @@ function tarjeta(r) {
     a.append(document.createTextNode('Abrir en SECOP'), svg('ext'));
     acc.append(a);
   }
+  const marca = equipoMarcas[idDe(r)];
+  if (marca) body.append(lineaEquipo(marca));
   body.append(acc);
   li.append(sc, body);
   return li;
@@ -1534,7 +1591,7 @@ document.addEventListener('keydown', e => {
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = () => cargar(true, true);
 $('dias').onchange = () => cargar();
-['q', 'dep', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+['q', 'dep', 'renov', 'equipo'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 cargar();
 vista(location.hash.slice(1) || 'radar');
 iniciarHoja();

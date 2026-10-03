@@ -170,7 +170,7 @@ def persona_local():
     return nombre_propio(nombre)[:60]
 
 
-CAMPOS_HOJA = ("id", "estado", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
+CAMPOS_HOJA = ("accion", "id", "estado", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
                "factibilidad", "departamento", "modalidad", "tipo", "url")
 
 
@@ -187,7 +187,10 @@ def enviar_a_hoja(item):
         resultado = r.json()
     except (requests.RequestException, ValueError):
         return {"ok": False, "error": "No se pudo hablar con la hoja."}
-    return {"ok": bool(resultado.get("ok")), "error": resultado.get("error") or ""}
+    salida = {"ok": bool(resultado.get("ok")), "error": resultado.get("error") or ""}
+    if isinstance(resultado.get("filas"), list):
+        salida["filas"] = resultado["filas"]
+    return salida
 
 
 def criterios():

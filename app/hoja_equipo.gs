@@ -107,6 +107,24 @@ function instalarDisparador() {
   ScriptApp.newTrigger('publicarProgramado').timeBased().everyMinutes(30).create();
 }
 
+// Lo que marco el equipo: un resumen corto (sin el objeto ni el valor) para mostrarlo en cada tarjeta de la web.
+function equipo_() {
+  const cache = CacheService.getScriptCache();
+  const guardado = cache.get('equipo');
+  if (guardado) return JSON.parse(guardado);
+  const h = hoja_();
+  const n = Math.max(h.getLastRow() - 1, 0);
+  const filas = n ? h.getRange(2, 1, n, COLUMNAS.length).getValues() : [];
+  const hora = (v) => v instanceof Date ? Utilities.formatDate(v, 'America/Bogota', 'yyyy-MM-dd HH:mm') : String(v);
+  const lista = filas
+    .filter(f => f[COL('Estado') - 1] === 'Me interesa' && f[COL('Id del proceso') - 1])
+    .map(f => ({ id: String(f[COL('Id del proceso') - 1]), persona: String(f[COL('Persona') - 1]),
+      seguimiento: String(f[COL('Seguimiento') - 1] || ''), fecha: hora(f[COL('Fecha') - 1]) }));
+  const r = { ok: true, filas: lista };
+  try { cache.put('equipo', JSON.stringify(r), 30); } catch (err) { /* demasiado grande para la memoria: se lee cada vez */ }
+  return r;
+}
+
 function doPost(e) {
   const cerrojo = LockService.getScriptLock();
   try {
@@ -114,6 +132,7 @@ function doPost(e) {
     const d = JSON.parse(e.postData.contents);
     if (d.token !== TOKEN) return salida_({ ok: false, error: 'clave' });
     if (d.accion === 'actualizar') return salida_(actualizarWeb_());
+    if (d.accion === 'equipo') return salida_(equipo_());
     if (!ID_VALIDO.test(String(d.id || ''))) return salida_({ ok: false, error: 'id no valido' });
     const estado = d.estado == null ? '' : String(d.estado);
     if (ESTADOS.indexOf(estado) < 0) return salida_({ ok: false, error: 'estado no valido' });
@@ -137,6 +156,13 @@ function doPost(e) {
       let n;
       if (i >= 0) {
         n = i + 2;
+        // Si otra persona ya la tenia marcada, se suman los nombres («Ana, Carlos»).
+        const previa = h.getRange(n, 1, 1, 3).getValues()[0];
+        if (String(previa[2]) === 'Me interesa' && previa[1] && persona) {
+          const nombres = String(previa[1]).split(',').map(x => x.trim()).filter(Boolean);
+          if (nombres.map(x => x.toLowerCase()).indexOf(persona.toLowerCase()) < 0) nombres.push(persona);
+          fila[1] = nombres.join(', ');
+        }
         h.getRange(n, 1, 1, N_RADAR).setValues([fila]);
       } else {
         n = h.getLastRow() + 1;
@@ -154,6 +180,7 @@ function doPost(e) {
       h.getRange(i + 2, COL('Fecha'), 1, 1).setValue(ahora);
       h.getRange(i + 2, COL('Estado'), 1, 1).setValue(que + (persona ? ' por ' + persona : ''));
     }
+    CacheService.getScriptCache().remove('equipo');
     return salida_({ ok: true });
   } catch (err) {
     return salida_({ ok: false, error: String(err) });

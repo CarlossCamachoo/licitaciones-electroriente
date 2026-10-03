@@ -96,3 +96,12 @@ del editor a veces ejecuta otra función sin avisar; en la página Ejecuciones s
 
 El token vence (máximo un año): al vencer, el botón sigue funcionando leyendo lo ya publicado; se renueva
 creando otro y cambiando la propiedad.
+
+## Lo que marcó el equipo, en cada tarjeta
+
+La web lee de la hoja un resumen corto (quién la marcó y su Seguimiento; nunca el objeto ni el valor) y lo
+muestra en cada tarjeta: «Ana la marcó · Preparando oferta», o «Usted y Ana la marcaron». Si dos personas marcan
+la misma licitación, los nombres se suman en la hoja («Ana, Carlos»). Hay un filtro **Equipo** (marcadas por el
+equipo / que nadie ha marcado). Se actualiza al abrir, al volver a la pestaña, cada 3 minutos y al marcar algo.
+El resumen se guarda 30 segundos en la memoria del script para no leer la hoja en cada consulta.
+Solo muestra los «Me interesa»: el «Descartar» sigue siendo personal.
