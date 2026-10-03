@@ -365,6 +365,13 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
       <label class="f">Producto
         <select id="mprod"><option value="">Todos</option></select>
       </label>
+      <label class="f">Estado del contrato
+        <select id="mestado">
+          <option value="">Todos</option>
+          <option value="act">Activos</option>
+          <option value="fin">Finalizados</option>
+        </select>
+      </label>
       <label class="f">Ordenar por
         <select id="morden">
           <option value="n">Más contratos</option>
@@ -1018,6 +1025,16 @@ function cargarMer() {
     if (d.estado.calculando && !$('vista-mer').hidden) merTimer = setTimeout(cargarMer, 5000);
   }).catch(() => { mer = { error: true }; pintarMer(); });
 }
+// Estado de un contrato. Las entidades no siempre cierran el contrato en SECOP:
+// si el plazo ya paso pero sigue "en ejecucion", se dice tal cual.
+function estadoContrato(c) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const est = (c.estado || '').toLowerCase();
+  const fin = c.fin ? new Date(c.fin + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  if (/terminad|cerrad|liquidad/.test(est)) return { id: 'fin', texto: `Finalizado${fin ? ' el ' + fin : ''}` };
+  if (c.fin && c.fin < hoy) return { id: 'fin', texto: `Plazo cumplido el ${fin}, SECOP aún no lo marca como terminado${/modificad/.test(est) ? ' (fue modificado: puede haberse prorrogado)' : ''}` };
+  return { id: 'act', texto: c.fin ? `Activo hasta el ${fin}` : 'Activo, sin fecha de fin publicada' };
+}
 const mMediana = (a) => { const s = a.filter(x => x > 0).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
 const mCuartil = (a, q) => { const s = a.filter(x => x > 0).sort((x, y) => x - y); return s.length ? s[Math.floor((s.length - 1) * q)] : 0; };
 const mTop = (lista, campo, max) => {
@@ -1071,11 +1088,13 @@ function filaMer(g, vista) {
     lineas.push(['Más contratos', mTop(g.contratos, 'proveedor', 3).map(([n, k]) => `${n} (${k})`).join(', ')]);
     lineas.push(['Compran', `${plural(ents.size, 'entidad', 'entidades')} en ${plural(deps.size, 'departamento', 'departamentos')}`]);
   }
+  const nAct = g.contratos.filter(c => estadoContrato(c).id === 'act').length;
+  lineas.push(['Estado', `${plural(nAct, 'activo', 'activos')} y ${plural(g.n - nAct, 'finalizado', 'finalizados')}`]);
   lineas.forEach(([k, v]) => { const p = el('p', 'hist'); p.append(el('b', '', k + ': '), document.createTextNode(v)); body.append(p); });
   const det = el('details', 'req'); const sum = el('summary', '', `Ver contratos (${g.n})`); det.append(sum);
   const cuerpo = el('div', 'cuerpo'); const ul = el('ul');
   g.contratos.slice().sort((a, b) => (b.valor || 0) - (a.valor || 0)).slice(0, 8).forEach(c => {
-    const l = el('li'); l.append(document.createTextNode(`${c.firma} · ${c.entidad} · ${pesos(c.valor)} · ${vista === 'ganadores' ? '' : (c.proveedor || 'proveedor no publicado') + ' · '}${(c.objeto || '').slice(0, 110)}${(c.objeto || '').length > 110 ? '…' : ''} `));
+    const l = el('li'); l.append(el('b', '', estadoContrato(c).texto + ' · '), document.createTextNode(`${c.entidad} · ${pesos(c.valor)} · ${vista === 'ganadores' ? '' : (c.proveedor || 'proveedor no publicado') + ' · '}${(c.objeto || '').slice(0, 110)}${(c.objeto || '').length > 110 ? '…' : ''} `));
     if (c.url) { const a = el('a', 'go'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = 'SECOP'; l.append(a); }
     ul.append(l);
   });
@@ -1098,8 +1117,8 @@ function pintarMer() {
       : estadoVacio('Consultando contratos en SECOP…', 'La primera vez tarda un par de minutos. Esta pantalla se actualiza sola.'));
     return;
   }
-  const q = radarNorm($('mq').value), dep = $('mdep').value, prod = $('mprod').value, orden = $('morden').value;
-  const f = mer.contratos.filter(c => (!dep || c.departamento === dep) && (!prod || c.coincidencias.includes(prod)) &&
+  const q = radarNorm($('mq').value), dep = $('mdep').value, prod = $('mprod').value, orden = $('morden').value, est = $('mestado').value;
+  const f = mer.contratos.filter(c => (!dep || c.departamento === dep) && (!est || estadoContrato(c).id === est) && (!prod || c.coincidencias.includes(prod)) &&
     (!q || radarNorm(c.proveedor + ' ' + c.entidad + ' ' + c.objeto).includes(q)));
   const grupos = agruparMer(f, merVer).sort((a, b) => (b[orden] - a[orden]) || (b.total - a.total));
   const nombres = { ganadores: 'proveedores', entidades: 'entidades', regiones: 'departamentos', productos: 'productos' };
@@ -1112,7 +1131,7 @@ function pintarMer() {
   }
   lista.replaceChildren(...filas);
 }
-['mq', 'mdep', 'mprod', 'morden'].forEach(id => $(id).addEventListener('input', () => { merVistos = PAGINA; pintarMer(); }));
+['mq', 'mdep', 'mprod', 'mestado', 'morden'].forEach(id => $(id).addEventListener('input', () => { merVistos = PAGINA; pintarMer(); }));
 
 const TABS = ['radar', 'revisar', 'venc', 'mer', 'docs', 'crit'];
 function vista(nombre) {

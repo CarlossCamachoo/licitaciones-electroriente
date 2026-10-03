@@ -62,7 +62,10 @@ los últimos 12 meses). Es una pista, no una garantía: un contrato puede prorro
 **Pestaña Mercado:** con esos mismos contratos (suministro y compraventa del último año)
 muestra quién gana (con NIT), qué entidades compran y a quién, en qué departamentos hay menos
 competencia y el rango de valores por producto. Se puede filtrar por departamento y producto.
-Los datos abiertos no traen teléfono ni correo de los proveedores, solo el NIT.
+Cada contrato dice si está activo o finalizado (hay filtro). Muchas entidades no cierran el
+contrato en SECOP: si el plazo ya pasó pero sigue «en ejecución», se muestra como «plazo
+cumplido, SECOP aún no lo marca como terminado». Los datos abiertos no traen teléfono ni
+correo de los proveedores, solo el NIT.
 
 **Posible renovación:** si una alerta es de una entidad que tenía un contrato de suministro
 de lo mismo (comparten algún término) que terminó en los últimos 4 meses o termina pronto, la

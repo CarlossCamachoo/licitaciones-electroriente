@@ -29,14 +29,14 @@ import radar
 URL = "https://www.datos.gov.co/resource/jbjy-vk9h.json"
 RUTA = radar.RAIZ / "data" / "mercado.json"
 VIGENCIA = 12 * 3600      # segundos: los contratos no cambian minuto a minuto
-VERSION = 2               # sube si cambian los campos guardados: fuerza una descarga nueva
+VERSION = 3               # sube si cambian los campos guardados: fuerza una descarga nueva
 MESES_HISTORIAL = 12
 DIAS_VENCIMIENTO = 180    # ventana de contratos que terminan pronto
 DIAS_RENOVACION_PASADA = 120  # un contrato terminado hace menos de esto aun cuenta
 
 COLUMNAS = ("id_contrato,nombre_entidad,departamento,objeto_del_contrato,"
             "tipo_de_contrato,valor_del_contrato,fecha_de_firma,"
-            "fecha_de_fin_del_contrato,proveedor_adjudicado,documento_proveedor,urlproceso")
+            "fecha_de_fin_del_contrato,proveedor_adjudicado,documento_proveedor,estado_contrato,urlproceso")
 
 _candado = threading.Lock()
 _estado = {"calculando": False, "error": ""}
@@ -172,6 +172,7 @@ def _limpio(c, coincide, favorables):
         "firma": (c.get("fecha_de_firma") or "")[:10],
         "fin": (c.get("fecha_de_fin_del_contrato") or "")[:10],
         "proveedor": radar.limpiar(c.get("proveedor_adjudicado", "")),
+        "estado": radar.limpiar(c.get("estado_contrato", "")),
         "nit": re.sub(r"\D", "", str(c.get("documento_proveedor", "")))[:15],
         "url": radar.url_segura(c.get("urlproceso")),
         "coincidencias": coincide,
@@ -252,7 +253,7 @@ def contratos_del_ano():
         return []
     desde = (datetime.now() - timedelta(days=30 * MESES_HISTORIAL)).strftime("%Y-%m-%d")
     return [{k: c[k] for k in ("entidad", "departamento", "objeto", "tipo", "valor",
-                               "firma", "fin", "proveedor", "nit", "url", "coincidencias")
+                               "firma", "fin", "proveedor", "nit", "estado", "url", "coincidencias")
              if k in c}
             for c in d["contratos"] if c.get("afin") and c["firma"] and c["firma"] >= desde]
 
