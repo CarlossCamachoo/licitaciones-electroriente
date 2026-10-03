@@ -1256,12 +1256,13 @@ const AYUDA = {
 })();
 // Flechas, Inicio y Fin recorren las pestañas; "/" lleva al buscador.
 $('tablist').addEventListener('keydown', e => {
-  const i = TABS.findIndex(t => $('tab-' + t) === document.activeElement);
+  const visibles = TABS.filter(t => !$('tab-' + t).hidden);   // en la web compartida algunas pestañas no existen
+  const i = visibles.findIndex(t => $('tab-' + t) === document.activeElement);
   if (i < 0) return;
   const paso = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-  const j = e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : paso === undefined ? -1 : (i + paso + TABS.length) % TABS.length;
+  const j = e.key === 'Home' ? 0 : e.key === 'End' ? visibles.length - 1 : paso === undefined ? -1 : (i + paso + visibles.length) % visibles.length;
   if (j < 0) return;
-  e.preventDefault(); vista(TABS[j]); $('tab-' + TABS[j]).focus();
+  e.preventDefault(); vista(visibles[j]); $('tab-' + visibles[j]).focus();
 });
 document.addEventListener('keydown', e => {
   if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || $('ctlRadar').hidden) return;
