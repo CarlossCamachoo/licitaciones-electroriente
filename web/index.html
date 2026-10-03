@@ -262,7 +262,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   <div class="tabs" role="tablist" aria-label="Secciones" id="tablist">
     <button class="tab" role="tab" id="tab-radar" aria-selected="true" tabindex="0" type="button">Radar</button>
     <button class="tab" role="tab" id="tab-revisar" aria-selected="false" tabindex="-1" type="button">Por revisar</button>
-    <button class="tab" role="tab" id="tab-venc" aria-selected="false" tabindex="-1" type="button">Próximos vencimientos</button>
+    <button class="tab" role="tab" id="tab-venc" aria-selected="false" tabindex="-1" type="button">Oportunidades futuras</button>
     <button class="tab" role="tab" id="tab-docs" aria-selected="false" tabindex="-1" type="button">Documentos</button>
     <button class="tab" role="tab" id="tab-crit" aria-selected="false" tabindex="-1" type="button">Criterios</button>
   </div>
@@ -871,7 +871,7 @@ async function cargarCrit() {
   }
 }
 
-// ---- Proximos vencimientos
+// ---- Oportunidades futuras (contratos que terminan pronto)
 let venc = null, vencTimer = null, vencVistos = PAGINA;
 function cargarVenc() {
   clearTimeout(vencTimer);

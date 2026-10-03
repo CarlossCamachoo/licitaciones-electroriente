@@ -2,7 +2,7 @@
 Mercado: lo que las entidades ya contrataron de lo que Electroriente vende.
 
 Sale de los contratos firmados en SECOP II (datos abiertos). Sirve para dos cosas:
-  - Proximos vencimientos: contratos que terminan pronto y que la entidad
+  - Oportunidades futuras: contratos que terminan pronto y que la entidad
     probablemente vuelva a contratar. Es una pista, no una garantia: pueden
     prorrogarlos o no renovarlos.
   - Historial de la entidad: cuantos contratos parecidos firmo en el ultimo

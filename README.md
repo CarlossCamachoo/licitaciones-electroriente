@@ -55,7 +55,7 @@ arranca. Guarda el resultado 10 minutos para no saturar SECOP.
 
 **Mercado:** el panel descarga una vez al día (cerca de 20 segundos, en segundo plano) los
 contratos firmados en SECOP II que mencionan los términos de `config/filtros.yaml` y
-los guarda en `data/mercado.json`. Con eso arma la pestaña *Próximos vencimientos*
+los guarda en `data/mercado.json`. Con eso arma la pestaña *Oportunidades futuras*
 (contratos que terminan en los próximos 6 meses y quién los tiene hoy) y la línea
 *Historial* de cada tarjeta (contratos de suministro o compraventa de esa entidad en
 los últimos 12 meses). Es una pista, no una garantía: un contrato puede prorrogarse.
