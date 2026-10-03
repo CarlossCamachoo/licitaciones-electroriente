@@ -31,6 +31,7 @@ RUTA = radar.RAIZ / "data" / "mercado.json"
 VIGENCIA = 12 * 3600      # segundos: los contratos no cambian minuto a minuto
 MESES_HISTORIAL = 12
 DIAS_VENCIMIENTO = 180    # ventana de contratos que terminan pronto
+DIAS_RENOVACION_PASADA = 120  # un contrato terminado hace menos de esto aun cuenta
 
 COLUMNAS = ("id_contrato,nombre_entidad,departamento,objeto_del_contrato,"
             "tipo_de_contrato,valor_del_contrato,fecha_de_firma,"
@@ -299,6 +300,49 @@ def historial():
         }
     _memo_historial.update(ts=d["generado_ts"], tabla=resumen)
     return resumen
+
+
+_memo_afines = {"ts": None, "tabla": {}}
+
+
+def _afines_por_entidad():
+    """{entidad: contratos de suministro o compraventa que siguen en los datos}:
+    firmados en el ultimo ano o que terminan pronto."""
+    d = datos_listos()
+    if d is None:
+        return {}
+    if _memo_afines["ts"] == d["generado_ts"]:
+        return _memo_afines["tabla"]
+    tabla = {}
+    for c in d["contratos"]:
+        if c.get("afin") and c["fin"]:
+            tabla.setdefault(_clave(c["entidad"]), []).append(c)
+    _memo_afines.update(ts=d["generado_ts"], tabla=tabla)
+    return tabla
+
+
+def renovacion_de(entidad, coincidencias):
+    """Si la entidad ya tenia un contrato de lo mismo (comparten algun termino),
+    el proceso nuevo puede ser su renovacion. Devuelve el contrato mas reciente
+    que coincide, o None. Es una pista: no se puede saber si de verdad lo reemplaza."""
+    propios = {radar.normalizar(t) for t in coincidencias}
+    candidatos = []
+    for c in _afines_por_entidad().get(_clave(entidad), []):
+        comunes = sorted(propios & {radar.normalizar(t) for t in c["coincidencias"]})
+        if comunes:
+            candidatos.append((c["fin"], c, comunes))
+    # Un contrato que termino hace mas de ~4 meses ya no apunta a una renovacion.
+    limite = (datetime.now() - timedelta(days=DIAS_RENOVACION_PASADA)).strftime("%Y-%m-%d")
+    candidatos = [x for x in candidatos if x[0] >= limite]
+    if not candidatos:
+        return None
+    fin, c, comunes = max(candidatos, key=lambda x: x[0])
+    try:
+        dias = (datetime.strptime(fin, "%Y-%m-%d").date() - datetime.now().date()).days
+    except ValueError:
+        dias = None
+    return {"objeto": c["objeto"], "proveedor": c["proveedor"], "valor": c["valor"],
+            "fin": fin, "dias": dias, "terminos": comunes, "url": c["url"]}
 
 
 def historial_de(entidad, tabla):

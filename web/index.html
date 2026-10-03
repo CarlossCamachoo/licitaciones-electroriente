@@ -144,6 +144,9 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
 .hist { margin: 0 0 10px; font-size: .875rem; color: var(--text); max-width: 110ch; overflow-wrap: anywhere; }
 .hist b { font-weight: 600; }
 .hist.nd { color: var(--text-2); }
+.renov-caja { margin: 0 0 10px; padding: 10px 14px; border-radius: 10px; background: var(--primary-soft); color: var(--text); font-size: .875rem; max-width: 110ch; overflow-wrap: anywhere; }
+.renov-caja b { color: var(--primary); font-weight: 600; }
+.chip.renov { background: var(--bg); color: var(--primary); font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--primary); }
 .state { text-align: center; padding: 56px 16px; border: 1px dashed var(--border); border-radius: var(--r); list-style: none; }
 .state svg { width: 28px; height: 28px; color: var(--text-2); }
 .state h2 { margin: 10px 0 4px; font: 600 1.375rem var(--serif); }
@@ -287,6 +290,12 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     </label>
     <label class="f">Puntaje máx.
       <input type="number" id="pmax" min="0" max="100" step="5" value="100" inputmode="numeric">
+    </label>
+    <label class="f">Renovación
+      <select id="renov">
+        <option value="">Todos</option>
+        <option value="si">Posibles renovaciones</option>
+      </select>
     </label>
     <label class="f">Aliado
       <select id="aliado">
@@ -510,12 +519,23 @@ function filtrar(conDecision = true) {
     (!conDecision || dv(r)) &&
     r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
+    (!$('renov').value || r.renovacion) &&
     (!$('aliado').value || (r.requiere_aliado ? $('aliado').value === 'con' : $('aliado').value === 'sin')) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
   // Por puntaje ya viene ordenado del servidor (a igualdad, el mas reciente).
   if (orden === 'valor') lista.sort((a, b) => (b.valor_cop || 0) - (a.valor_cop || 0) || b.puntaje - a.puntaje);
   else if (orden === 'recientes') lista.sort((a, b) => (b.fecha_publicacion || '').localeCompare(a.fecha_publicacion || '') || b.puntaje - a.puntaje);
   return lista;
+}
+
+// La entidad ya tenia un contrato de lo mismo: este proceso puede ser su renovacion.
+function renovacionDe(v) {
+  const p = el('p', 'renov-caja');
+  const fecha = new Date(v.fin + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  const cuando = v.dias === null ? `terminó el ${fecha}` : v.dias < 0 ? `terminó el ${fecha} (hace ${plural(-v.dias, 'día', 'días')})` : v.dias === 0 ? 'termina hoy' : `termina el ${fecha} (en ${plural(v.dias, 'día', 'días')})`;
+  p.append(el('b', '', 'Posible renovación: '),
+    document.createTextNode(`esta entidad tenía un contrato de lo mismo (${v.terminos.join(', ')}) con ${v.proveedor || 'un proveedor no publicado'}, que ${cuando}${v.valor ? ` por ${pesos(v.valor)}` : ''}. Este proceso puede ser su reemplazo: vale la pena mirarlo con prioridad.`));
+  return p;
 }
 
 // Lo que la entidad ya contrato de este tipo en el ultimo ano (contratos firmados en SECOP II).
@@ -542,6 +562,7 @@ function tarjeta(r) {
   const body = el('div');
   const top = el('div', 'top');
   { const c = el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel); c.title = AYUDA_NIVEL[r.nivel] || ''; top.append(c); }
+  if (r.renovacion) { const c = el('span', 'chip renov', 'Posible renovación'); c.title = 'Esta entidad ya tenía un contrato de lo mismo que terminó hace poco o termina pronto. Este proceso puede ser su reemplazo.'; top.append(c); }
   if (r.requiere_aliado) { const c = el('span', 'chip aliado', 'Requiere aliado'); c.title = 'Obra con montaje: Electroriente suministra, pero instalar requiere un aliado (unión temporal o consorcio).'; top.append(c); }
   if (estadoDe(r) === 'interesa') top.append(el('span', 'chip ok', 'Me interesa'));
   const cabeza = el('div', 'cabeza');
@@ -573,6 +594,7 @@ function tarjeta(r) {
     body.append(n);
   }
 
+  if (r.renovacion) body.append(renovacionDe(r.renovacion));
   body.append(historialDe(r));
 
   const acc = el('div', 'acciones');
@@ -991,7 +1013,7 @@ document.addEventListener('keydown', e => {
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
-['q', 'dep', 'pmin', 'pmax', 'aliado'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+['q', 'dep', 'pmin', 'pmax', 'aliado', 'renov'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
 pendientes();
 cargar();
 vista(location.hash.slice(1) || 'radar');

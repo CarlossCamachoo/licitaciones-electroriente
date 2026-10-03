@@ -203,7 +203,8 @@ class Manejador(BaseHTTPRequestHandler):
                                 "mercado": mercado.estado(),
                                 "resultados": [
                     {**r, "documentos": docs.requisitos(r, cats),
-                     "historial": mercado.historial_de(r["entidad"], tabla)}
+                     "historial": mercado.historial_de(r["entidad"], tabla),
+                     "renovacion": mercado.renovacion_de(r["entidad"], r["coincidencias"])}
                     for r in datos["resultados"]]})
             except requests.RequestException:
                 self._json(502, {"error": "No se pudo consultar SECOP. "

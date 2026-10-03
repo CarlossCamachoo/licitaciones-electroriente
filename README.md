@@ -59,6 +59,11 @@ los guarda en `data/mercado.json`. Con eso arma la pestaña *Oportunidades futur
 (contratos que terminan en los próximos 6 meses y quién los tiene hoy) y la línea
 *Historial* de cada tarjeta (contratos de suministro o compraventa de esa entidad en
 los últimos 12 meses). Es una pista, no una garantía: un contrato puede prorrogarse.
+**Posible renovación:** si una alerta es de una entidad que tenía un contrato de suministro
+de lo mismo (comparten algún término) que terminó en los últimos 4 meses o termina pronto, la
+tarjeta lo marca y el filtro *Renovación* permite verlas solas. Es una pista, no una
+garantía.
+
 La búsqueda tolera tildes, plurales y errores de una letra («alumbrado públicos»,
 «breakers», «baja tención»): cada término se consulta en varias formas y luego se
 confirma en local. Ojo: esa tolerancia es solo del mercado; el radar de procesos sigue
