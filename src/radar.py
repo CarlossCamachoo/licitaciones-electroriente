@@ -157,7 +157,8 @@ COLUMNAS = ("entidad,departamento_entidad,referencia_del_proceso,"
             "nombre_del_procedimiento,descripci_n_del_procedimiento,"
             "modalidad_de_contratacion,tipo_de_contrato,estado_del_procedimiento,"
             "fase,precio_base,valor_total_adjudicacion,fecha_de_publicacion_del,"
-            "urlproceso,estado_de_apertura_del_proceso,id_del_proceso")
+            "urlproceso,estado_de_apertura_del_proceso,id_del_proceso,"
+            "fecha_de_recepcion_de")
 HILOS = 3
 
 
@@ -265,6 +266,13 @@ def evaluar(proceso, perfil, filtros, umbral=None):
     # no se descarta: es mejor revisar de mas que perder una oportunidad.
     apertura = proceso.get("estado_de_apertura_del_proceso", "")
     if apertura and apertura != "Abierto":
+        return None
+
+    # Fecha limite para presentar oferta ("recepcion de respuestas"). SECOP la
+    # trae en pocos procesos (cerca del 5 %). Si ya paso, el proceso esta
+    # vencido aunque siga marcado "Abierto". Si no viene, no se descarta.
+    fecha_cierre = (proceso.get("fecha_de_recepcion_de") or "")[:10]
+    if fecha_cierre and fecha_cierre < datetime.now().strftime("%Y-%m-%d"):
         return None
 
     # --- Paso 1: inclusion y puntaje base -----------------------------
@@ -376,6 +384,7 @@ def evaluar(proceso, perfil, filtros, umbral=None):
         "fase": proceso.get("fase", ""),
         "valor_cop": valor,
         "fecha_publicacion": (proceso.get("fecha_de_publicacion_del") or "")[:10],
+        "fecha_cierre": fecha_cierre,
         "url": url_segura(proceso.get("urlproceso")),
         "coincidencias": sorted(set(coincidencias)),
         "notas": notas,

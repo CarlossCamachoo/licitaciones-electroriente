@@ -103,6 +103,9 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .valor strong { display: block; font: 600 1.125rem/1.3 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .valor strong.nulo { font-weight: 500; font-size: .9375rem; color: var(--text-2); }
 .valor small { display: block; color: var(--text-2); font-size: .8125rem; }
+.valor small.cierre { margin-top: 2px; font-weight: 600; color: var(--text); }
+.valor small.cierre.nd { font-weight: 400; color: var(--text-2); }
+.valor small.cierre.pronto { color: var(--danger); }
 .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 14px 0 4px; }
 .acciones .sp { flex: 1; }
@@ -358,6 +361,18 @@ function antiguedad(f) {
   const fecha = d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
   return `Publicado ${fecha} · ${dias <= 0 ? 'hoy' : dias === 1 ? 'ayer' : `hace ${dias} días`}`;
 }
+// Fecha limite para ofertar. SECOP la publica en pocos procesos: si falta, se dice.
+function cierre(f) {
+  const el1 = el('small', 'cierre');
+  const d = f ? new Date(f + 'T00:00:00') : null;
+  if (!d || isNaN(d)) { el1.classList.add('nd'); el1.textContent = 'Cierre no publicado: confírmelo en SECOP'; return el1; }
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const dias = Math.round((d - hoy) / 86400000);
+  const fecha = d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  el1.textContent = `Cierra ${fecha} · ${dias <= 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`}`;
+  if (dias <= 3) el1.classList.add('pronto');
+  return el1;
+}
 const pesos = (v) => v ? '$' + Math.round(v).toLocaleString('es-CO') + ' COP' : 'Sin valor publicado';
 
 let datos = null, ultimaConsulta = null;
@@ -487,7 +502,7 @@ function tarjeta(r) {
   const cabeza = el('div', 'cabeza');
   const valor = el('div', 'valor');
   const v = el('strong', r.valor_cop ? '' : 'nulo', pesos(r.valor_cop));
-  valor.append(v, el('small', '', antiguedad(r.fecha_publicacion)));
+  valor.append(v, el('small', '', antiguedad(r.fecha_publicacion)), cierre(r.fecha_cierre));
   cabeza.append(el('h2', '', r.entidad || 'Entidad sin nombre'), valor);
   body.append(top, cabeza);
   const meta = el('div', 'meta');
