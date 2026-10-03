@@ -233,6 +233,13 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   a.go:hover { border-bottom-color: currentColor; }
   .tab:hover { color: var(--text); }
 }
+
+.ayuda { position: fixed; z-index: 50; max-width: 400px; padding: 14px 16px 15px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 28px rgba(1, 30, 145, .14), 0 2px 6px rgba(33, 37, 41, .08); pointer-events: none; opacity: 0; transform: translateY(-4px); transition: opacity .14s ease-out, transform .14s ease-out; }
+.ayuda.visible { opacity: 1; transform: none; }
+.ayuda b { display: block; margin-bottom: 4px; font: 600 .9375rem/1.3 var(--sans); color: var(--primary); }
+.ayuda p { margin: 0; font-size: .875rem; line-height: 1.5; }
+.ayuda p + p { margin-top: 6px; color: var(--text-2); }
+@media (prefers-reduced-motion: reduce) { .ayuda { transition: none; transform: none; } }
 </style>
 </head>
 <body>
@@ -274,7 +281,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   </div>
 
   <div id="vista-radar" role="tabpanel">
-  <p class="intro" id="intro"></p>
   <section class="banner" id="pend" hidden aria-label="Pendientes del proyecto"></section>
   <section class="banner warn" id="trunc" hidden role="status"></section>
 
@@ -328,7 +334,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   </div>
 
   <div id="vista-venc" role="tabpanel" aria-labelledby="tab-venc" hidden>
-    <p class="intro"><b>Estos contratos ya están adjudicados: no se puede ofertar en ellos.</b> Sirven para anticiparse. Cuando un contrato termina, la entidad suele necesitar lo mismo otra vez y puede abrir un proceso nuevo, que aparecería en la pestaña Radar. Aquí ve con tiempo qué se viene, quién es el proveedor actual y por cuánto se contrató.</p>
     <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros de vencimientos">
       <label class="f buscar">Buscar
         <input type="search" id="vq" placeholder="Entidad, objeto o proveedor" autocomplete="off">
@@ -355,7 +360,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   </div>
 
   <div id="vista-mer" role="tabpanel" aria-labelledby="tab-mer" hidden>
-    <p class="intro"><b>Quién le vende al Estado lo que Electroriente vende.</b> Son los contratos de suministro y compraventa firmados en SECOP II en los últimos 12 meses que mencionan los productos de la empresa. Sirve para saber cuánto se paga, quién gana, qué entidades compran más y dónde hay menos competencia. No es todo el gasto del Estado, solo lo que coincide con la búsqueda.</p>
     <div class="seg" id="mseg" role="group" aria-label="Qué mirar" style="margin-bottom:12px"></div>
     <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros del mercado">
       <label class="f buscar">Buscar
@@ -388,7 +392,6 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 
   <div id="vista-docs" role="tabpanel" aria-labelledby="tab-docs" hidden>
     <div class="prog" id="docs-prog"></div>
-    <p class="nota-doc">Suba aquí los documentos de la empresa. El radar los cruza con cada alerta y le dice cuáles faltan para aplicar. Los archivos quedan en su computador (carpeta docs/empresa), nunca en GitHub. Aquí solo van los documentos generales que se piden en toda licitación; lo que cambia según el proceso se ve en su pliego.</p>
     <div class="controls" role="group" aria-label="Filtro de documentos">
       <label class="chk"><input type="checkbox" id="soloFaltan"> Solo los que faltan</label>
     </div>
@@ -405,6 +408,8 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
     El panel no interpreta derecho contractual.
   </footer>
 </div>
+
+<div class="ayuda" id="ayuda" role="tooltip"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -520,10 +525,8 @@ function llenarDeps() {
 }
 
 const MODOS = {
-  radar: { f: r => r.nivel !== 'revisar',
-    intro: 'Procesos con puntaje suficiente para avisarle, de mejor a menor. Es la lista para trabajar primero.' },
-  revisar: { f: r => r.nivel === 'revisar',
-    intro: 'Señales más débiles: no llegan al puntaje de alerta, pero podrían servir. Revíselos para decidir si podemos suministrar o aplicar, y para ver qué términos faltan en la búsqueda.' }
+  radar: { f: r => r.nivel !== 'revisar' },
+  revisar: { f: r => r.nivel === 'revisar' }
 };
 let modo = 'radar', mostrados = 50, animar = true;
 const PAGINA = 50;
@@ -1178,7 +1181,7 @@ function vista(nombre) {
   TABS.forEach(t => { const b = $('tab-' + t); b.setAttribute('aria-selected', String(t === nombre)); b.tabIndex = t === nombre ? 0 : -1; });
   if (esRadar) {
     if (modo !== nombre) { mostrados = PAGINA; animar = true; }
-    modo = nombre; $('intro').textContent = MODOS[modo].intro;
+    modo = nombre;
     if (alertasViejas) { alertasViejas = false; cargar(); } else if (datos) { pintarKpis(); pintar(); }
   }
   if (nombre === 'venc') cargarVenc();
@@ -1189,6 +1192,44 @@ function vista(nombre) {
   history.replaceState(null, '', '#' + nombre);
 }
 TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
+
+// Mensaje flotante con la explicacion de cada seccion: aparece al pasar el cursor o al enfocar la pestaña.
+const AYUDA = {
+  radar: ['Radar', ['Las licitaciones abiertas hoy en SECOP II que más se parecen a lo que Electroriente vende, de la más a la menos factible. Es la lista para trabajar primero.',
+    'Cada tarjeta explica por qué salió, cuánto vale, cuándo cierra si SECOP lo publica, cuánta competencia suele haber y qué ha contratado antes esa entidad. Decida con «Me interesa» o «Descartar».']],
+  revisar: ['Por revisar', ['Procesos con señales más débiles: no llegan al puntaje para avisarle, pero podrían servir.',
+    'Revíselos para decidir si Electroriente puede suministrar o participar con un aliado, y para detectar qué términos faltan en la búsqueda.']],
+  venc: ['Oportunidades futuras', ['Contratos de lo que Electroriente vende que terminan pronto. Ya están adjudicados, así que no se puede ofertar en ellos.',
+    'Sirven para anticiparse: cuando un contrato termina, la entidad suele necesitar lo mismo y puede abrir un proceso nuevo, que aparecería en Radar. Aquí ve quién es el proveedor actual y por cuánto se contrató.']],
+  mer: ['Mercado', ['Quién le vende al Estado lo que Electroriente vende, según los contratos de suministro y compraventa firmados en los últimos 12 meses.',
+    'Vea quién gana, qué entidades compran y a quién, cuánta competencia hay por región y producto, y cuánto se paga. No es todo el gasto del Estado: solo lo que coincide con la búsqueda.']],
+  docs: ['Documentos', ['Los documentos generales que se piden en toda licitación. Suba aquí los de Electroriente y el radar le dirá cuáles faltan para aplicar a cada alerta.',
+    'Los archivos se guardan solo en este computador (carpeta docs/empresa), nunca en GitHub. Lo que cambia según el proceso se ve en su pliego.']],
+  crit: ['Criterios', ['Cómo decide el radar si una licitación vale la pena: los criterios, su peso y los términos de búsqueda, con las veces que acertó cada uno.',
+    'Sirve para revisar y ajustar la búsqueda.']]
+};
+(function () {
+  const caja = $('ayuda'); let espera = null;
+  const ocultar = () => { clearTimeout(espera); caja.classList.remove('visible'); };
+  function mostrar(tab, id) {
+    const [titulo, parrafos] = AYUDA[id];
+    caja.replaceChildren(el('b', '', titulo), ...parrafos.map(t => el('p', '', t)));
+    const r = tab.getBoundingClientRect();
+    caja.style.left = Math.max(12, Math.min(r.left, innerWidth - caja.offsetWidth - 12)) + 'px';
+    caja.style.top = (r.bottom + 8) + 'px';
+    caja.classList.add('visible');
+  }
+  TABS.forEach(id => {
+    const tab = $('tab-' + id);
+    tab.setAttribute('aria-describedby', 'ayuda');
+    tab.addEventListener('mouseenter', () => { clearTimeout(espera); espera = setTimeout(() => mostrar(tab, id), 180); });
+    tab.addEventListener('mouseleave', ocultar);
+    tab.addEventListener('focus', () => { if (tab.matches(':focus-visible')) mostrar(tab, id); });
+    tab.addEventListener('blur', ocultar);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') ocultar(); });
+  window.addEventListener('scroll', ocultar, { passive: true });
+})();
 // Flechas, Inicio y Fin recorren las pestañas; "/" lleva al buscador.
 $('tablist').addEventListener('keydown', e => {
   const i = TABS.findIndex(t => $('tab-' + t) === document.activeElement);
