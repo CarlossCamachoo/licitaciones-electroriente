@@ -3,11 +3,13 @@ name: Publicar la web compartida
 # Genera la version compartida del panel (con contrasena) y la publica en el repositorio
 # publico "radar-licitaciones" (GitHub Pages). Los datos van cifrados: el sitio es publico pero
 # sin la contrasena no se puede leer nada. No incluye los documentos de la empresa.
-# Horario: cada hora, de 6:00 a. m. a 7:00 p. m. hora de Colombia (UTC-5) = 11:00-23:00 y 00:00 UTC.
+# Horario: cada 2 horas, de 6:00 a. m. a 6:00 p. m. hora de Colombia (UTC-5) = 11, 13, 15, 17, 19, 21 y 23 UTC.
+# (Una ejecucion normal dura ~2 min; la que rehace mercado y periodos largos, una vez al dia, ~11 min.
+# Con el vigilante nocturno el total mensual queda dentro del cupo gratuito de 2.000 minutos.)
 # La contrasena es el secreto CLAVE_WEB (se cambia con `gh secret set CLAVE_WEB`).
 on:
   schedule:
-    - cron: "0 11-23,0 * * *"
+    - cron: "0 11,13,15,17,19,21,23 * * *"
   workflow_dispatch:
 
 concurrency:

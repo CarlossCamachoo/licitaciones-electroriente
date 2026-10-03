@@ -28,7 +28,7 @@ import radar
 
 URL = "https://www.datos.gov.co/resource/jbjy-vk9h.json"
 RUTA = radar.RAIZ / "data" / "mercado.json"
-VIGENCIA = 12 * 3600      # segundos: los contratos no cambian minuto a minuto
+VIGENCIA = 24 * 3600      # segundos: los contratos no cambian minuto a minuto
 VERSION = 3               # sube si cambian los campos guardados: fuerza una descarga nueva
 MESES_HISTORIAL = 12
 DIAS_VENCIMIENTO = 180    # ventana de contratos que terminan pronto

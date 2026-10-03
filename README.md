@@ -69,6 +69,16 @@ correo y la muestra en su campana. No usa contraseñas ni aplicaciones: solo el 
 GitHub da a cada ejecución. Gasta unos 900 minutos al mes del cupo gratuito de 2.000. Para
 probarla a mano: pestaña *Actions* del repositorio, «Vigilante…», «Run workflow».
 
+**Web compartida con contraseña:** `.github/workflows/publicar.yml` genera cada 2 horas (6 a. m. a 6 p. m.)
+una versión estática del panel y la publica en el repositorio público `radar-licitaciones`
+(GitHub Pages). Los datos van cifrados (AES-256, clave derivada de la contraseña): el enlace es
+público, pero sin la contraseña no se lee nada. La contraseña es el secreto `CLAVE_WEB` del
+repositorio privado (mínimo 12 caracteres; se cambia con `gh secret set CLAVE_WEB` y relanzando
+la tarea). No incluye los documentos de la empresa ni la campana; las decisiones «Me interesa» y
+«Descartar» quedan en el navegador de cada persona. El código está en `src/publicar.py` y
+`web/estatico/`. Si la contraseña se filtra, se cambia el secreto y el sitio se vuelve a cifrar
+en la siguiente ejecución.
+
 **Mercado:** el panel descarga una vez al día (cerca de 20 segundos, en segundo plano) los
 contratos firmados en SECOP II que mencionan los términos de `config/filtros.yaml` y
 los guarda en `data/mercado.json`. Con eso arma la pestaña *Oportunidades futuras*
