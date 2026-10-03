@@ -41,9 +41,11 @@ svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-widt
 
 .barra { background: var(--barra); color: #fff; }
 .barra-in { max-width: 1040px; margin: 0 auto; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
-h1 { margin: 0; font: 600 clamp(1.5rem, 3vw, 1.875rem)/1.1 var(--sans); letter-spacing: -.02em; display: flex; align-items: center; gap: 12px; }
-h1 svg.i { width: 26px; height: 26px; stroke-width: 1.5; }
-.sub { color: rgba(255,255,255,.74); font-size: .875rem; margin: 6px 0 0; }
+.marca { display: flex; align-items: center; gap: 20px; }
+.logo { height: 30px; width: auto; display: block; }
+.titulo { border-left: 1px solid rgba(255,255,255,.3); padding-left: 20px; }
+h1 { margin: 0; font: 600 1.375rem/1.15 var(--sans); letter-spacing: -.015em; }
+.sub { color: rgba(255,255,255,.74); font-size: .8125rem; margin: 4px 0 0; }
 .barra label.f { color: rgba(255,255,255,.76); }
 .barra select { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.3); border-radius: 999px; padding: 0 16px; }
 .barra select option { color: #212529; background: #fff; }
@@ -227,12 +229,12 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 <body>
 <a class="skip" href="#resultados">Saltar a los resultados</a>
 <header class="barra"><div class="barra-in">
-    <div>
-      <h1>
-        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/></svg>
-        Radar de Licitaciones
-      </h1>
-      <p class="sub">Electroriente S.A.S. · SECOP II · <span id="generado" title="Momento en que se consultó SECOP II por última vez">sin consultar</span></p>
+    <div class="marca">
+      <img class="logo" src="/logo.webp" alt="Electroriente" width="117" height="30">
+      <div class="titulo">
+      <h1>Radar de Licitaciones</h1>
+      <p class="sub">SECOP II · <span id="generado" title="Momento en que se consultó SECOP II por última vez">sin consultar</span></p>
+      </div>
     </div>
     <div class="controls" id="ctlRadar" role="group" aria-label="Consulta">
       <label class="f">Periodo

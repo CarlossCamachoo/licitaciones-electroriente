@@ -41,13 +41,13 @@ Es un radar hecho a la medida de una distribuidora de material eléctrico y auto
 ## Brand Commitments
 El panel debe seguir la identidad de la web de la empresa (https://www.electroriente.com.co/home), indicada por el usuario: azul marino (#011E91 para botones y títulos, #000775 para la barra superior), texto casi negro (#212529), fondo blanco, tipografía DM Sans y botones en forma de píldora. El panel usa solo esa familia tipográfica porque es la de la marca.
 
-El logo está en la web de la empresa pero todavía no se ha descargado al proyecto, y no hay manual de marca. No inventar un logo; hasta tenerlo, el encabezado lleva el nombre en texto.
+El logo (versión clara, blanco sobre azul marino) se descargó de la web de la empresa a `web/logo.webp` con autorización del usuario, y se usa en la barra superior. Solo se conserva la versión clara. No hay manual de marca. No inventar variantes del logo.
 
 ## Evidence on Hand
 - Datos reales de SECOP II consultados en vivo (octubre de 2026).
 - Perfil de la empresa y catálogo de la tienda en línea reflejados en `config/perfil.yaml`.
 - Sin historial confirmado de contratación estatal directa: la herramienta abre un canal nuevo, no optimiza uno existente.
-- Paleta y tipografía tomadas de la web de la empresa. No hay logo descargado, manual de marca, testimonios ni documentos de la empresa en el repositorio.
+- Paleta, tipografía y logo (versión clara) tomados de la web de la empresa. No hay manual de marca, testimonios ni documentos de la empresa en el repositorio.
 
 ## Product Principles
 1. Cada alerta debe poder explicarse: si el área no puede rastrear por qué salió algo, deja de confiar en la herramienta.

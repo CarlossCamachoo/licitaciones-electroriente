@@ -175,6 +175,8 @@ class Manejador(BaseHTTPRequestHandler):
         if url.path in ("/", "/index.html"):
             self._enviar(200, (WEB / "index.html").read_bytes(),
                          "text/html; charset=utf-8")
+        elif url.path == "/logo.webp":
+            self._enviar(200, (WEB / "logo.webp").read_bytes(), "image/webp")
         elif url.path == "/api/alertas":
             q = parse_qs(url.query)
             try:
