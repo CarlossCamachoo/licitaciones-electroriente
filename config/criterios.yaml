@@ -15,7 +15,7 @@ criterios:
     estado: activo
 
   - titulo: "Tipo de contrato"
-    como: "Suma si es Suministros o Compraventa; resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga 'suministro de' o 'adquisición de' (el tipo de contrato lo llena la entidad y a veces viene mal). Obra no resta aquí: se trata aparte como 'requiere aliado'."
+    como: "Suma si es Suministros o Compraventa; resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga 'suministro de' o 'adquisición de' (el tipo de contrato lo llena la entidad y a veces viene mal). Obra no resta aquí: se trata aparte como 'requiere aliado'. Aparte, si el objeto habla de mantenimiento resta 20 puntos, aunque la entidad lo marque como compraventa, salvo que diga 'suministro de', 'adquisición de' o 'compra de'; y un mantenimiento nunca pasa de 'por revisar', por alto que sea su puntaje."
     por_que: "Electroriente vende producto. Los contratos de servicios casi nunca son para un distribuidor."
     estado: supuesto
 

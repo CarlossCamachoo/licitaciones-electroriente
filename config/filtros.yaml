@@ -103,6 +103,10 @@ excluir:
   - "electrodomestico"
   - "electrobisturi"
   - "electrocardiograf"
+  # Ruido que entraba por una palabra suelta (canaleta de aguas, subestacion de telecomunicaciones)
+  - "vertimientos"
+  - "aguas lluvias"
+  - "enlaces de datos"
 
 # Modalidades que no aplican o no interesan por ahora
 excluir_modalidad:
@@ -152,6 +156,15 @@ ajustes_contrato:
     tipos: ["Prestación de servicios", "Consultoría", "Interventoría", "Seguros",
             "Arrendamiento de inmuebles", "Arrendamiento de muebles",
             "Servicios financieros", "Comodato"]
+
+  # Mantenimiento y reparacion son servicios aunque la entidad marque "Compraventa".
+  # Restan salvo que el objeto diga que compra bienes (suministro de, adquisicion de...).
+  # Aqui NO vale "suministro e instalacion": eso es obra menor dentro de un mantenimiento.
+  mantenimiento:
+    penalizacion: -20
+    tope_puntaje: 29                # y nunca pasa de "por revisar" (debajo del nivel media)
+    terminos: ["mantenimiento"]
+    salvo_si_menciona: ["suministro de", "suministros de", "adquisicion de", "compra de", "compraventa de"]
 
 ajustes_modalidad:
   favorables:

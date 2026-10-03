@@ -377,6 +377,13 @@ def evaluar(proceso, perfil, filtros, umbral=None):
             contiene(texto_norm, t) for t in des.get("salvo_si_menciona", [])):
         puntaje += des["penalizacion"]
         notas.append(f"contrato de {tipo.lower()}, poco afin")
+    man = filtros.get("ajustes_contrato", {}).get("mantenimiento", {})
+    tope_mantenimiento = None
+    if man and any(contiene(texto_norm, t) for t in man.get("terminos", [])) and not any(
+            contiene(texto_norm, t) for t in man.get("salvo_si_menciona", [])):
+        puntaje += man["penalizacion"]
+        tope_mantenimiento = man.get("tope_puntaje")
+        notas.append("mantenimiento o reparacion: es servicio, no suministro")
     mod_fav = filtros.get("ajustes_modalidad", {}).get("favorables", {})
     mod_info = filtros.get("ajustes_modalidad", {}).get("solo_informacion", {})
     if modalidad in mod_fav.get("modalidades", []):
@@ -386,6 +393,8 @@ def evaluar(proceso, perfil, filtros, umbral=None):
         notas.append("solo solicitud de informacion, no es oferta")
 
     puntaje = max(0, min(100, puntaje))
+    if tope_mantenimiento is not None:
+        puntaje = min(puntaje, tope_mantenimiento)
     if puntaje < (ajustes["umbral_alerta"] if umbral is None else umbral):
         return None
     niveles = filtros.get("niveles", {"alta": 50, "media": 30})
