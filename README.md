@@ -49,7 +49,7 @@ python src/servidor.py          # abre http://127.0.0.1:8765
 python src/servidor.py --puerto 9000
 ```
 
-Muestra las alertas con filtros, resumen y el aviso de pendientes. Solo
+Muestra las alertas con filtros y resumen. Solo
 escucha en tu computador (127.0.0.1). Si el puerto está ocupado, avisa y no
 arranca. Guarda el resultado 10 minutos para no saturar SECOP.
 
