@@ -88,6 +88,15 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .docsres ul { margin: 4px 0 8px; padding-left: 20px; columns: 2; column-gap: 32px; font-size: .875rem; color: var(--text-2); }
 .docsres li { break-inside: avoid; margin: 2px 0; }
 .docsres li.falta { color: var(--text); }
+.der { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+.ord { display: inline-flex; align-items: center; gap: 8px; font-size: .875rem; color: var(--text-2); }
+.ord select { min-height: 38px; padding: 0 10px; font-size: .9375rem; }
+.cabeza { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 4px 24px; margin-bottom: 4px; }
+.cabeza h2 { flex: 1 1 280px; margin: 0; }
+.valor { text-align: right; flex: none; }
+.valor strong { display: block; font: 600 1.125rem/1.3 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.valor strong.nulo { font-weight: 500; font-size: .9375rem; color: var(--text-2); }
+.valor small { display: block; color: var(--text-2); font-size: .8125rem; }
 .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 14px 0 4px; }
 .acciones .sp { flex: 1; }
@@ -273,7 +282,16 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   <main id="resultados" tabindex="-1">
     <div class="decide-bar">
       <div class="seg" id="seg" role="group" aria-label="Ver según su decisión"></div>
-      <p class="count" id="cuenta" aria-live="polite"></p>
+      <div class="der">
+        <label class="ord">Ordenar por
+          <select id="orden">
+            <option value="puntaje">Puntaje</option>
+            <option value="valor">Valor, de mayor a menor</option>
+            <option value="recientes">Más recientes</option>
+          </select>
+        </label>
+        <p class="count" id="cuenta" aria-live="polite"></p>
+      </div>
     </div>
     <ol class="lista" id="lista"></ol>
   </main>
@@ -321,6 +339,20 @@ function el(tag, cls, text) {
   if (cls) e.className = cls;
   if (text !== undefined) e.textContent = text;
   return e;
+}
+const compacto = (v) => {
+  if (!v) return 'Sin valor publicado';
+  const n = (x) => x.toLocaleString('es-CO', { maximumFractionDigits: 1 });
+  if (v >= 1e9) return `$${n(v / 1e9)} mil millones`;
+  if (v >= 1e6) return `$${n(v / 1e6)} millones`;
+  return '$' + Math.round(v).toLocaleString('es-CO');
+};
+function antiguedad(f) {
+  if (!f) return '';
+  const d = new Date(f + 'T00:00:00'); if (isNaN(d)) return f;
+  const dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const fecha = d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `Publicado ${fecha} · ${dias <= 0 ? 'hoy' : dias === 1 ? 'ayer' : `hace ${dias} días`}`;
 }
 const pesos = (v) => v ? '$' + Math.round(v).toLocaleString('es-CO') + ' COP' : 'Sin valor publicado';
 
@@ -410,7 +442,7 @@ function pintarKpis() {
 
 let decisiones = {};
 try { decisiones = JSON.parse(localStorage.getItem('radar-decisiones') || '{}'); } catch (_) {}
-let ver = 'pendientes';
+let ver = 'pendientes', orden = 'puntaje';
 const idDe = (r) => r.id || (r.entidad + '|' + r.referencia);
 const estadoDe = (r) => decisiones[idDe(r)] || '';
 function decidir(r, valor) {
@@ -426,13 +458,17 @@ function filtrar(conDecision = true) {
   const num = (id, def) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : def; };
   const pmin = num('pmin', 0), pmax = num('pmax', 100);
   const dv = VISTAS.find(v => v[0] === ver)[2];
-  return base().filter(r =>
+  const lista = base().filter(r =>
     (!conDecision || dv(r)) &&
     r.puntaje >= pmin && r.puntaje <= pmax &&
     (!dep || r.departamento === dep) &&
     (!$('soloAliado').checked || r.requiere_aliado) &&
     (!$('soloMonto').checked || r.valor_cop > 0) &&
     (!q || (r.entidad + ' ' + r.descripcion + ' ' + r.coincidencias.join(' ')).toLowerCase().includes(q)));
+  // Por puntaje ya viene ordenado del servidor (a igualdad, el mas reciente).
+  if (orden === 'valor') lista.sort((a, b) => (b.valor_cop || 0) - (a.valor_cop || 0) || b.puntaje - a.puntaje);
+  else if (orden === 'recientes') lista.sort((a, b) => (b.fecha_publicacion || '').localeCompare(a.fecha_publicacion || '') || b.puntaje - a.puntaje);
+  return lista;
 }
 
 function tarjeta(r) {
@@ -446,11 +482,16 @@ function tarjeta(r) {
   top.append(el('span', 'chip ' + r.nivel, NIVEL[r.nivel] || r.nivel));
   if (r.requiere_aliado) top.append(el('span', 'chip aliado', 'Requiere aliado'));
   if (estadoDe(r) === 'interesa') top.append(el('span', 'chip ok', 'Me interesa'));
-  body.append(top, el('h2', '', r.entidad || 'Entidad sin nombre'));
+  const cabeza = el('div', 'cabeza');
+  const valor = el('div', 'valor');
+  const v = el('strong', r.valor_cop ? '' : 'nulo', compacto(r.valor_cop));
+  if (r.valor_cop) v.title = pesos(r.valor_cop);
+  valor.append(v, el('small', '', antiguedad(r.fecha_publicacion)));
+  cabeza.append(el('h2', '', r.entidad || 'Entidad sin nombre'), valor);
+  body.append(top, cabeza);
   const meta = el('div', 'meta');
   const m = (ic, t) => { const s = el('span'); s.append(svg(ic), document.createTextNode(t)); return s; };
-  meta.append(m('pin', r.departamento || 'Sin departamento'), m('cal', r.fecha_publicacion || '—'),
-              m('cash', pesos(r.valor_cop)), m('doc', r.modalidad || '—'));
+  meta.append(m('pin', r.departamento || 'Sin departamento'), m('doc', r.modalidad || '—'));
   const largo = (r.descripcion || '').length > 170;
   const desc = el('p', 'desc' + (largo ? ' corto' : ''), r.descripcion);
   body.append(meta, desc);
@@ -783,6 +824,7 @@ function vista(nombre) {
 TABS.forEach(t => $('tab-' + t).onclick = () => vista(t));
 ['soloFaltan'].forEach(id => $(id).addEventListener('input', pintarDocs));
 
+$('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = cargar;
 $('dias').onchange = cargar;
 ['q', 'dep', 'pmin', 'pmax', 'soloAliado', 'soloMonto'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
