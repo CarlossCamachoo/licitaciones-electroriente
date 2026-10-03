@@ -101,7 +101,7 @@
       try {
         const g = almacen.getItem('radar-clave'); if (!g) continue;
         const k = await crypto.subtle.importKey('raw', aBytes(g), { name: 'AES-GCM' }, true, ['decrypt']);
-        if (await probar(k)) { window.RADAR_USUARIO = almacen.getItem('radar-usuario') || ''; return k; }
+        if (almacen.getItem('radar-usuario') && await probar(k)) { window.RADAR_USUARIO = almacen.getItem('radar-usuario'); return k; }
         almacen.removeItem('radar-clave'); almacen.removeItem('radar-usuario');
       } catch (_) { try { almacen.removeItem('radar-clave'); almacen.removeItem('radar-usuario'); } catch (__) {} }
     }
@@ -149,26 +149,18 @@
       try {
         const usuario = document.getElementById('acceso-usuario').value;
         const recordar = document.getElementById('acceso-recordar').checked;
-        if (usuario.trim()) {
-          // Entrada personal: la contrasena abre la ranura de esa persona, que trae la clave de los datos y su nombre.
-          const ranuras = await (await fetchReal('data/usuarios.json', { cache: 'no-store' })).json();
-          const r = ranuras[await idRanura(usuario)];
-          if (!r) throw new Error('mala');
-          const dato = await descifrar(await derivar(campo.value, r.s), aBytes(r.b));
-          const k = await crypto.subtle.importKey('raw', aBytes(dato.k), { name: 'AES-GCM' }, true, ['decrypt']);
-          if (!(await probar(k))) throw new Error('mala');
-          await entrarCon(k, recordar, dato.n);
-        } else {
-          // Contrasena del equipo (sin usuario): entra, pero sin nombre.
-          const sal = (await (await fetchReal('data/salt.txt', { cache: 'no-store' })).text()).trim();
-          const k = await derivar(campo.value, sal);
-          let bien = false;
-          try { bien = await probar(k); } catch (_) { bien = false; }
-          if (!bien) throw new Error('mala');
-          await entrarCon(k, recordar, '');
-        }
-      } catch (_) {
-        error.textContent = 'Usuario o contraseña incorrectos. Revíselos e intente de nuevo.'; error.hidden = false;
+        // Solo hay entrada personal: la contrasena abre la ranura de esa persona, que trae la clave de los
+        // datos y su nombre. La contrasena maestra (CLAVE_WEB) ya no sirve para entrar.
+        if (!usuario.trim()) throw new Error('sin usuario');
+        const ranuras = await (await fetchReal('data/usuarios.json', { cache: 'no-store' })).json();
+        const r = ranuras[await idRanura(usuario)];
+        if (!r) throw new Error('mala');
+        const dato = await descifrar(await derivar(campo.value, r.s), aBytes(r.b));
+        const k = await crypto.subtle.importKey('raw', aBytes(dato.k), { name: 'AES-GCM' }, true, ['decrypt']);
+        if (!(await probar(k))) throw new Error('mala');
+        await entrarCon(k, recordar, dato.n);
+      } catch (e) {
+        error.textContent = e && e.message === 'sin usuario' ? 'Escriba su usuario.' : 'Usuario o contraseña incorrectos. Revíselos e intente de nuevo.'; error.hidden = false;
         campo.select(); boton.disabled = false; boton.textContent = 'Entrar';
       }
     });

@@ -55,7 +55,7 @@ se le pregunta al marcar un «Me interesa». El panel del Mac usa el nombre de `
 
 Cómo funciona: la clave de los datos se guarda cifrada una vez por persona (una «ranura», en
 `data/usuarios.json`), cada una abierta solo con su contraseña. Nadie recibe la contraseña maestra
-(`CLAVE_WEB`). Quien entra sin usuario con la contraseña del equipo sigue pasando, pero sin nombre.
+(`CLAVE_WEB`), que ya no sirve para entrar: es un valor al azar que nadie conoce ni necesita guardar.
 
 Se gestionan con `src/usuarios_web.py` (no hace falta el entorno del proyecto, solo `python3` y `gh`):
 
@@ -70,7 +70,8 @@ La lista vive en `config/usuarios.txt` (fuera de git; GitHub no deja leer un sec
 Cada cambio la sube como secreto `USUARIOS_WEB` y publica la web en unos 3 minutos.
 
 Si alguien se va, `quitar` impide que entre de nuevo, pero ya conoce la clave de los datos. Para cortar
-del todo, cambie también `CLAVE_WEB`: como nadie la usa para entrar, no hay que avisar a nadie.
+del todo, cambie también `CLAVE_WEB` por otro valor al azar (`gh secret set CLAVE_WEB`) y publique: como
+nadie la usa para entrar, no hay que avisar a nadie.
 
 ## Aviso de versión nueva
 
