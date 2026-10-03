@@ -77,6 +77,14 @@ button.btn.ghost { background: transparent; color: var(--primary); }
 .seg button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 14px; border: 0; border-radius: 7px; background: none; color: var(--text-2); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: background var(--t), color var(--t); }
 .seg button b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .seg button[aria-pressed=true] { background: var(--primary-soft); color: var(--primary); }
+.docsres { margin: -8px 0 20px; }
+.docsres .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-height: 44px; }
+.docsres .txt { font-size: .9375rem; }
+.docsres .txt b { font-weight: 600; }
+.docsres .sp { flex: 1; }
+.docsres ul { margin: 4px 0 8px; padding-left: 20px; columns: 2; column-gap: 32px; font-size: .875rem; color: var(--text-2); }
+.docsres li { break-inside: avoid; margin: 2px 0; }
+.docsres li.falta { color: var(--text); }
 .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .acciones { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 14px 0 4px; }
 .acciones .sp { flex: 1; }
@@ -239,6 +247,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   <section class="banner warn" id="trunc" hidden role="status"></section>
 
   <section class="kpis" aria-label="Resumen" id="kpis" hidden></section>
+  <section class="docsres" id="docsres" aria-label="Estado de los documentos de la empresa" hidden></section>
 
   <div class="controls" style="margin-bottom:12px" role="group" aria-label="Filtros">
     <label class="f">Buscar
@@ -383,6 +392,7 @@ const plural = (n, uno, varios) => `${n.toLocaleString('es-CO')} ${n === 1 ? uno
 const base = () => datos.resultados.filter(MODOS[modo].f);
 
 function pintarKpis() {
+  pintarDocsResumen();
   const r = base();
   const k = $('kpis'); k.hidden = false;
   const data = [
@@ -658,16 +668,42 @@ function pintarDocs() {
   $('docs-lista').replaceChildren(...(grupos.length ? grupos : [el('p', 'nota-doc', 'No hay documentos con este filtro.')]));
 }
 
+function pintarDocsResumen() {
+  const box = $('docsres'), g = datos && datos.documentos_generales;
+  if (!g || !g.length) { box.hidden = true; return; }
+  const mal = (x) => x.estado === 'falta' || x.estado === 'vencido';
+  const faltan = g.filter(mal);
+  box.hidden = false;
+  const fila = el('div', 'fila');
+  const t = el('span', 'txt');
+  if (faltan.length) {
+    t.append(el('b', '', `Faltan ${faltan.length} de ${g.length} documentos de la empresa`),
+             document.createTextNode('. Se piden en toda licitación, así que afectan a todas las alertas.'));
+  } else {
+    t.append(el('b', '', 'Documentos de la empresa completos'), document.createTextNode(` (${g.length} de ${g.length}).`));
+  }
+  fila.append(t, el('span', 'sp'));
+  const ul = el('ul'); ul.id = 'docsres-lista'; ul.hidden = true;
+  g.forEach(x => ul.append(el('li', mal(x) ? 'falta' : '', x.nombre + (x.estado === 'vencido' ? ' (vencido)' : x.estado === 'por_vencer' ? ' (vence pronto)' : x.estado === 'falta' ? '' : ' (cargado)'))));
+  const ver = el('button', 'link', 'Ver cuáles'); ver.type = 'button';
+  ver.setAttribute('aria-expanded', 'false'); ver.setAttribute('aria-controls', 'docsres-lista');
+  ver.onclick = () => { ul.hidden = !ul.hidden; ver.setAttribute('aria-expanded', String(!ul.hidden)); ver.textContent = ul.hidden ? 'Ver cuáles' : 'Ocultar'; };
+  const ir = el('button', 'btn ghost', faltan.length ? 'Subir documentos' : 'Gestionar documentos'); ir.type = 'button'; ir.onclick = () => vista('docs');
+  fila.append(ver, ir);
+  box.replaceChildren(fila, ul);
+}
+
 function bloqueDocs(r) {
   const dc = r.documentos; if (!dc) return null;
   const mal = (x) => x.estado === 'falta' || x.estado === 'vencido';
-  const lista = [...dc.necesarios.map(x => ({ ...x, probable: false })), ...dc.probables.map(x => ({ ...x, probable: true }))];
+  const lista = [...dc.necesarios.map(x => ({ ...x, probable: false })), ...dc.probables.map(x => ({ ...x, probable: true }))].filter(x => !x.general);
+  if (!lista.length) return null;
   const faltan = lista.filter(mal);
   const det = el('details', 'req');
   const sm = el('summary');
   sm.append(el('span', faltan.length ? 'chip sm sin' : 'chip sm ok',
     faltan.length ? `Faltan ${faltan.length} de ${lista.length} documentos` : 'Documentos completos'));
-  sm.append(document.createTextNode(' para aplicar'));
+  sm.append(document.createTextNode(' propios de este proceso'));
   const cuerpo = el('div', 'cuerpo');
   const ul = el('ul');
   lista.forEach(x => {

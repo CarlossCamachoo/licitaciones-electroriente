@@ -184,7 +184,8 @@ class Manejador(BaseHTTPRequestHandler):
             try:
                 datos = calcular(dias)
                 cats = docs.listar()
-                self._json(200, {**datos, "resultados": [
+                self._json(200, {**datos, "documentos_generales": docs.generales(cats),
+                                "resultados": [
                     {**r, "documentos": docs.requisitos(r, cats)}
                     for r in datos["resultados"]]})
             except requests.RequestException:

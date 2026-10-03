@@ -179,6 +179,13 @@ def abrir(fid):
         raise ErrorDocumento("Archivo no encontrado.")
 
 
+def generales(cats=None):
+    """Documentos que se piden en toda licitacion, con su estado."""
+    cats = cats or listar()
+    return [{"id": d["id"], "nombre": d["nombre"], "estado": d["estado"]}
+            for c in cats for d in c["documentos"] if d["cuando"] == "siempre"]
+
+
 def requisitos(resultado, cats=None):
     """Que documentos hacen falta para una alerta.
 
@@ -193,7 +200,8 @@ def requisitos(resultado, cats=None):
     grupos = {"necesarios": [], "probables": [], "verificar": []}
     for c in cats:
         for d in c["documentos"]:
-            item = {"id": d["id"], "nombre": d["nombre"], "estado": d["estado"]}
+            item = {"id": d["id"], "nombre": d["nombre"], "estado": d["estado"],
+                    "general": d["cuando"] == "siempre"}
             if d["cuando"] == "siempre":
                 grupos["necesarios"].append(item)
             elif d["cuando"] == "si_aplica":
