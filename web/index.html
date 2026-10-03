@@ -378,6 +378,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
         <select id="morden">
           <option value="n">Más contratos</option>
           <option value="total">Mayor valor total</option>
+          <option value="total_asc">Menor valor total</option>
         </select>
       </label>
     </div>
@@ -1151,7 +1152,10 @@ function pintarMer() {
   const q = radarNorm($('mq').value), dep = $('mdep').value, prod = $('mprod').value, orden = $('morden').value, est = $('mestado').value;
   const f = mer.contratos.filter(c => (!dep || c.departamento === dep) && (!est || estadoContrato(c).id === est) && (!prod || c.coincidencias.includes(prod)) &&
     (!q || radarNorm(c.proveedor + ' ' + c.entidad + ' ' + c.objeto).includes(q)));
-  const grupos = agruparMer(f, merVer).sort((a, b) => (b[orden] - a[orden]) || (b.total - a.total));
+  const grupos = agruparMer(f, merVer).sort(orden === 'total_asc'
+    // De menor a mayor, dejando al final los que no publican ningun valor.
+    ? (a, b) => (a.total === 0) - (b.total === 0) || (a.total - b.total) || (b.n - a.n)
+    : (a, b) => (b[orden] - a[orden]) || (b.total - a.total));
   const nombres = { ganadores: 'proveedores', entidades: 'entidades', regiones: 'departamentos', productos: 'productos' };
   $('mcuenta').textContent = `${grupos.length.toLocaleString('es-CO')} ${nombres[merVer]} · ${f.length.toLocaleString('es-CO')} contratos${e.calculando ? ' · actualizando datos…' : ` · datos de ${e.generado}`}${merVer === 'productos' ? ' · un contrato con varios productos cuenta en cada uno' : ''}`;
   if (!grupos.length) { lista.replaceChildren(estadoVacio('Sin resultados con estos filtros', 'Quite algún filtro para ver más.')); return; }
