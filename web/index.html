@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Radar de Licitaciones</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -25,16 +25,18 @@
   --r: 12px; --t: 200ms; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * { box-sizing: border-box; }
-html { color-scheme: light; }
+html { color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+button, a, summary, label.chk, select { touch-action: manipulation; }
+button, .tab, .seg button, label.chk { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
-.wrap { max-width: 1600px; margin: 0 auto; padding: 8px clamp(20px, 4vw, 56px) 48px; }
+.wrap { max-width: 1600px; margin: 0 auto; padding: 8px max(clamp(20px, 4vw, 56px), env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(clamp(20px, 4vw, 56px), env(safe-area-inset-left)); }
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 6px; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--primary); color: var(--on-primary); padding: 8px 12px; border-radius: 6px; z-index: 10; }
 .skip:focus { left: 8px; }
 svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-.barra { background: var(--barra); color: #fff; }
-.barra-in { max-width: 1600px; margin: 0 auto; padding: 12px clamp(20px, 4vw, 56px); display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
+.barra { background: var(--barra); color: #fff; position: relative; }
+.barra-in { max-width: 1600px; margin: 0 auto; padding: max(12px, env(safe-area-inset-top)) max(clamp(20px, 4vw, 56px), env(safe-area-inset-right)) 12px max(clamp(20px, 4vw, 56px), env(safe-area-inset-left)); display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
 .marca { display: flex; align-items: center; gap: 20px; }
 .logo { height: 46px; width: auto; display: block; }
 .titulo { border-left: 1px solid rgba(255,255,255,.3); padding-left: 20px; }
@@ -147,15 +149,41 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
 @keyframes sh { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 @media (max-width: 600px) {
-  .card { grid-template-columns: 1fr; gap: 8px; }
+  .card { grid-template-columns: 1fr; gap: 8px; padding: 20px 0; }
   .score { display: flex; align-items: baseline; gap: 10px; }
   .score b { font-size: 2.25rem; }
   .score .bar { flex: 1; margin: 0; }
-  .kpi, .kpi + .kpi { padding: 14px 12px 12px 0; border-left: 0; }
   input[type=search] { min-width: 0; width: 100%; }
   .controls > * { flex: 1 1 auto; }
+  /* Encabezado: marca arriba, consulta y campana debajo en una sola fila */
+  .barra-in { row-gap: 12px; }
+  .marca { width: 100%; gap: 12px; }
+  .logo { height: 34px; }
+  .titulo { padding-left: 12px; min-width: 0; }
+  h1 { font-size: 1.125rem; }
+  .sub { font-size: .75rem; }
+  /* Resumen en dos columnas, número arriba y rótulo abajo */
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .kpi, .kpi + .kpi { flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px 12px 14px 0; border-left: 0; }
+  .kpi:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--hair); }
+  .kpi:nth-child(n+3) { border-top: 1px solid var(--hair); }
+  .kpi b { font-size: 1.5rem; }
+  /* Filtros uno bajo otro, de lado a lado */
+  .controls > label.f, label.buscar { flex: 1 1 100%; }
+  /* Decisión y orden: cuadrícula de dos columnas, sin salirse de la pantalla */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; width: 100%; border-radius: 22px; }
+  .seg button { justify-content: center; min-height: 44px; padding: 0 10px; white-space: nowrap; }
+  .decide-bar { gap: 12px; }
+  .der { width: 100%; gap: 8px 16px; }
+  .ord { flex: 1 1 100%; justify-content: space-between; }
+  .ord select { flex: 1; min-height: 44px; }
+  /* Valor y fechas bajo el título, alineados a la izquierda */
+  .cabeza { gap: 8px; }
+  .valor { text-align: left; flex: 1 1 100%; }
+  .acciones .sp { display: none; }
+  button.dec { flex: 1 1 auto; min-height: 44px; }
+  .state { padding: 40px 12px; }
 }
-
 .tabs { display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { flex: none; white-space: nowrap; font: 500 .9375rem var(--sans); min-height: 44px; padding: 0 16px; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-2); cursor: pointer; transition: color var(--t), border-color var(--t); }
@@ -214,6 +242,11 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 ol.pasos { max-width: 72ch; padding-left: 20px; }
 ol.pasos li { margin: 6px 0; }
 footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width: 70ch; border-top: 1px solid var(--border); margin-top: 24px; }
+.tab:active { color: var(--text); }
+.seg button:active { background: var(--muted); }
+@media (pointer: coarse) {
+  button.link.mini, .notif li .acc button.link, .notif li .acc a.go, .notif footer button.link { min-height: 44px; }
+}
 @media (hover: hover) and (pointer: fine) {
   .seg button:hover { color: var(--text); }
   button.dec:hover { border-color: var(--text-2); }
@@ -224,7 +257,7 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
   .tab:hover { color: var(--text); }
 }
 
-.ayuda { position: fixed; z-index: 50; max-width: 400px; padding: 14px 16px 15px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 28px rgba(1, 30, 145, .14), 0 2px 6px rgba(33, 37, 41, .08); pointer-events: none; opacity: 0; transform: translateY(-4px); transition: opacity .14s ease-out, transform .14s ease-out; }
+.ayuda { position: fixed; z-index: 50; max-width: min(400px, calc(100vw - 24px)); padding: 14px 16px 15px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 28px rgba(1, 30, 145, .14), 0 2px 6px rgba(33, 37, 41, .08); pointer-events: none; opacity: 0; transform: translateY(-4px); transition: opacity .14s ease-out, transform .14s ease-out; }
 .ayuda.visible { opacity: 1; transform: none; }
 .ayuda b { display: block; margin-bottom: 4px; font: 600 .9375rem/1.3 var(--sans); color: var(--primary); }
 .ayuda p { margin: 0; font-size: .875rem; line-height: 1.5; }
@@ -253,6 +286,20 @@ footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width
 .notif .vacio { padding: 28px 20px; text-align: center; color: var(--text-2); font-size: .875rem; }
 .notif footer { margin: 0; max-width: none; border-top: 1px solid var(--hair); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .75rem; color: var(--text-2); }
 .notif footer button.link { min-height: 32px; padding: 0; font-size: .8125rem; }
+@media (max-width: 600px) {
+  .barra-der { width: 100%; margin-left: 0; gap: 10px; }
+  .barra-der > .controls { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; }
+  .barra-der > .controls > label.f { flex: 1 1 0; min-width: 0; }
+  .barra-der > .controls { gap: 8px; }
+  .barra-der > .controls select { width: 100%; padding-left: 14px; padding-right: 32px; background-position: right 12px center; }
+  .barra-der > .controls > button.btn { flex: none; padding: 0 14px; gap: 6px; }
+  /* Campana: el panel se abre a todo el ancho, bajo el encabezado */
+  .campana-wrap { position: static; }
+  .campana { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); width: 40px; height: 40px; }
+  .titulo { padding-right: 48px; }
+  .barra-der:has(> .controls[hidden]) { margin-top: -12px; }
+  .notif { left: 12px; right: 12px !important; width: auto; top: calc(100% + 6px); max-height: 70vh; }
+}
 </style>
 </head>
 <body>
@@ -1253,7 +1300,23 @@ const AYUDA = {
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') ocultar(); });
   window.addEventListener('scroll', ocultar, { passive: true });
+  // En pantallas táctiles no existe el cursor: la explicación se muestra al tocar la sección
+  // por primera vez y se cierra sola o al tocar en cualquier otro lado.
+  if (matchMedia('(hover: none)').matches) {
+    let vistas = {};
+    try { vistas = JSON.parse(localStorage.getItem('ayudaVista') || '{}'); } catch (_) {}
+    TABS.forEach(id => $('tab-' + id).addEventListener('click', () => {
+      if (vistas[id]) return;
+      vistas[id] = 1;
+      try { localStorage.setItem('ayudaVista', JSON.stringify(vistas)); } catch (_) {}
+      mostrar($('tab-' + id), id);
+      clearTimeout(espera); espera = setTimeout(ocultar, 9000);
+    }));
+    document.addEventListener('pointerdown', ocultar, true);
+  }
 })();
+// Sin teclado físico no hay atajo "/": el texto de ayuda sobra.
+if (matchMedia('(pointer: coarse)').matches) $('q').placeholder = 'Entidad, objeto o término';
 // Flechas, Inicio y Fin recorren las pestañas; "/" lleva al buscador.
 $('tablist').addEventListener('keydown', e => {
   const visibles = TABS.filter(t => !$('tab-' + t).hidden);   // en la web compartida algunas pestañas no existen
