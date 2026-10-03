@@ -342,13 +342,6 @@ function el(tag, cls, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
-const compacto = (v) => {
-  if (!v) return 'Sin valor publicado';
-  const n = (x) => x.toLocaleString('es-CO', { maximumFractionDigits: 1 });
-  if (v >= 1e9) return `$${n(v / 1e9)} mil millones`;
-  if (v >= 1e6) return `$${n(v / 1e6)} millones`;
-  return '$' + Math.round(v).toLocaleString('es-CO');
-};
 function antiguedad(f) {
   if (!f) return '';
   const d = new Date(f + 'T00:00:00'); if (isNaN(d)) return f;
@@ -487,8 +480,7 @@ function tarjeta(r) {
   if (estadoDe(r) === 'interesa') top.append(el('span', 'chip ok', 'Me interesa'));
   const cabeza = el('div', 'cabeza');
   const valor = el('div', 'valor');
-  const v = el('strong', r.valor_cop ? '' : 'nulo', compacto(r.valor_cop));
-  if (r.valor_cop) v.title = pesos(r.valor_cop);
+  const v = el('strong', r.valor_cop ? '' : 'nulo', pesos(r.valor_cop));
   valor.append(v, el('small', '', antiguedad(r.fecha_publicacion)));
   cabeza.append(el('h2', '', r.entidad || 'Entidad sin nombre'), valor);
   body.append(top, cabeza);
