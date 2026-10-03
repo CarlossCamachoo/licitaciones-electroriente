@@ -71,10 +71,15 @@ def guardar_vistos(ids):
 def avisar(titulo, cuerpo):
     """Crea una issue en el repositorio: GitHub la manda por correo."""
     repo, token = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_TOKEN"]
+    # GitHub solo manda correo si la issue le concierne a alguien: por eso se la
+    # asigna al dueño del repositorio y se le menciona. Sin eso, una issue creada por
+    # el robot no le llegaria a nadie (por defecto no se "vigila" el repositorio propio).
+    dueño = os.environ.get("GITHUB_REPOSITORY_OWNER") or repo.split("/")[0]
     r = requests.post(f"{API}/repos/{repo}/issues", timeout=20,
                       headers={"Authorization": f"Bearer {token}",
                                "Accept": "application/vnd.github+json"},
-                      json={"title": titulo[:200], "body": cuerpo, "labels": [ETIQUETA]})
+                      json={"title": titulo[:200], "body": f"@{dueño}\n\n{cuerpo}",
+                            "labels": [ETIQUETA], "assignees": [dueño]})
     r.raise_for_status()
 
 
@@ -99,9 +104,21 @@ def texto_alerta(r):
 def main():
     ap = argparse.ArgumentParser(description="Vigilante de licitaciones de Santander")
     ap.add_argument("--sin-avisar", action="store_true", help="solo muestra lo que avisaria")
+    ap.add_argument("--prueba", action="store_true", help="crea una issue de prueba para comprobar que llega el correo")
     args = ap.parse_args()
     if not args.sin_avisar and not (os.environ.get("GITHUB_TOKEN") and os.environ.get("GITHUB_REPOSITORY")):
         sys.exit("Faltan GITHUB_TOKEN y GITHUB_REPOSITORY (los da GitHub Actions). Use --sin-avisar para probar.")
+
+    if args.prueba:
+        titulo, cuerpo = texto_alerta({
+            "entidad": "ALCALDIA DE EJEMPLO (PRUEBA)", "departamento": "Santander", "puntaje": 55,
+            "nivel": "alta", "valor_cop": 158460000.0, "fecha_publicacion": time.strftime("%Y-%m-%d"),
+            "fecha_cierre": "", "coincidencias": ["alumbrado publico", "luminaria"],
+            "descripcion": "Suministro de luminarias LED para el alumbrado publico del municipio.",
+            "url": "https://community.secop.gov.co/"})
+        avisar("PRUEBA: " + titulo, cuerpo + "\n\n_Es una prueba del vigilante. Puede cerrar esta issue._")
+        print("Issue de prueba creada.")
+        return
 
     encontradas = alertas_de_santander()
     vistos = leer_vistos()

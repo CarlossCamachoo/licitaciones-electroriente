@@ -3,13 +3,21 @@ name: Vigilante de licitaciones de Santander
 # Busca en SECOP II cada 30 minutos y avisa por correo de las alertas nuevas de
 # Santander, aunque el computador de la empresa este apagado. El aviso es una issue en este
 # repositorio: GitHub la envia por correo al dueño y la muestra en su campana de GitHub.
-# Horario: 6:00 a 20:59 hora de Colombia (UTC-5) todos los dias = 11:00-23:59 y 00:00-01:59 UTC.
-# Cada ejecucion dura cerca de 1 minuto: unas 900 al mes, dentro del cupo gratuito (2.000 min)
-# de un repositorio privado.
+# Horario: de 6:00 p. m. a 7:00 a. m. hora de Colombia (UTC-5), todos los dias, que es cuando el
+# computador de la empresa suele estar apagado. Durante el dia basta con el panel.
+# En UTC: 23:00-11:59 cada 30 minutos y las 12:00 (= 7:00 a. m.).
+# Cada ejecucion dura menos de 1 minuto facturado: unas 800 al mes, dentro del cupo gratuito
+# (2.000 min) de un repositorio privado.
 on:
   schedule:
-    - cron: "*/30 0-1,11-23 * * *"
+    - cron: "*/30 23,0-11 * * *"
+    - cron: "0 12 * * *"
   workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Crear una issue de prueba para comprobar que llega el correo"
+        type: boolean
+        default: false
 
 concurrency:
   group: vigilante
@@ -37,6 +45,6 @@ jobs:
           path: data/vistos_nube.json
           key: vistos-${{ github.run_id }}
           restore-keys: vistos-
-      - run: python src/vigilante_nube.py
+      - run: python src/vigilante_nube.py ${{ inputs.prueba && '--prueba' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
