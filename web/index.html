@@ -452,9 +452,9 @@ function cierre(f) {
 function respondieron(n) {
   if (n === null || n === undefined) return document.createDocumentFragment();
   const s = el('small', 'resp' + (n === 0 ? ' cero' : ''));
-  s.textContent = n === 0 ? 'SECOP aún no reporta respuestas' : n === 1 ? '1 proveedor ya respondió' : `${n} proveedores ya respondieron`;
+  s.textContent = n === 0 ? 'Proveedores que respondieron: pendiente' : n === 1 ? '1 proveedor ya respondió' : `${n} proveedores ya respondieron`;
   s.title = n === 0
-    ? 'SECOP suele publicar este conteo tarde: casi todos los procesos abiertos aparecen en 0. No significa que nadie haya respondido.'
+    ? 'Pendiente: SECOP publica este conteo tarde, casi siempre cuando el proceso ya cerró. No significa que nadie haya respondido.'
     : 'Proveedores distintos que ya enviaron su respuesta u oferta a este proceso, según SECOP. Menos proveedores significa menos competencia.';
   return s;
 }
@@ -573,6 +573,19 @@ function filtrar(conDecision = true) {
   return lista;
 }
 
+// Cuantos proveedores suelen presentarse (procesos ya cerrados de los ultimos 12 meses).
+const numEs = (x) => x.toLocaleString('es-CO', { maximumFractionDigits: 1 });
+function textoCompetencia(c) {
+  return `en promedio ${numEs(c.promedio)} ${c.promedio === 1 ? 'proveedor' : 'proveedores'} por proceso (${plural(c.n, 'proceso cerrado', 'procesos cerrados')}${c.desiertos ? `, ${plural(c.desiertos, 'sin ninguna respuesta', 'sin ninguna respuesta')}` : ''})`;
+}
+function competenciaDe(c) {
+  const p = el('p', 'hist');
+  if (!c) { p.hidden = true; return p; }
+  p.append(el('b', '', c.alcance === 'entidad' ? 'Competencia en procesos anteriores de esta entidad: ' : 'Competencia habitual en este producto (la entidad no tiene procesos cerrados de lo mismo): '),
+    document.createTextNode(textoCompetencia(c) + (c.n < 3 ? '. Son pocos procesos: tómelo con cuidado.' : '.')));
+  return p;
+}
+
 // La entidad ya tenia un contrato de lo mismo: este proceso puede ser su renovacion.
 function renovacionDe(v) {
   const p = el('p', 'renov-caja');
@@ -640,7 +653,7 @@ function tarjeta(r) {
   }
 
   if (r.renovacion) body.append(renovacionDe(r.renovacion));
-  body.append(historialDe(r));
+  body.append(historialDe(r), competenciaDe(r.competencia));
 
   const acc = el('div', 'acciones');
   const marcar = (valor, texto, cls) => {
@@ -1016,7 +1029,7 @@ function pintarVenc() {
   }
   lista.replaceChildren(...filas);
 }
-const radarNorm = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const radarNorm = (t) => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 ['vq', 'vdep', 'vdias', 'vtipo'].forEach(id => $(id).addEventListener('input', () => { vencVistos = PAGINA; pintarVenc(); }));
 
 // ---- Mercado: quien gana, cuanto se paga, que entidades compran, donde hay menos competencia
@@ -1094,7 +1107,7 @@ function filaMer(g, vista) {
     lineas.push(['Le compra a', `${plural(provs.size, 'proveedor', 'proveedores')}: ${mTop(g.contratos, 'proveedor', 3).map(([n, k]) => `${n} (${k})`).join(', ')}${provs.size > 3 ? '…' : ''}`]);
   } else if (vista === 'regiones') {
     const lider = mTop(g.contratos, 'proveedor', 1)[0];
-    lineas.push(['Competencia', `${plural(provs.size, 'proveedor distinto', 'proveedores distintos')} en ${plural(g.n, 'contrato', 'contratos')}${lider ? `. Más contratos: ${lider[0]} (${lider[1]})` : ''}`]);
+    lineas.push(['Quién ganó', `${plural(provs.size, 'proveedor distinto', 'proveedores distintos')} en ${plural(g.n, 'contrato', 'contratos')}${lider ? `. Más contratos: ${lider[0]} (${lider[1]})` : ''}`]);
     lineas.push(['Entidades que compran', String(ents.size)]);
   } else {
     lineas.push(['Rango habitual', g.mediana ? `${pesos(mCuartil(g.valores, 0.25))} a ${pesos(mCuartil(g.valores, 0.75))} (la mitad de los contratos queda en ese rango)` : 'sin valores']);
@@ -1102,6 +1115,11 @@ function filaMer(g, vista) {
     lineas.push(['Compran', `${plural(ents.size, 'entidad', 'entidades')} en ${plural(deps.size, 'departamento', 'departamentos')}`]);
   }
   const nAct = g.contratos.filter(c => estadoContrato(c).id === 'act').length;
+  if (mer && mer.competencia && vista !== 'ganadores') {
+    const clave = vista === 'entidades' ? radarNorm(g.nombre) : vista === 'regiones' ? radarNorm(g.nombre) : g.nombre;
+    const c = (mer.competencia[vista] || {})[clave];
+    if (c) lineas.push(['Competencia', textoCompetencia(c) + ', últimos 12 meses']);
+  }
   lineas.push(['Estado', `${plural(nAct, 'activo', 'activos')} y ${plural(g.n - nAct, 'finalizado', 'finalizados')}`]);
   lineas.forEach(([k, v]) => { const p = el('p', 'hist'); p.append(el('b', '', k + ': '), document.createTextNode(v)); body.append(p); });
   const det = el('details', 'req'); const sum = el('summary', '', `Ver contratos (${g.n})`); det.append(sum);

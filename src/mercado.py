@@ -109,13 +109,13 @@ def _coincide(tokens, termino):
                for i in range(len(tokens) - n + 1))
 
 
-def _consultar(consulta, donde):
+def _consultar(consulta, donde, url=URL, columnas=COLUMNAS, orden="id_contrato"):
     filas, pagina, inicio = [], 5000, 0
     while True:
         lote = radar._pedir_pagina({
-            "$select": COLUMNAS, "$where": donde, "$q": consulta,
+            "$select": columnas, "$where": donde, "$q": consulta,
             "$limit": str(pagina), "$offset": str(inicio),
-            "$order": "id_contrato"}, {}, url=URL)
+            "$order": orden}, {}, url=url)
         filas.extend(lote)
         if len(lote) < pagina:
             return filas

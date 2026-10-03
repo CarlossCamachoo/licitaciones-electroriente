@@ -67,6 +67,14 @@ contrato en SECOP: si el plazo ya pasó pero sigue «en ejecución», se muestra
 cumplido, SECOP aún no lo marca como terminado». Los datos abiertos no traen teléfono ni
 correo de los proveedores, solo el NIT.
 
+**Competencia:** SECOP publica cuántos proveedores respondieron a un proceso solo cuando ya
+cerró (en los abiertos casi siempre dice 0). Por eso el panel mide la competencia en los
+procesos cerrados del último año de modalidades donde compiten varios (mínima cuantía,
+selección abreviada, licitación pública), por entidad, producto y departamento
+(`data/competencia.json`, se actualiza una vez al día). La tarjeta del radar muestra el
+promedio de la entidad, o el del producto si la entidad no tiene procesos de lo mismo, y
+aparte el conteo del propio proceso, que dice «pendiente» mientras SECOP no lo publique.
+
 **Posible renovación:** si una alerta es de una entidad que tenía un contrato de suministro
 de lo mismo (comparten algún término) que terminó en los últimos 4 meses o termina pronto, la
 tarjeta lo marca y el filtro *Renovación* permite verlas solas. Es una pista, no una

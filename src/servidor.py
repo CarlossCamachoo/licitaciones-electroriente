@@ -22,6 +22,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 import requests
 import yaml
 
+import competencia
 import documentos as docs
 import mercado
 import radar
@@ -204,7 +205,8 @@ class Manejador(BaseHTTPRequestHandler):
                                 "resultados": [
                     {**r, "documentos": docs.requisitos(r, cats),
                      "historial": mercado.historial_de(r["entidad"], tabla),
-                     "renovacion": mercado.renovacion_de(r["entidad"], r["coincidencias"])}
+                     "renovacion": mercado.renovacion_de(r["entidad"], r["coincidencias"]),
+                     "competencia": competencia.de_alerta(r["entidad"], r["coincidencias"])}
                     for r in datos["resultados"]]})
             except requests.RequestException:
                 self._json(502, {"error": "No se pudo consultar SECOP. "
@@ -215,8 +217,10 @@ class Manejador(BaseHTTPRequestHandler):
                              "contratos": mercado.vencimientos()})
         elif url.path == "/api/mercado":
             mercado.refrescar_en_segundo_plano()
+            competencia.refrescar_en_segundo_plano()
             self._json(200, {"estado": mercado.estado(),
-                             "contratos": mercado.contratos_del_ano()})
+                             "contratos": mercado.contratos_del_ano(),
+                             "competencia": competencia.para_mercado()})
         elif url.path == "/api/pendientes":
             self._json(200, pendientes())
         elif url.path == "/api/documentos":
@@ -249,6 +253,7 @@ def main():
 
     servidor = ThreadingHTTPServer((HOST, args.puerto), Manejador)
     mercado.refrescar_en_segundo_plano()
+    competencia.refrescar_en_segundo_plano()
     print(f"Panel en http://{HOST}:{args.puerto}  (Ctrl+C para cerrar)")
     try:
         servidor.serve_forever()
