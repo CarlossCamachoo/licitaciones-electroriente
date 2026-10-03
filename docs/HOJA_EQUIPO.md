@@ -47,3 +47,32 @@ de la hoja ni acceso a la cuenta de Google; y la hoja guarda historial de versio
 Si cambia la contraseña de la web, cambia el cifrado y quien ya no deba tener acceso lo pierde. Si
 sospecha de un uso indebido, cambie la clave: genere una nueva, edite `TOKEN` en el script de Google,
 publique una versión nueva y actualice los secretos (`gh secret set HOJA_TOKEN`) y `config/hoja.yaml`.
+
+## Usuarios: quién marca cada licitación
+
+Cada persona entra a la web compartida con **su usuario y su contraseña**, y el nombre sale de ahí: ya no
+se le pregunta al marcar un «Me interesa». El panel del Mac usa el nombre de `persona:` en `config/hoja.yaml`.
+
+Cómo funciona: la clave de los datos se guarda cifrada una vez por persona (una «ranura», en
+`data/usuarios.json`), cada una abierta solo con su contraseña. Nadie recibe la contraseña maestra
+(`CLAVE_WEB`). Quien entra sin usuario con la contraseña del equipo sigue pasando, pero sin nombre.
+
+Se gestionan con `src/usuarios_web.py` (no hace falta el entorno del proyecto, solo `python3` y `gh`):
+
+```bash
+python3 src/usuarios_web.py listar
+python3 src/usuarios_web.py agregar "Ana Pérez"      # crea el usuario «ana» y su contraseña
+python3 src/usuarios_web.py clave ana                # contraseña nueva
+python3 src/usuarios_web.py quitar ana
+```
+
+La lista vive en `config/usuarios.txt` (fuera de git; GitHub no deja leer un secreto una vez guardado).
+Cada cambio la sube como secreto `USUARIOS_WEB` y publica la web en unos 3 minutos.
+
+Si alguien se va, `quitar` impide que entre de nuevo, pero ya conoce la clave de los datos. Para cortar
+del todo, cambie también `CLAVE_WEB`: como nadie la usa para entrar, no hay que avisar a nadie.
+
+## Aviso de versión nueva
+
+La web compara su versión con `version.txt` al volver a la pestaña y cada 5 minutos. Si hay una nueva,
+muestra «Hay una versión nueva de la web» con un botón Actualizar.

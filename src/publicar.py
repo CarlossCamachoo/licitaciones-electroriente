@@ -22,11 +22,14 @@ contratos del mercado, se recalculan solo una o dos veces al dia porque tardan m
 import argparse
 import base64
 import gzip
+import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 from cryptography.hazmat.primitives import hashes
@@ -59,6 +62,56 @@ def cifrar(clave, obj):
 
 def descifrar(clave, datos):
     return json.loads(gzip.decompress(AESGCM(clave).decrypt(datos[:12], datos[12:], None)))
+
+
+def normalizar_usuario(usuario):
+    """Minusculas y sin tildes: «Ana» y «ana» son el mismo usuario. Debe coincidir con web/estatico/shim.js."""
+    u = unicodedata.normalize("NFD", usuario.strip().lower())
+    return "".join(c for c in u if unicodedata.category(c) != "Mn")
+
+
+def id_ranura(usuario):
+    return hashlib.sha256(("radar:" + normalizar_usuario(usuario)).encode("utf-8")).hexdigest()[:32]
+
+
+def leer_usuarios(texto):
+    """Lineas «usuario|Nombre|contrasena» (las vacias y las que empiezan por # se ignoran)."""
+    usuarios = []
+    for linea in (texto or "").splitlines():
+        linea = linea.strip()
+        if not linea or linea.startswith("#"):
+            continue
+        partes = linea.split("|", 2)
+        if len(partes) != 3:
+            sys.exit("USUARIOS_WEB: cada linea debe ser usuario|Nombre|contrasena")
+        usuario, nombre, contrasena = normalizar_usuario(partes[0]), partes[1].strip(), partes[2]
+        if not re.fullmatch(r"[a-z0-9._-]{2,30}", usuario) or not nombre:
+            sys.exit(f"USUARIOS_WEB: usuario o nombre no validos en «{partes[0][:20]}»")
+        if len(contrasena) < 12:
+            sys.exit(f"USUARIOS_WEB: la contrasena de «{usuario}» es muy corta (minimo 12 caracteres)")
+        if usuario in [u[0] for u in usuarios]:
+            sys.exit(f"USUARIOS_WEB: el usuario «{usuario}» esta repetido")
+        usuarios.append((usuario, nombre, contrasena))
+    return usuarios
+
+
+def escribir_usuarios(datos_dir, usuarios, clave_datos):
+    """Una «ranura» por persona: la clave de los datos, cifrada con la contrasena de esa persona.
+
+    Quien entra con su usuario y contrasena abre su ranura, saca la clave de los datos y su nombre.
+    Nadie recibe la contrasena maestra (CLAVE_WEB), y cambiarla re-cifra todo para quienes siguen."""
+    ruta = datos_dir / "usuarios.json"
+    if not usuarios:
+        ruta.unlink(missing_ok=True)
+        return
+    k_b64 = base64.b64encode(clave_datos).decode()
+    ranuras = {}
+    for usuario, nombre, contrasena in usuarios:
+        sal = os.urandom(16)
+        ranuras[id_ranura(usuario)] = {
+            "s": base64.b64encode(sal).decode(),
+            "b": base64.b64encode(cifrar(derivar(contrasena, sal), {"n": nombre, "k": k_b64})).decode()}
+    ruta.write_text(json.dumps(ranuras, separators=(",", ":")), encoding="utf-8")
 
 
 def respuesta_alertas(dias, tabla_mercado):
@@ -112,7 +165,11 @@ def armar_pagina(destino):
     login = (web / "estatico" / "login.html").read_text(encoding="utf-8")
     html = html.replace("</head>", f"<style>\n{estilos}</style>\n<script>\n{shim}</script>\n</head>", 1)
     html = html.replace("<body>", f"<body>\n{login}", 1)
+    # Version de la pagina: la web revisa version.txt de vez en cuando y avisa si hay una nueva.
+    version = hashlib.sha256(html.encode("utf-8")).hexdigest()[:12]
+    html = html.replace('<meta charset="utf-8">', f'<meta charset="utf-8">\n<meta name="radar-version" content="{version}">', 1)
     (destino / "index.html").write_text(html, encoding="utf-8")
+    (destino / "version.txt").write_text(version, encoding="utf-8")
     for nombre in ACTIVOS:
         shutil.copyfile(web / nombre, destino / nombre)
     manifiesto = json.loads((web / "manifest.webmanifest").read_text(encoding="utf-8"))
@@ -157,6 +214,7 @@ def main():
         (datos_dir / "hoja.enc").write_bytes(cifrar(clave, {"url": hoja_url, "token": hoja_token}))
     else:
         (datos_dir / "hoja.enc").unlink(missing_ok=True)
+    escribir_usuarios(datos_dir, leer_usuarios(os.environ.get("USUARIOS_WEB", "")), clave)
     if args.solo_pagina:
         return
 

@@ -394,7 +394,7 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
           </select>
         </label>
         <p class="count" id="cuenta" aria-live="polite"></p>
-        <p class="count persona" id="persona-linea" hidden>Marcando como <b id="persona-nombre-vista"></b> · <button class="link mini" id="persona-cambiar" type="button">Cambiar</button></p>
+        <p class="count persona" id="persona-linea" hidden>Marcando como <b id="persona-nombre-vista"></b><span id="persona-cambio"> · <button class="link mini" id="persona-cambiar" type="button">Cambiar</button></span></p>
       </div>
     </div>
     <ol class="lista" id="lista"></ol>
@@ -731,7 +731,10 @@ let hojaCfg = null, enviandoHoja = false, toastTimer = null;
 let colaHoja = {};
 try { colaHoja = JSON.parse(localStorage.getItem('radar-hoja-cola') || '{}'); } catch (_) {}
 const guardarCola = () => { try { localStorage.setItem('radar-hoja-cola', JSON.stringify(colaHoja)); } catch (_) {} };
-const personaGuardada = () => { try { return localStorage.getItem('radar-persona') || ''; } catch (_) { return ''; } };
+// Nombre de quien marca: el de su usuario (web compartida) o el configurado en el panel local; solo si no hay
+// ninguno de los dos se le pregunta y se recuerda en este navegador.
+const personaFija = () => window.RADAR_USUARIO || (hojaCfg && hojaCfg.persona) || '';
+const personaGuardada = () => { try { return personaFija() || localStorage.getItem('radar-persona') || ''; } catch (_) { return personaFija(); } };
 async function cargarHoja() {
   if (hojaCfg) return hojaCfg;
   try { const r = await fetch('/api/hoja'); const j = r.ok ? await r.json() : {}; hojaCfg = j && (j.servidor || j.url) ? j : { url: '' }; }
@@ -763,6 +766,7 @@ function pintarPersona() {
   const n = personaGuardada();
   $('persona-linea').hidden = !(hojaCfg && (hojaCfg.servidor || hojaCfg.url) && n);
   $('persona-nombre-vista').textContent = n;
+  $('persona-cambio').hidden = !!personaFija();   // con usuario no se cambia el nombre desde aqui
 }
 async function vaciarColaHoja() {
   if (enviandoHoja) return; enviandoHoja = true;

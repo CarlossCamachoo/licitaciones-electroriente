@@ -23,6 +23,12 @@
     const flujo = new Blob([plano]).stream().pipeThrough(new DecompressionStream('gzip'));
     return JSON.parse(await new Response(flujo).text());
   }
+  // Mismo calculo que src/publicar.py: el usuario se normaliza y se convierte en el nombre de su «ranura».
+  const normalizarUsuario = (u) => u.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  async function idRanura(usuario) {
+    const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('radar:' + normalizarUsuario(usuario)));
+    return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  }
   async function archivo(nombre) {
     const r = await fetchReal('data/' + nombre + '?m=' + Math.floor(Date.now() / 60000), { cache: 'no-store' });
     return r.ok ? r.arrayBuffer() : null;
@@ -58,7 +64,9 @@
   }
   function marcarActividad() { try { localStorage.setItem(CLAVE_ACTIVIDAD, String(Date.now())); } catch (_) {} }
   function olvidarClave() {
-    for (const almacen of [sessionStorage, localStorage]) { try { almacen.removeItem('radar-clave'); } catch (_) {} }
+    for (const almacen of [sessionStorage, localStorage]) {
+      try { almacen.removeItem('radar-clave'); almacen.removeItem('radar-usuario'); } catch (_) {}
+    }
     try { localStorage.removeItem(CLAVE_ACTIVIDAD); } catch (_) {}
   }
   const vencida = () => Date.now() - ultimaActividad() > INACTIVIDAD_MS;
@@ -74,10 +82,15 @@
     addEventListener('focus', revisar);
     tocar();
   }
-  async function entrarCon(k, recordar) {
+  async function entrarCon(k, recordar, nombre) {
     clave = k;
+    window.RADAR_USUARIO = nombre || '';
     const exportada = aB64(await crypto.subtle.exportKey('raw', k));
-    try { (recordar ? localStorage : sessionStorage).setItem('radar-clave', exportada); } catch (_) {}
+    try {
+      const almacen = recordar ? localStorage : sessionStorage;
+      almacen.setItem('radar-clave', exportada);
+      if (nombre) almacen.setItem('radar-usuario', nombre); else almacen.removeItem('radar-usuario');
+    } catch (_) {}
     document.getElementById('acceso').hidden = true;
     vigilarInactividad();
     abrir();
@@ -88,14 +101,42 @@
       try {
         const g = almacen.getItem('radar-clave'); if (!g) continue;
         const k = await crypto.subtle.importKey('raw', aBytes(g), { name: 'AES-GCM' }, true, ['decrypt']);
-        if (await probar(k)) return k;
-        almacen.removeItem('radar-clave');
-      } catch (_) { try { almacen.removeItem('radar-clave'); } catch (__) {} }
+        if (await probar(k)) { window.RADAR_USUARIO = almacen.getItem('radar-usuario') || ''; return k; }
+        almacen.removeItem('radar-clave'); almacen.removeItem('radar-usuario');
+      } catch (_) { try { almacen.removeItem('radar-clave'); almacen.removeItem('radar-usuario'); } catch (__) {} }
     }
     return null;
   }
 
+  // Aviso de version nueva: la pagina guarda su version en una etiqueta y la compara con version.txt.
+  function vigilarVersion() {
+    const meta = document.querySelector('meta[name="radar-version"]');
+    const actual = meta && meta.content;
+    if (!actual) return;
+    let avisado = false;
+    const revisar = async () => {
+      if (avisado) return;
+      try {
+        const nueva = (await (await fetchReal('version.txt?v=' + Date.now(), { cache: 'no-store' })).text()).trim();
+        if (!nueva || nueva === actual || !/^[0-9a-f]{12}$/.test(nueva)) return;
+        avisado = true;
+        const caja = document.createElement('div');
+        caja.id = 'nueva-version'; caja.setAttribute('role', 'status');
+        const texto = document.createElement('span'); texto.textContent = 'Hay una versión nueva de la web.';
+        const boton = document.createElement('button'); boton.type = 'button'; boton.textContent = 'Actualizar';
+        // La direccion con ?v= esquiva la memoria de 10 minutos de GitHub Pages.
+        boton.onclick = () => location.replace(location.pathname + '?v=' + nueva + location.hash);
+        caja.append(texto, boton); document.body.append(caja);
+      } catch (_) {}
+    };
+    setInterval(revisar, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
+    addEventListener('focus', revisar);
+    revisar();
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
+    vigilarVersion();
     const caja = document.getElementById('acceso'), form = document.getElementById('acceso-form');
     const campo = document.getElementById('acceso-clave'), error = document.getElementById('acceso-error');
     const boton = document.getElementById('acceso-entrar');
@@ -106,14 +147,28 @@
       e.preventDefault();
       error.hidden = true; boton.disabled = true; boton.textContent = 'Comprobando…';
       try {
-        const sal = (await (await fetchReal('data/salt.txt', { cache: 'no-store' })).text()).trim();
-        const k = await derivar(campo.value, sal);
-        let bien = false;
-        try { bien = await probar(k); } catch (_) { bien = false; }
-        if (!bien) throw new Error('mala');
-        await entrarCon(k, document.getElementById('acceso-recordar').checked);
+        const usuario = document.getElementById('acceso-usuario').value;
+        const recordar = document.getElementById('acceso-recordar').checked;
+        if (usuario.trim()) {
+          // Entrada personal: la contrasena abre la ranura de esa persona, que trae la clave de los datos y su nombre.
+          const ranuras = await (await fetchReal('data/usuarios.json', { cache: 'no-store' })).json();
+          const r = ranuras[await idRanura(usuario)];
+          if (!r) throw new Error('mala');
+          const dato = await descifrar(await derivar(campo.value, r.s), aBytes(r.b));
+          const k = await crypto.subtle.importKey('raw', aBytes(dato.k), { name: 'AES-GCM' }, true, ['decrypt']);
+          if (!(await probar(k))) throw new Error('mala');
+          await entrarCon(k, recordar, dato.n);
+        } else {
+          // Contrasena del equipo (sin usuario): entra, pero sin nombre.
+          const sal = (await (await fetchReal('data/salt.txt', { cache: 'no-store' })).text()).trim();
+          const k = await derivar(campo.value, sal);
+          let bien = false;
+          try { bien = await probar(k); } catch (_) { bien = false; }
+          if (!bien) throw new Error('mala');
+          await entrarCon(k, recordar, '');
+        }
       } catch (_) {
-        error.textContent = 'Contraseña incorrecta. Revísela e intente de nuevo.'; error.hidden = false;
+        error.textContent = 'Usuario o contraseña incorrectos. Revíselos e intente de nuevo.'; error.hidden = false;
         campo.select(); boton.disabled = false; boton.textContent = 'Entrar';
       }
     });

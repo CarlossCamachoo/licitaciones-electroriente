@@ -14,3 +14,4 @@ data/notificaciones.json
 data/vistos_nube.json
 config/hoja.yaml
 config/hoja_equipo.gs
+config/usuarios.txt

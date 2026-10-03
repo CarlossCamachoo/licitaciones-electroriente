@@ -133,6 +133,18 @@ def hoja_equipo():
     return {"url": url, "token": token} if url.startswith(("https://", "http://127.0.0.1")) and token else {}
 
 
+def persona_local():
+    """Nombre de quien usa este panel (config/hoja.yaml, clave `persona`), para no preguntarlo."""
+    nombre = os.environ.get("HOJA_PERSONA", "")
+    ruta = radar.RAIZ / "config" / "hoja.yaml"
+    if not nombre and ruta.exists():
+        try:
+            nombre = str((yaml.safe_load(ruta.read_text(encoding="utf-8")) or {}).get("persona", "") or "")
+        except (OSError, yaml.YAMLError):
+            nombre = ""
+    return nombre.strip()[:60]
+
+
 CAMPOS_HOJA = ("id", "estado", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
                "factibilidad", "departamento", "modalidad", "tipo", "url")
 
@@ -304,7 +316,7 @@ class Manejador(BaseHTTPRequestHandler):
             self._json(200, criterios())
         elif url.path == "/api/hoja":
             # Solo dice si hay hoja configurada: la direccion y la clave no salen del servidor.
-            self._json(200, {"servidor": True} if hoja_equipo() else {})
+            self._json(200, {"servidor": True, "persona": persona_local()} if hoja_equipo() else {})
         elif url.path == "/api/archivo":
             try:
                 datos, tipo, ext = docs.abrir(parse_qs(url.query).get("id", [""])[0])

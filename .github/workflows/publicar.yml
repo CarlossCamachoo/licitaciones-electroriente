@@ -8,6 +8,7 @@ name: Publicar la web compartida
 # Con el vigilante nocturno el total mensual queda dentro del cupo gratuito de 2.000 minutos.)
 # La contrasena es el secreto CLAVE_WEB (se cambia con `gh secret set CLAVE_WEB`).
 # La hoja compartida del equipo (Google Sheets) usa los secretos HOJA_URL y HOJA_TOKEN.
+# Los usuarios de la web (uno por persona) vienen del secreto USUARIOS_WEB: se gestionan con src/usuarios_web.py.
 # Tambien se publica sola al subir cambios al codigo, la configuracion o la pantalla.
 on:
   schedule:
@@ -68,6 +69,7 @@ jobs:
           CLAVE_WEB: ${{ secrets.CLAVE_WEB }}
           HOJA_URL: ${{ secrets.HOJA_URL }}
           HOJA_TOKEN: ${{ secrets.HOJA_TOKEN }}
+          USUARIOS_WEB: ${{ secrets.USUARIOS_WEB }}
         run: python src/publicar.py --destino sitio
       - name: Publicar
         run: |
