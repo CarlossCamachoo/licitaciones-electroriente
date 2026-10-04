@@ -26,7 +26,7 @@
   --r: 12px; --t: 200ms; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * { box-sizing: border-box; }
-html { scroll-padding-top: calc(var(--alto-barra, 0px) + 12px); color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+html { scroll-padding-top: calc(var(--alto-barra, 0px) + var(--alto-tabs, 0px) + 12px); color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
 button, a, summary, label.chk, select { touch-action: manipulation; }
 button, .tab, .seg button, label.chk { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
@@ -193,7 +193,7 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
   button.dec { flex: 1 1 auto; min-height: 44px; }
   .state { padding: 40px 12px; }
 }
-.tabs { display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.tabs { position: sticky; top: var(--alto-barra, 0px); z-index: 25; background: var(--bg); display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { flex: none; white-space: nowrap; font: 500 .9375rem var(--sans); min-height: 44px; padding: 0 16px; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-2); cursor: pointer; transition: color var(--t), border-color var(--t); }
 .tab[aria-selected=true] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
@@ -265,12 +265,12 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 .mas-filtros label.f { min-width: 200px; }
 #limpiar { align-self: center; min-height: 44px; }
 .crit-cuerpo { display: grid; gap: 36px; }
-.crit-nav { position: sticky; top: var(--alto-barra, 0px); z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: -12px; background: var(--bg); border-bottom: 1px solid var(--hair); }
+.crit-nav { position: sticky; top: calc(var(--alto-barra, 0px) + var(--alto-tabs, 0px)); z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: -12px; background: var(--bg); border-bottom: 1px solid var(--hair); }
 .crit-nav button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--primary); cursor: pointer; transition: background var(--t), border-color var(--t); }
 .crit-nav button:hover { background: var(--primary-soft); border-color: transparent; }
 .crit-nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .crit-sec { scroll-margin-top: 72px; }
-html:has(#vista-crit:not([hidden])) { scroll-padding-top: calc(var(--alto-barra, 0px) + 76px); }
+html:has(#vista-crit:not([hidden])) { scroll-padding-top: calc(var(--alto-barra, 0px) + var(--alto-tabs, 0px) + 76px); }
 .crit-sec > h2 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin: 0 0 14px; font: 600 1.375rem/1.2 var(--serif); letter-spacing: -.01em; color: var(--primary); }
 .crit-sec > h2 small { font: 400 .8125rem var(--sans); letter-spacing: 0; color: var(--text-2); }
 /* Como se califica: dos columnas que se equilibran en alto */
@@ -1975,8 +1975,12 @@ $('dias').onchange = () => cargar();
     }
   };
   addEventListener('scroll', () => { if (!esperando) { esperando = true; requestAnimationFrame(ajustar); } }, { passive: true });
-  const medir = () => document.documentElement.style.setProperty('--alto-barra', barra.offsetHeight + 'px');
-  if ('ResizeObserver' in window) new ResizeObserver(medir).observe(barra); else medir();
+  const tabs = document.getElementById('tablist');
+  const medir = () => {
+    document.documentElement.style.setProperty('--alto-barra', barra.offsetHeight + 'px');
+    document.documentElement.style.setProperty('--alto-tabs', tabs.offsetHeight + 'px');
+  };
+  if ('ResizeObserver' in window) { const ro = new ResizeObserver(medir); ro.observe(barra); ro.observe(tabs); } else medir();
   ajustar();
 })();
 // Filtros: buscar y departamento siempre a la vista; el resto en «Más filtros», con la cuenta de los activos.
