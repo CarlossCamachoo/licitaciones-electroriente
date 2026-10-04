@@ -9,64 +9,63 @@
 # estado: activo | supuesto | sin_datos | pendiente
 
 criterios:
-  - titulo: "El objeto es algo que Electroriente suministra"
-    como: "Se buscan términos por familia: núcleo (variadores, PLC), catálogo (material eléctrico, cable, breaker), líneas secundarias (luminarias, UPS, solar) y contexto (RETIE)."
-    por_que: "Es el filtro principal. Sin coincidencia de objeto el proceso ni entra."
+  - titulo: "Objeto del proceso"
+    como: "Se busca por familias de términos: núcleo (variadores, PLC), catálogo (material eléctrico, cable, breaker), líneas secundarias (luminarias, UPS, solar) y contexto (RETIE)."
+    por_que: "Es el filtro principal: sin coincidencia de objeto, el proceso no entra."
     estado: activo
 
   - titulo: "Tipo de contrato"
-    como: "Suma si es Suministros o Compraventa y resta si es un contrato de servicios. El tipo lo llena la entidad y a veces viene mal, por eso hay excepciones."
+    como: "Suma si es Suministros o Compraventa; resta si es un contrato de servicios."
     detalles:
-      - "Resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga «suministro de», «adquisición de» o «compra de»."
-      - "Obra no resta aquí: se trata aparte como «requiere aliado»."
-      - "Si el objeto habla de mantenimiento resta 20 puntos, aunque la entidad lo marque como compraventa, salvo que diga «suministro de», «adquisición de» o «compra de»."
-      - "Un mantenimiento nunca pasa de «por revisar», por alto que sea su puntaje."
-    por_que: "Electroriente vende producto. Los contratos de servicios casi nunca son para un distribuidor."
+      - "Resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga «suministro de», «adquisición de» o «compra de»: la entidad llena el tipo y a veces se equivoca."
+      - "Obra no resta aquí: se marca aparte como «requiere aliado»."
+      - "Mantenimiento resta 20 puntos aunque venga como compraventa, salvo las mismas excepciones, y nunca pasa de «por revisar»."
+    por_que: "Electroriente vende producto; los contratos de servicios casi nunca son para un distribuidor."
     estado: supuesto
 
-  - titulo: "Modalidad de contratación"
-    como: "Suma en mínima cuantía, selección abreviada (menor cuantía y subasta inversa) y licitación pública. Resta en 'solicitud de información' (no es oferta). La contratación directa se excluye."
-    por_que: "En estas modalidades el proceso está abierto a ofertas de proveedores. La contratación directa suele llegar con proveedor definido."
+  - titulo: "Modalidad"
+    como: "Suma en mínima cuantía, selección abreviada (menor cuantía y subasta inversa) y licitación pública. Resta en «solicitud de información». La contratación directa se excluye."
+    por_que: "Son las modalidades abiertas a ofertas; la directa suele llegar con proveedor definido."
     estado: supuesto
 
-  - titulo: "Cuantía dentro de la capacidad"
-    como: "Penaliza si el valor está por debajo del mínimo útil (hoy 5 millones, definido por el área) o muy por encima de lo que puede asumir la empresa. Sin valor publicado no penaliza: se marca para revisión."
-    por_que: "Un proceso fuera de capacidad financiera no se puede ganar, y uno muy pequeño no paga el esfuerzo de la oferta."
+  - titulo: "Cuantía"
+    como: "Resta si el valor está por debajo del mínimo útil (hoy 5 millones, definido por el área) o muy por encima de la capacidad. Sin valor publicado no resta: queda marcado para revisión."
+    por_que: "Fuera de la capacidad financiera no se puede ganar; muy pequeño, no paga el esfuerzo."
     estado: supuesto
 
-  - titulo: "Territorio prioritario"
+  - titulo: "Territorio"
     como: "Suma si la entidad está en Santander, Norte de Santander, Boyacá o Cesar."
     por_que: "Entrega, soporte y relación comercial son más fáciles cerca de Bucaramanga."
     estado: activo
 
-  - titulo: "Entidad que ya compra este material"
-    como: "Suma si la entidad está en la lista de entidades conocidas (EPM, Ecopetrol, ESSA, etc.)."
-    por_que: "Compradores recurrentes de material eléctrico y automatización repiten procesos."
+  - titulo: "Entidad conocida"
+    como: "Suma si la entidad está en la lista de compradores conocidos (EPM, Ecopetrol, ESSA, etc.)."
+    por_que: "Los compradores recurrentes de material eléctrico y automatización repiten procesos."
     estado: activo
 
-  - titulo: "Requiere instalación o montaje"
-    como: "Se marca 'requiere aliado' si el contrato es de Obra o el objeto menciona construcción, obra civil, montaje o puesta en marcha. Resta 15 puntos: el proceso baja a 'por revisar' en lugar de perderse."
-    por_que: "Electroriente instala a través de aliados, así que esos procesos solo sirven en unión temporal o consorcio."
+  - titulo: "Instalación o montaje"
+    como: "Se marca «requiere aliado» si el contrato es de Obra o el objeto menciona construcción, obra civil, montaje o puesta en marcha. Resta 15 puntos y baja a «por revisar», no se pierde."
+    por_que: "Electroriente instala con aliados: estos procesos solo sirven en unión temporal o consorcio."
     estado: activo
 
-  - titulo: "Proceso todavía abierto"
-    como: "Solo se muestran procesos con estado de apertura 'Abierto' y, si SECOP publica la fecha de cierre, que no haya pasado ya. Los cerrados y los vencidos se descartan."
-    por_que: "Un proceso cerrado o con la fecha de cierre vencida ya no admite ofertas."
+  - titulo: "Proceso abierto"
+    como: "Solo se muestran procesos con apertura «Abierto» y, si SECOP publica la fecha de cierre, que no haya pasado. Los cerrados y vencidos se descartan."
+    por_que: "Un proceso cerrado o vencido ya no admite ofertas."
     estado: activo
 
-  - titulo: "Fecha de cierre y plazo restante"
-    como: "SECOP publica la fecha de cierre de ofertas solo en una parte de los procesos (cerca del 5 %). Cuando la trae, la tarjeta la muestra con los días que faltan y se marca en rojo si quedan 3 días o menos. Cuando no la trae, la tarjeta no dice nada: ábralo en SECOP para verla."
+  - titulo: "Fecha de cierre"
+    como: "SECOP la publica en cerca del 5 % de los procesos. Cuando la trae, la tarjeta muestra los días que faltan y se marca en rojo con 3 o menos. Si no, ábralo en SECOP."
     por_que: "Con menos de 5 días hábiles, una primera oferta difícilmente alcanza."
     estado: activo
 
   - titulo: "Códigos UNSPSC"
-    como: "No se usan para puntuar: en los datos abiertos la mayoría de procesos trae el código como 'UNSPECIFIED' o con códigos poco confiables."
+    como: "No puntúan: la mayoría de procesos los trae como «UNSPECIFIED» o poco confiables."
     por_que: "Sí importan para el RUP: la empresa solo puede presentarse si sus códigos inscritos cubren el objeto."
     estado: pendiente
 
-  - titulo: "Requisitos habilitantes (RUP, experiencia, capacidad financiera)"
-    como: "Aún no se cruzan: faltan los documentos de la empresa. Cuando estén, el radar podrá descartar lo que no se pueda presentar."
-    por_que: "Falta un solo habilitante y la oferta no es válida."
+  - titulo: "Requisitos habilitantes"
+    como: "RUP, experiencia y capacidad financiera aún no se cruzan: faltan los documentos de la empresa."
+    por_que: "Si falta un solo habilitante, la oferta no es válida."
     estado: pendiente
 
 # Lo que se descarta de plano, antes de puntuar (se muestra en la pestana Criterios).

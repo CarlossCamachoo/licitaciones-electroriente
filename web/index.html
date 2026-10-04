@@ -251,68 +251,85 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 .chip.alta { background: var(--primary); color: var(--on-primary); font-weight: 600; }
 .chip.media { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .chip.revisar { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.crit-cuerpo { max-width: 1180px; }
-.crit-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.crit-cuerpo { display: grid; gap: 36px; }
+.crit-nav { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: -12px; background: var(--bg); border-bottom: 1px solid var(--hair); }
 .crit-nav button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--primary); cursor: pointer; transition: background var(--t), border-color var(--t); }
 .crit-nav button:hover { background: var(--primary-soft); border-color: transparent; }
 .crit-nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.crit-sec { margin-top: 40px; scroll-margin-top: 16px; }
-.crit-sec > h2 { font: 600 1.5rem/1.2 var(--serif); letter-spacing: -.01em; margin: 0; color: var(--primary); }
-.crit-sec > .sub { margin: 6px 0 18px; color: var(--text-2); font-size: .9375rem; max-width: 80ch; }
-/* Como se califica */
-.cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
-.cal-card { border: 1px solid var(--border); border-radius: 14px; padding: 20px; background: var(--bg); }
-.cal-card h3 { margin: 0 0 4px; font: 600 1.0625rem/1.3 var(--sans); display: flex; align-items: center; gap: 10px; }
-.cal-n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: var(--on-primary); font: 600 .875rem var(--sans); display: inline-grid; place-items: center; }
-.cal-card > p { margin: 6px 0 14px; color: var(--text-2); font-size: .9rem; }
-.fam { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--hair); font-size: .9375rem; }
-.fam b { font-variant-numeric: tabular-nums; color: var(--primary); }
-.fam i { grid-column: 1 / -1; display: block; height: 6px; border-radius: 3px; background: var(--muted); overflow: hidden; }
-.fam i::after { content: ""; display: block; height: 100%; width: var(--w); background: var(--primary); border-radius: 3px; }
-.aj { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--hair); font-size: .9rem; }
-.pts { font: 600 .8125rem var(--sans); font-variant-numeric: tabular-nums; min-width: 3.4em; text-align: center; padding: 2px 8px; border-radius: 999px; }
+.crit-sec { scroll-margin-top: 72px; }
+.crit-sec > h2 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin: 0 0 14px; font: 600 1.375rem/1.2 var(--serif); letter-spacing: -.01em; color: var(--primary); }
+.crit-sec > h2 small { font: 400 .8125rem var(--sans); letter-spacing: 0; color: var(--text-2); }
+/* Como se califica: dos columnas que se equilibran en alto */
+.cal { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); grid-template-areas: "izq aj" "des eje"; gap: 16px; align-items: start; }
+.cal > .a-izq { grid-area: izq; display: grid; gap: 16px; } .cal > .a-aj { grid-area: aj; } .cal > .a-des { grid-area: des; } .cal > .a-eje { grid-area: eje; }
+.cal-pie { margin: 8px 0 0; padding-top: 10px; border-top: 1px solid var(--hair); font-size: .8125rem; color: var(--text-2); }
+.cal-card { border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; background: var(--bg); }
+.cal-card h3 { margin: 0 0 6px; display: flex; align-items: center; gap: 10px; font: 600 1rem/1.3 var(--sans); }
+.cal-card h3 small { margin-left: auto; font: 400 .8125rem var(--sans); color: var(--text-2); }
+.cal-n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: var(--on-primary); font: 600 .8125rem var(--sans); display: inline-grid; place-items: center; }
+.fam { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 3.4rem; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--hair); font-size: .9375rem; }
+.fam:first-of-type { border-top: 0; }
+.fam b { text-align: right; font-variant-numeric: tabular-nums; color: var(--primary); }
+.fam i { display: block; height: 8px; border-radius: 4px; background: var(--muted); overflow: hidden; }
+.fam i::after { content: ""; display: block; height: 100%; width: var(--w); background: var(--primary); border-radius: 4px; }
+.aj { display: grid; grid-template-columns: 3.4rem 1fr; gap: 2px 14px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--hair); font-size: .9375rem; }
+.aj:first-of-type { border-top: 0; }
+.pts { font: 600 .8125rem var(--sans); font-variant-numeric: tabular-nums; text-align: center; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .pts.mas { background: var(--primary-soft); color: var(--primary); }
 .pts.menos { background: var(--danger-soft); color: var(--danger); }
 .aj small { grid-column: 2; color: var(--text-2); font-size: .8125rem; line-height: 1.35; }
-.escala { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 6px 0 10px; }
+.escala { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 8px 0 4px; }
 .escala span { display: block; }
 .escala .e0 { background: var(--muted); } .escala .e1 { background: var(--accent-soft); } .escala .e2 { background: var(--primary-soft); } .escala .e3 { background: var(--primary); }
-.niv { display: grid; gap: 4px; justify-items: start; padding: 10px 0; border-top: 1px solid var(--hair); font-size: .9rem; }
-.niv small { color: var(--text-2); font-size: .8125rem; line-height: 1.35; }
-.cal-extra { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-.panel-suave { border-radius: 14px; padding: 20px; background: var(--surface); border: 1px solid var(--hair); }
-.panel-suave h3 { margin: 0 0 10px; font: 600 1rem/1.3 var(--sans); }
-.panel-suave ul { margin: 0; padding-left: 18px; color: var(--text); font-size: .9375rem; }
+.marcas { position: relative; height: 16px; margin-bottom: 10px; font-size: .75rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.marcas span { position: absolute; transform: translateX(-50%); }
+.marcas span:first-child { transform: none; } .marcas span:last-child { transform: translateX(-100%); }
+.niv { display: grid; grid-template-columns: 8.5rem 1fr; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--hair); font-size: .875rem; color: var(--text-2); }
+.niv .chip { justify-self: start; }
+.panel-suave { border-radius: 14px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--hair); }
+.panel-suave h3 { margin: 0 0 8px; font: 600 1rem/1.3 var(--sans); }
+.panel-suave ul { margin: 0; padding-left: 18px; font-size: .9375rem; }
 .panel-suave li { margin: 5px 0; }
-.ejemplo .linea { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--hair); font-size: .9rem; }
-.ejemplo .linea:first-of-type { border-top: 0; }
-.ejemplo .total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 10px; border-top: 2px solid var(--primary); font-weight: 600; }
-.ejemplo .total b { font: 600 1.5rem var(--serif); color: var(--primary); }
-.ejemplo .obj { color: var(--text-2); font-size: .875rem; margin: 0 0 8px; }
-/* Que se evalua */
-.crit-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
-.crit { border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
-.crit h3 { margin: 0; font: 600 1rem/1.35 var(--sans); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
-.crit p { margin: 0; font-size: .9375rem; }
-.crit ul { margin: 0; padding-left: 18px; font-size: .9rem; color: var(--text); }
-.crit li { margin: 4px 0; }
-.crit .por { margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--border); color: var(--text-2); font-size: .875rem; }
-.crit .por b { color: var(--text); font-weight: 600; }
+.ejemplo .obj { color: var(--text-2); font-size: .875rem; margin: 0 0 6px; }
+.ejemplo .linea { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid var(--hair); font-size: .9375rem; }
+.ejemplo .total { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 10px; border-top: 2px solid var(--primary); font-weight: 600; }
+.ejemplo .total b { font: 600 1.5rem/1 var(--serif); color: var(--primary); }
+/* Que se evalua: tabla de tres columnas */
+.crit-tabla { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--bg); }
+.crit-fila { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2.2fr) minmax(0, 1.3fr); gap: 6px 32px; padding: 16px 20px; border-top: 1px solid var(--hair); align-items: start; }
+.crit-fila.cab { padding: 10px 20px; border-top: 0; background: var(--surface); font: 600 .75rem var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.crit-fila h3 { margin: 0 0 6px; font: 600 .9375rem/1.35 var(--sans); }
+.crit-fila p { margin: 0; font-size: .9375rem; }
+.crit-fila ul { margin: 8px 0 0; padding-left: 18px; font-size: .875rem; }
+.crit-fila li { margin: 3px 0; }
+.crit-fila .por { color: var(--text-2); font-size: .875rem; }
+.crit-fila .por::before { display: none; content: attr(data-et); margin-bottom: 2px; font: 600 .75rem var(--sans); letter-spacing: .08em; text-transform: uppercase; }
 /* Terminos */
-.fam-terms { border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 12px; background: var(--bg); }
-.fam-terms header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.terms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.fam-terms { border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; background: var(--bg); }
+.fam-terms header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .fam-terms h3 { margin: 0; font: 600 1rem var(--sans); }
-.fam-terms details { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); }
-.ruido { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); }
-.ruido summary { cursor: pointer; padding: 14px 20px; font: 600 1rem var(--sans); min-height: 44px; display: flex; align-items: center; justify-content: space-between; }
+.fam-terms .terms { margin: 10px 0 0; }
+.ruido { margin-top: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg); }
+.ruido summary { cursor: pointer; padding: 12px 20px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 600 1rem var(--sans); }
 .ruido .terms { padding: 0 20px 16px; margin: 0; }
-.ruido + .nota-doc { margin-top: 12px; }
 /* Revision semanal */
-ol.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: paso; }
-ol.pasos li { counter-increment: paso; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; margin: 0; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
-ol.pasos li::before { content: counter(paso); width: 28px; height: 28px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font: 600 .875rem var(--sans); display: grid; place-items: center; }
-@media (max-width: 900px) { .cal-extra { grid-template-columns: 1fr; } }
-@media (max-width: 420px) { .crit-lista { grid-template-columns: 1fr; } }
+ol.pasos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr)); gap: 12px; counter-reset: paso; }
+ol.pasos li { counter-increment: paso; display: grid; gap: 10px; align-content: start; margin: 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); font-size: .9375rem; }
+ol.pasos li::before { content: counter(paso); width: 26px; height: 26px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font: 600 .8125rem var(--sans); display: grid; place-items: center; }
+@media (max-width: 600px) {
+  .crit-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter, 20px)); padding-inline: var(--gutter, 20px); }
+  .crit-nav::-webkit-scrollbar { display: none; }
+  .crit-nav button { flex: none; white-space: nowrap; min-height: 40px; }
+  .crit-sec { scroll-margin-top: 64px; }
+}
+@media (max-width: 900px) {
+  .cal { grid-template-columns: 1fr; grid-template-areas: "izq" "aj" "des" "eje"; }
+  .crit-fila { grid-template-columns: 1fr; padding: 14px 16px; }
+  .crit-fila.cab { display: none; }
+  .crit-fila .por::before { display: block; }
+  .fam { grid-template-columns: 7.5rem minmax(0, 1fr) 3rem; }
+}
 .terms { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
 .term { font-size: .8125rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-2); }
 .term.hit { background: var(--primary-soft); color: var(--primary); border-color: transparent; font-weight: 600; }
@@ -605,7 +622,6 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
   </div>
 
   <div id="vista-crit" role="tabpanel" aria-labelledby="tab-crit" hidden>
-    <p class="intro">Así decide el radar si una licitación vale la pena. Los pesos son supuestos de negocio para calibrar con el área: si algo no coincide con su experiencia, anótelo y ajústelo en la revisión semanal que aparece al final.</p>
     <div id="crit-cuerpo" class="crit-cuerpo"></div>
   </div>
 
@@ -1508,74 +1524,69 @@ async function cargarCrit() {
   try {
     const r = await fetch('/api/criterios'); if (!r.ok) throw new Error('No se pudieron leer los criterios');
     const d = await r.json(); critListo = true;
-    const sec = (id, t, sub) => { const g = el('section', 'crit-sec'); g.id = id; g.append(el('h2', '', t)); if (sub) g.append(el('p', 'sub', sub)); return g; };
+    const sec = (id, t, meta) => { const g = el('section', 'crit-sec'); g.id = id; const h = el('h2', '', t); if (meta) h.append(el('small', '', meta)); g.append(h); return g; };
     const pts = (n) => el('span', 'pts ' + (n >= 0 ? 'mas' : 'menos'), (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n));
+    const tarjeta = (cls, n, titulo, nota) => { const t = el('div', 'cal-card ' + cls); const h = el('h3'); if (n) h.append(el('span', 'cal-n', n)); h.append(document.createTextNode(titulo)); if (nota) h.append(el('small', '', nota)); t.append(h); return t; };
     const { alta, media } = d.niveles, revisar = d.puntaje.umbral_revisar;
 
     // ---- 1. Como se califica ----
-    const g0 = sec('crit-calif', 'Cómo se califica una licitación',
-      'Cada licitación recibe un puntaje de 0 a 100. Se arma en tres pasos: primero qué compra la entidad, luego lo que sube o baja ese puntaje, y al final en qué nivel cae.');
-    const grid = el('div', 'cal-grid');
-    // Paso 1
-    const c1 = el('div', 'cal-card'); const h1 = el('h3'); h1.append(el('span', 'cal-n', '1'), document.createTextNode('Qué compra la entidad'));
-    c1.append(h1, el('p', '', 'Se busca el objeto del proceso entre cuatro familias de palabras. Cada familia que aparece suma su peso una sola vez, aunque repita palabras.'));
+    const g0 = sec('crit-calif', 'Cómo se califica una licitación', 'Puntaje de 0 a 100');
+    const cal = el('div', 'cal');
+    const c1 = tarjeta('a-fam', '1', 'Qué compra la entidad');
     const maxPeso = Math.max(...d.grupos.map(g => g.peso));
-    d.grupos.forEach(g => { const f = el('div', 'fam'); f.append(el('span', '', g.etiqueta), el('b', '', g.peso + ' pts'), el('i')); f.lastChild.style.setProperty('--w', Math.round(g.peso / maxPeso * 100) + '%'); c1.append(f); });
-    // Paso 2
-    const c2 = el('div', 'cal-card'); const h2 = el('h3'); h2.append(el('span', 'cal-n', '2'), document.createTextNode('Lo que sube o baja el puntaje'));
-    c2.append(h2, el('p', '', 'Después se ajusta según el contexto del proceso.'));
+    d.grupos.forEach(g => { const f = el('div', 'fam'); f.append(el('span', '', g.etiqueta), el('i'), el('b', '', g.peso)); f.children[1].style.setProperty('--w', Math.round(g.peso / maxPeso * 100) + '%'); c1.append(f); });
+    c1.append(el('p', 'cal-pie', 'Cada familia suma su peso una sola vez.'));
+    const c2 = tarjeta('a-aj', '2', 'Lo que sube o baja el puntaje');
     d.ajustes.forEach(a => { const row = el('div', 'aj'); row.append(pts(a.puntos), el('span', '', a.texto)); if (a.nota) row.append(el('small', '', a.nota)); c2.append(row); });
-    // Paso 3
-    const c3 = el('div', 'cal-card'); const h3 = el('h3'); h3.append(el('span', 'cal-n', '3'), document.createTextNode('En qué nivel cae'));
-    c3.append(h3, el('p', '', 'El puntaje final queda entre 0 y 100 y decide cómo se muestra.'));
+    const c3 = tarjeta('a-niv', '3', 'En qué nivel cae');
     const esc = el('div', 'escala'); esc.setAttribute('role', 'img'); esc.setAttribute('aria-label', `Escala de 0 a 100: sin mostrar hasta ${revisar - 1}, por revisar de ${revisar} a ${media - 1}, media de ${media} a ${alta - 1}, alta desde ${alta}`);
     [[revisar, 'e0'], [media - revisar, 'e1'], [alta - media, 'e2'], [100 - alta, 'e3']].forEach(([w, k]) => { const x = el('span', k); x.style.width = w + '%'; esc.append(x); });
-    c3.append(esc);
-    [[`Alta · desde ${alta}`, 'chip alta', 'Se muestra en el Radar y avisa en la campana.'],
-     [`Media · desde ${media}`, 'chip media', 'También entra al Radar.'],
-     [`Por revisar · de ${revisar} a ${media - 1}`, 'chip revisar', 'No avisa: queda en la pestaña «Por revisar» para que alguien la mire.'],
-     [`Menos de ${revisar}`, 'chip nota', 'No se muestra.']].forEach(([t, k, nota]) => { const n = el('div', 'niv'); n.append(el('span', k + ' sm', t), el('small', '', nota)); c3.append(n); });
-    grid.append(c1, c2, c3);
-    // Descarte y ejemplo
-    const extra = el('div', 'cal-extra');
-    const pd = el('div', 'panel-suave'); pd.append(el('h3', '', 'Antes de puntuar, se descarta de plano'));
+    const marcas = el('div', 'marcas'); marcas.setAttribute('aria-hidden', 'true');
+    [[0, '0'], [media, media], [alta, alta], [100, '100']].forEach(([p, t]) => { const m = el('span', '', String(t)); m.style.left = p + '%'; marcas.append(m); });
+    c3.append(esc, marcas);
+    [[`Alta · desde ${alta}`, 'chip alta', 'Entra al Radar y avisa en la campana'],
+     [`Media · desde ${media}`, 'chip media', 'Entra al Radar'],
+     [`Por revisar · ${revisar} a ${media - 1}`, 'chip revisar', 'Solo en la pestaña «Por revisar»'],
+     [`Menos de ${revisar}`, 'chip nota', 'No se muestra']].forEach(([t, k, nota]) => { const n = el('div', 'niv'); n.append(el('span', k + ' sm', t), el('span', '', nota)); c3.append(n); });
+    const pd = el('div', 'panel-suave a-des'); pd.append(el('h3', '', 'Se descarta antes de puntuar'));
     const ul = el('ul'); (d.descarte || []).forEach(t => ul.append(el('li', '', t))); pd.append(ul);
-    const pe = el('div', 'panel-suave ejemplo'); pe.append(el('h3', '', 'Un ejemplo, paso a paso'));
-    pe.append(el('p', 'obj', `Una entidad de Santander publica «suministro de ${d.ejemplo.objeto}» como compraventa, por mínima cuantía.`));
+    const pe = el('div', 'panel-suave ejemplo a-eje'); pe.append(el('h3', '', 'Ejemplo'));
+    pe.append(el('p', 'obj', `Entidad de Santander: «suministro de ${d.ejemplo.objeto}», compraventa, mínima cuantía.`));
     d.ejemplo.lineas.forEach(l => { const ln = el('div', 'linea'); ln.append(el('span', '', l.texto), pts(l.puntos)); pe.append(ln); });
     const tot = el('div', 'total'); tot.append(el('span', '', `Total · factibilidad ${d.ejemplo.nivel}`), el('b', '', String(d.ejemplo.total))); pe.append(tot);
-    extra.append(pd, pe);
-    g0.append(grid, extra);
+    const izq = el('div', 'a-izq'); izq.append(c1, c3);
+    cal.append(izq, c2, pd, pe);
+    g0.append(cal);
 
     // ---- 2. Que se evalua ----
-    const g1 = sec('crit-eval', 'Qué se evalúa', 'Cada criterio con lo que hace y por qué importa. La etiqueta dice qué tan firme es: «Activo» ya se aplica, «Supuesto a validar» es una decisión de negocio por confirmar.');
-    const lista = el('div', 'crit-lista');
+    const g1 = sec('crit-eval', 'Qué se evalúa');
+    const tabla = el('div', 'crit-tabla');
+    const cab = el('div', 'crit-fila cab'); ['Criterio', 'Cómo se aplica', 'Por qué importa'].forEach(t => cab.append(el('span', '', t))); tabla.append(cab);
     d.criterios.forEach(x => {
-      const div = el('article', 'crit'); const h = el('h3'); h.append(el('span', '', x.titulo));
-      const e = ESTADO_CRIT[x.estado]; if (e) h.append(el('span', e[0], e[1]));
-      div.append(h, el('p', '', x.como));
-      if (x.detalles && x.detalles.length) { const u = el('ul'); x.detalles.forEach(t => u.append(el('li', '', t))); div.append(u); }
-      const por = el('p', 'por'); por.append(el('b', '', 'Por qué importa: '), document.createTextNode(x.por_que)); div.append(por);
-      lista.append(div);
+      const fila = el('div', 'crit-fila');
+      const c1 = el('div'); c1.append(el('h3', '', x.titulo)); const e = ESTADO_CRIT[x.estado]; if (e) c1.append(el('span', e[0], e[1]));
+      const c2 = el('div'); c2.append(el('p', '', x.como));
+      if (x.detalles && x.detalles.length) { const u = el('ul'); x.detalles.forEach(t => u.append(el('li', '', t))); c2.append(u); }
+      const c3 = el('div', 'por', x.por_que); c3.dataset.et = 'Por qué importa';
+      fila.append(c1, c2, c3); tabla.append(fila);
     });
-    g1.append(lista);
+    g1.append(tabla);
 
     // ---- 3. Terminos ----
-    const g2 = sec('crit-terminos', 'Términos de búsqueda', d.base
-      ? `Los números cuentan en cuántos procesos de la última consulta (${d.base.generado}, ${d.base.candidatos} candidatos) acertó cada término. Los que están en gris no acertaron nada.`
-      : 'Abra la pestaña Radar para consultar SECOP y ver cuántas veces acierta cada término.');
+    const g2 = sec('crit-terminos', 'Términos de búsqueda', d.base ? `Última consulta ${d.base.generado} · ${d.base.candidatos} candidatos · el número es en cuántos acertó` : 'Abra el Radar para ver cuántas veces acierta cada término');
+    const rej = el('div', 'terms-grid');
     d.grupos.forEach(g => {
       const caja = el('div', 'fam-terms'); const hd = el('header'); hd.append(el('h3', '', g.etiqueta), el('span', 'pts mas', g.peso + ' puntos'));
       const w = el('div', 'terms');
       g.terminos.forEach(t => w.append(el('span', 'term' + (t.n ? ' hit' : ''), t.t + (t.n ? ' · ' + t.n : ''))));
-      caja.append(hd, w); g2.append(caja);
+      caja.append(hd, w); rej.append(caja);
     });
+    g2.append(rej);
     const det = el('details', 'ruido'); const sm = el('summary'); sm.append(el('span', '', 'Términos que sacan un proceso (ruido)'), el('span', 'pts menos', String(d.excluir.length)));
     const wx = el('div', 'terms'); d.excluir.forEach(t => wx.append(el('span', 'term out', t))); det.append(sm, wx); g2.append(det);
-    g2.append(el('p', 'nota-doc', 'Para agregar o quitar términos se edita config/filtros.yaml; lo hace quien administra el radar.'));
 
     // ---- 4. Revision semanal ----
-    const g3 = sec('crit-revision', 'Revisión semanal: cómo decidir si agregar términos');
+    const g3 = sec('crit-revision', 'Revisión semanal');
     const ol = el('ol', 'pasos'); d.revision.forEach(t => ol.append(el('li', '', t))); g3.append(ol);
 
     // ---- Atajos ----
