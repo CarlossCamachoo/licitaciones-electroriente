@@ -20,12 +20,13 @@
   --accent: #8A5200; --accent-soft: #FDF1D8;
   --danger: #A12B2B; --danger-soft: #FBE8E6;
   --ring: #011E91; --barra: #000775;
+  --border-ctl: #7A839A;   /* borde de campos y botones: 3,5:1 sobre blanco (las lineas decorativas siguen con --border) */
   --serif: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --r: 12px; --t: 200ms; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * { box-sizing: border-box; }
-html { color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+html { scroll-padding-top: 84px; color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
 button, a, summary, label.chk, select { touch-action: manipulation; }
 button, .tab, .seg button, label.chk { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
@@ -51,13 +52,13 @@ h1 { margin: 0; font: 600 1.375rem/1.15 var(--sans); letter-spacing: -.015em; }
 .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 label.f { display: flex; flex-direction: column; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); gap: 4px; }
 select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px; background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23495057' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); }
-select, input[type=search], input[type=number] { font: 400 1rem var(--sans); min-height: 44px; padding-top: 0; padding-bottom: 0; padding-left: 12px; background-color: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; transition: border-color var(--t); }
+select, input[type=search], input[type=number] { font: 400 1rem var(--sans); min-height: 44px; padding-top: 0; padding-bottom: 0; padding-left: 12px; background-color: var(--surface); color: var(--text); border: 1px solid var(--border-ctl); border-radius: 8px; transition: border-color var(--t); }
 input[type=search], input[type=number] { padding-right: 12px; }
 label.buscar { flex: 1 1 280px; }
 label.buscar input { width: 100%; box-sizing: border-box; }
 input[type=number] { width: 96px; }
 .subir input[type=date] { font-size: 1rem; }
-.chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; transition: border-color var(--t); }
+.chk { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-ctl); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: .9375rem; user-select: none; transition: border-color var(--t); }
 .chk input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
 button.btn { transition: transform 120ms var(--ease-out), filter var(--t); font: 600 .9375rem var(--sans); min-height: 44px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 button.btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -145,6 +146,7 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
 .state svg { width: 28px; height: 28px; color: var(--text-2); }
 .state h2 { margin: 10px 0 4px; font: 600 1.375rem var(--serif); }
 .state p { margin: 0 auto 16px; color: var(--text-2); max-width: 52ch; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .skel { list-style: none; height: 110px; margin: 12px 0; border-radius: var(--r); background: linear-gradient(90deg, var(--muted), var(--surface), var(--muted)); background-size: 200% 100%; animation: sh 1.6s linear infinite; }
 @keyframes sh { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -226,7 +228,7 @@ button.link.peligro { color: var(--danger); }
 .tr-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .875rem; color: var(--text-2); }
 .tr-ctrl { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: start; margin-top: 4px; }
 .tr-ctrl label { display: grid; gap: 4px; font-size: .8125rem; color: var(--text-2); font-weight: 500; }
-.tr-ctrl textarea { font: 400 .9375rem var(--sans); min-height: 44px; padding: 10px 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+.tr-ctrl textarea { font: 400 .9375rem var(--sans); min-height: 44px; padding: 10px 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border-ctl); border-radius: 8px; resize: vertical; }
 .tr-ctrl textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .tr-estado { font-size: .8125rem; color: var(--text-2); min-height: 1em; }
 .tr-estado.error { color: var(--danger); }
@@ -998,7 +1000,7 @@ function pintarSaludo() {
   }
 }
 // ---- Lo que marco el equipo: se lee de la hoja de Google y se muestra en cada tarjeta --------------
-let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '', equipoSeq = 0, equipoPendiente = false;
+let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '', equipoSeq = 0, equipoPendiente = false, equipoEstado = 'cargando';
 const primerNombre = (n) => String(n).trim().split(' ')[0];
 const unirNombres = (l) => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1];
 function lineaEquipo(m) {
@@ -1031,16 +1033,19 @@ function lineaDescartes(m) {
 async function cargarEquipo() {
   const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
   const mia = ++equipoSeq;      // si salen dos lecturas, solo vale la ultima que se pidio
+  if (equipoEstado === 'error') { equipoEstado = 'cargando'; if (!$('vista-tramite').hidden) pintarTramite(); }
   try {
     const resp = cfg.servidor
       ? await fetch('/api/hoja', { method: 'POST', headers: API_POST, body: JSON.stringify({ accion: 'equipo' }) })
       : await fetch(cfg.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ accion: 'equipo', token: cfg.token }) });
     const res = await resp.json();
-    if (mia !== equipoSeq || !res.ok || !Array.isArray(res.filas)) return;
+    if (mia !== equipoSeq) return;
+    if (!res.ok || !Array.isArray(res.filas)) throw new Error('hoja');
+    const veniaSinDatos = equipoEstado !== 'ok'; equipoEstado = 'ok';
     const descartes = Array.isArray(res.descartes) ? res.descartes : [];
     const firma = JSON.stringify([res.filas, descartes]);
-    if (firma === equipoFirma) return;                 // nada cambio: no se redibuja
+    if (firma === equipoFirma && !veniaSinDatos) return;   // nada cambio: no se redibuja
     equipoFirma = firma;
     equipoMarcas = Object.fromEntries(res.filas.map(f => [f.id, f]));
     equipoDescartes = Object.fromEntries(descartes.map(f => [f.id, f]));
@@ -1050,7 +1055,10 @@ async function cargarEquipo() {
       // Con el cursor dentro de una nota no se redibuja (se perderia lo escrito): queda pendiente hasta que salga.
       if ($('tr-lista').contains(document.activeElement)) equipoPendiente = true; else pintarTramite();
     }
-  } catch (_) { /* se intenta de nuevo en la proxima vuelta */ }
+  } catch (_) {
+    // Si nunca llego nada, «En trámite» lo dice (con reintento); si ya habia datos, se conservan y se reintenta en la proxima vuelta.
+    if (mia === equipoSeq && equipoEstado !== 'ok') { equipoEstado = 'error'; if (!$('vista-tramite').hidden) pintarTramite(); }
+  }
 }
 
 // ---- En trámite: seguimiento del equipo sobre lo que marcó «Me interesa» -----------------------------------
@@ -1127,6 +1135,13 @@ function tarjetaTramite(m) {
 }
 function pintarTramite() {
   equipoPendiente = false;
+  if (equipoEstado !== 'ok') {          // sin datos todavia: estructura de carga, o el error con reintento
+    $('tr-seg').replaceChildren(); $('tr-aviso').hidden = true;
+    $('tr-lista').replaceChildren(...(equipoEstado === 'error'
+      ? [estadoVacio('No se pudo leer la hoja del equipo', 'Revise la conexión e intente de nuevo.', cargarEquipo)]
+      : esqueletos('li')));
+    return;
+  }
   const todas = Object.values(equipoMarcas);
   const grupoDe = (m) => EN_MARCHA.includes(m.seguimiento || 'Por estudiar') ? 'marcha' : 'fin';
   const q = $('tr-q').value.trim().toLowerCase();
@@ -1423,6 +1438,7 @@ const API_POST = { 'X-Panel': '1' };
 
 async function cargarDocs() {
   const cont = $('docs-lista');
+  cont.replaceChildren(...esqueletos('div'));
   try {
     const r = await fetch('/api/documentos');
     if (!r.ok) throw new Error('No se pudo leer la lista de documentos');
@@ -1521,6 +1537,7 @@ const ESTADO_CRIT = { activo: ['chip sm ok', 'Activo'], supuesto: ['chip sm avis
 let critListo = false;
 async function cargarCrit() {
   const c = $('crit-cuerpo');
+  c.replaceChildren(...esqueletos('div'));
   try {
     const r = await fetch('/api/criterios'); if (!r.ok) throw new Error('No se pudieron leer los criterios');
     const d = await r.json(); critListo = true;
@@ -1605,6 +1622,7 @@ async function cargarCrit() {
 let venc = null, vencTimer = null, vencVistos = PAGINA;
 function cargarVenc() {
   clearTimeout(vencTimer);
+  if (!venc) $('vlista').replaceChildren(...esqueletos());
   fetch('/api/vencimientos').then(r => r.json()).then(d => {
     venc = d;
     const deps = [...new Set(d.contratos.map(c => c.departamento).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
@@ -1615,8 +1633,15 @@ function cargarVenc() {
     if (d.estado.calculando && !$('vista-venc').hidden) vencTimer = setTimeout(cargarVenc, 5000);
   }).catch(() => { venc = { error: true }; pintarVenc(); });
 }
-function estadoVacio(titulo, texto) {
-  const st = el('li', 'state'); st.append(el('h2', '', titulo), el('p', '', texto)); return st;
+function estadoVacio(titulo, texto, reintentar) {
+  const st = el('li', 'state'); st.append(el('h2', '', titulo), el('p', '', texto));
+  if (reintentar) { const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = reintentar; st.append(b); }
+  return st;
+}
+// Estructura de carga: bloques con la forma del contenido final y un aviso «Cargando…» solo para lectores de pantalla.
+function esqueletos(etiqueta = 'li', n = 3) {
+  const aviso = el(etiqueta, 'solo-lectores', 'Cargando…'); aviso.setAttribute('role', 'status');
+  return [aviso, ...Array.from({ length: n }, () => { const b = el(etiqueta, 'skel'); b.setAttribute('aria-hidden', 'true'); return b; })];
 }
 function tarjetaVenc(c) {
   const li = el('li', 'card');
@@ -1658,7 +1683,7 @@ function tarjetaVenc(c) {
 function pintarVenc() {
   const lista = $('vlista');
   if (!venc) return;
-  if (venc.error) { lista.replaceChildren(estadoVacio('No se pudo cargar', 'Revise la conexión e intente de nuevo cambiando de pestaña y volviendo.')); $('vcuenta').textContent = ''; return; }
+  if (venc.error) { lista.replaceChildren(estadoVacio('No se pudo cargar', 'Revise la conexión e intente de nuevo.', cargarVenc)); $('vcuenta').textContent = ''; return; }
   const e = venc.estado;
   if (!e.listo) {
     $('vcuenta').textContent = '';
@@ -1687,6 +1712,7 @@ let mer = null, merTimer = null, merVer = 'ganadores', merVistos = PAGINA;
 const MER_VISTAS = [['ganadores', 'Ganadores'], ['entidades', 'Entidades'], ['regiones', 'Regiones'], ['productos', 'Productos']];
 function cargarMer() {
   clearTimeout(merTimer);
+  if (!mer) $('mlista').replaceChildren(...esqueletos());
   fetch('/api/mercado').then(r => r.json()).then(d => {
     mer = d;
     const llenar = (id, valores, todos) => {
@@ -1790,7 +1816,7 @@ function pintarMer() {
     b.onclick = () => { merVer = id; merVistos = PAGINA; pintarMer(); }; return b;
   }));
   if (!mer) return;
-  if (mer.error) { lista.replaceChildren(estadoVacio('No se pudo cargar', 'Revise la conexión e intente de nuevo cambiando de pestaña y volviendo.')); $('mcuenta').textContent = ''; return; }
+  if (mer.error) { lista.replaceChildren(estadoVacio('No se pudo cargar', 'Revise la conexión e intente de nuevo.', cargarMer)); $('mcuenta').textContent = ''; return; }
   const e = mer.estado;
   if (!e.listo) {
     $('mcuenta').textContent = '';
