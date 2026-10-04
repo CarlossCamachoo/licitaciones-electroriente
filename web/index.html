@@ -824,7 +824,7 @@ async function cargar(forzar = false, manual = false) {
   const btn = $('actualizar'), antes = ultimaConsulta;
   btn.disabled = true;
   const lista = $('lista');
-  lista.replaceChildren(...[1, 2, 3].map(() => el('li', 'skel')));
+  lista.replaceChildren(...esqueletos());
   const d = +$('dias').value;
   $('cuenta').textContent = estatico ? 'Actualizando…' : forzar ? 'Consultando SECOP… puede tardar unos 30 segundos.' : 'Cargando…';
   $('kpis').hidden = true; $('trunc').hidden = true;
