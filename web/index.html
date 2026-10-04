@@ -26,7 +26,7 @@
   --r: 12px; --t: 200ms; --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 * { box-sizing: border-box; }
-html { scroll-padding-top: 84px; color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+html { scroll-padding-top: calc(var(--alto-barra, 0px) + 12px); color-scheme: light; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
 button, a, summary, label.chk, select { touch-action: manipulation; }
 button, .tab, .seg button, label.chk { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
@@ -36,7 +36,12 @@ body { margin: 0; font: 400 16px/1.6 var(--sans); background: var(--bg); color: 
 .skip:focus { left: 8px; }
 svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-.barra { background: var(--barra); color: #fff; position: relative; }
+.barra { background: var(--barra); color: #fff; position: sticky; top: 0; z-index: 30; }
+/* Al bajar, el encabezado se condensa para no quitar pantalla: sin la linea de ultima consulta y con el logo mas chico. */
+.barra.compacta .sub { display: none; }
+.barra.compacta .logo { height: 30px; }
+.barra.compacta .barra-in { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: 8px; row-gap: 8px; }
+.barra.compacta h1 { font-size: 1.125rem; }
 .barra-in { max-width: 1600px; margin: 0 auto; padding: max(12px, env(safe-area-inset-top)) max(clamp(20px, 4vw, 56px), env(safe-area-inset-right)) 12px max(clamp(20px, 4vw, 56px), env(safe-area-inset-left)); display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: center; justify-content: space-between; }
 .marca { display: flex; align-items: center; gap: 20px; }
 .logo { height: 46px; width: auto; display: block; }
@@ -260,11 +265,12 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 .mas-filtros label.f { min-width: 200px; }
 #limpiar { align-self: center; min-height: 44px; }
 .crit-cuerpo { display: grid; gap: 36px; }
-.crit-nav { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: -12px; background: var(--bg); border-bottom: 1px solid var(--hair); }
+.crit-nav { position: sticky; top: var(--alto-barra, 0px); z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: -12px; background: var(--bg); border-bottom: 1px solid var(--hair); }
 .crit-nav button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--primary); cursor: pointer; transition: background var(--t), border-color var(--t); }
 .crit-nav button:hover { background: var(--primary-soft); border-color: transparent; }
 .crit-nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .crit-sec { scroll-margin-top: 72px; }
+html:has(#vista-crit:not([hidden])) { scroll-padding-top: calc(var(--alto-barra, 0px) + 76px); }
 .crit-sec > h2 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin: 0 0 14px; font: 600 1.375rem/1.2 var(--serif); letter-spacing: -.01em; color: var(--primary); }
 .crit-sec > h2 small { font: 400 .8125rem var(--sans); letter-spacing: 0; color: var(--text-2); }
 /* Como se califica: dos columnas que se equilibran en alto */
@@ -326,6 +332,9 @@ ol.pasos { list-style: none; margin: 0; padding: 0; display: grid; grid-template
 ol.pasos li { counter-increment: paso; display: grid; gap: 10px; align-content: start; margin: 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); font-size: .9375rem; }
 ol.pasos li::before { content: counter(paso); width: 26px; height: 26px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font: 600 .8125rem var(--sans); display: grid; place-items: center; }
 @media (max-width: 600px) {
+  .barra.compacta .titulo { display: none; }
+  .barra.compacta .barra-der label.f { font-size: 0; gap: 0; }   /* sin la palabra «Periodo»; el selector sigue con su etiqueta para lectores */
+  .barra.compacta .marca { min-height: 40px; align-items: center; }
   .crit-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter, 20px)); padding-inline: var(--gutter, 20px); }
   .crit-nav::-webkit-scrollbar { display: none; }
   .crit-nav button { flex: none; white-space: nowrap; min-height: 40px; }
@@ -1951,6 +1960,25 @@ document.addEventListener('keydown', e => {
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = () => cargar(true, true);
 $('dias').onchange = () => cargar();
+// Encabezado fijo: se condensa al bajar (con histeresis para que no parpadee) y publica su alto para los demas elementos fijos.
+(function () {
+  const barra = document.querySelector('.barra'); let compacta = false, esperando = false;
+  const ajustar = () => {
+    esperando = false;
+    // Al condensarse, el encabezado deja su hueco en el flujo (margen igual a lo que se encoge): asi el contenido no se
+    // mueve ni el navegador corrige la posicion del scroll, que haria parpadear el cambio.
+    if (!compacta && scrollY > 80) {
+      const antes = barra.offsetHeight; compacta = true; barra.classList.add('compacta');
+      barra.style.marginBottom = Math.max(0, antes - barra.offsetHeight) + 'px';
+    } else if (compacta && scrollY < 20) {
+      compacta = false; barra.classList.remove('compacta'); barra.style.marginBottom = '';
+    }
+  };
+  addEventListener('scroll', () => { if (!esperando) { esperando = true; requestAnimationFrame(ajustar); } }, { passive: true });
+  const medir = () => document.documentElement.style.setProperty('--alto-barra', barra.offsetHeight + 'px');
+  if ('ResizeObserver' in window) new ResizeObserver(medir).observe(barra); else medir();
+  ajustar();
+})();
 // Filtros: buscar y departamento siempre a la vista; el resto en «Más filtros», con la cuenta de los activos.
 function sincronizarFiltros(abrir) {
   const dentro = ['renov', 'novedad', 'equipo'].filter(id => $(id).value && !$(id).closest('label').hidden);
