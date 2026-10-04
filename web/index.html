@@ -155,11 +155,13 @@ a.go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; co
   .score .bar { flex: 1; margin: 0; }
   input[type=search] { min-width: 0; width: 100%; }
   .controls > * { flex: 1 1 auto; }
+  /* Los filtros de la lista van de a dos por fila: ocupan la mitad de alto antes de ver las tarjetas */
+  #vista-radar .controls label.f:not(.buscar) { flex: 1 1 calc(50% - 8px); min-width: 0; }
   /* Encabezado: marca arriba, consulta y campana debajo en una sola fila */
   .barra-in { row-gap: 12px; }
-  .marca { width: 100%; gap: 12px; }
+  .marca { width: 100%; gap: 8px 12px; flex-wrap: wrap; }
   .logo { height: 34px; }
-  .titulo { padding-left: 12px; min-width: 0; }
+  .titulo { flex: 1 1 100%; border-left: 0; padding-left: 0; min-width: 0; }
   h1 { font-size: 1.125rem; }
   .sub { font-size: .75rem; }
   /* Resumen en dos columnas, número arriba y rótulo abajo */
@@ -352,7 +354,6 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
   .usuario { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); width: 40px; height: 40px; padding: 0; justify-content: center; gap: 0; }
   .usuario .usuario-texto, .usuario svg.i { display: none; }
   .campana { position: absolute; top: max(12px, env(safe-area-inset-top)); right: calc(max(20px, env(safe-area-inset-right)) + 48px); width: 40px; height: 40px; }
-  .titulo { padding-right: 96px; }
   .usuario-menu { left: 12px; right: 12px; width: auto; top: calc(100% + 6px); }
   .barra-der:has(> .controls[hidden]) { margin-top: -12px; }
   .notif { left: 12px; right: 12px !important; width: auto; top: calc(100% + 6px); max-height: 70vh; }
@@ -1453,7 +1454,7 @@ async function cargarCrit() {
     });
     g2.append(el('h4', 'why', 'Términos que sacan un proceso (ruido)'));
     const wx = el('div', 'terms'); d.excluir.forEach(t => wx.append(el('span', 'term out', t))); g2.append(wx);
-    g2.append(el('p', 'nota-doc', 'Para agregar o quitar términos se edita config/filtros.yaml, o dígame cuáles y los agrego.'));
+    g2.append(el('p', 'nota-doc', 'Para agregar o quitar términos se edita config/filtros.yaml; lo hace quien administra el radar.'));
 
     const g3 = sec('Revisión semanal: cómo decidir si agregar términos');
     const ol = el('ol', 'pasos'); d.revision.forEach(t => ol.append(el('li', '', t))); g3.append(ol);
@@ -1734,7 +1735,7 @@ const AYUDA = {
   TABS.forEach(id => {
     const tab = $('tab-' + id);
     tab.setAttribute('aria-describedby', 'ayuda');
-    tab.addEventListener('mouseenter', () => { clearTimeout(espera); espera = setTimeout(() => mostrar(tab, id), 180); });
+    tab.addEventListener('mouseenter', () => { if (!matchMedia('(hover: hover)').matches) return; clearTimeout(espera); espera = setTimeout(() => mostrar(tab, id), 180); });
     tab.addEventListener('mouseleave', ocultar);
     tab.addEventListener('focus', () => { if (tab.matches(':focus-visible')) mostrar(tab, id); });
     tab.addEventListener('blur', ocultar);
