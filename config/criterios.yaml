@@ -15,7 +15,12 @@ criterios:
     estado: activo
 
   - titulo: "Tipo de contrato"
-    como: "Suma si es Suministros o Compraventa; resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga 'suministro de' o 'adquisición de' (el tipo de contrato lo llena la entidad y a veces viene mal). Obra no resta aquí: se trata aparte como 'requiere aliado'. Aparte, si el objeto habla de mantenimiento resta 20 puntos, aunque la entidad lo marque como compraventa, salvo que diga 'suministro de', 'adquisición de' o 'compra de'; y un mantenimiento nunca pasa de 'por revisar', por alto que sea su puntaje."
+    como: "Suma si es Suministros o Compraventa y resta si es un contrato de servicios. El tipo lo llena la entidad y a veces viene mal, por eso hay excepciones."
+    detalles:
+      - "Resta si es Prestación de servicios, Consultoría, Interventoría, Seguros o Arrendamientos, salvo que el objeto diga «suministro de», «adquisición de» o «compra de»."
+      - "Obra no resta aquí: se trata aparte como «requiere aliado»."
+      - "Si el objeto habla de mantenimiento resta 20 puntos, aunque la entidad lo marque como compraventa, salvo que diga «suministro de», «adquisición de» o «compra de»."
+      - "Un mantenimiento nunca pasa de «por revisar», por alto que sea su puntaje."
     por_que: "Electroriente vende producto. Los contratos de servicios casi nunca son para un distribuidor."
     estado: supuesto
 
@@ -63,6 +68,14 @@ criterios:
     como: "Aún no se cruzan: faltan los documentos de la empresa. Cuando estén, el radar podrá descartar lo que no se pueda presentar."
     por_que: "Falta un solo habilitante y la oferta no es válida."
     estado: pendiente
+
+# Lo que se descarta de plano, antes de puntuar (se muestra en la pestana Criterios).
+descarte:
+  - "El proceso ya no está abierto, o SECOP lo marca cancelado, en evaluación, adjudicado o desierto."
+  - "La fecha de cierre ya pasó."
+  - "Es contratación directa (suele llegar con proveedor definido)."
+  - "Contiene un término de la lista de ruido (interventoría, vigilancia, papelería…)."
+  - "No menciona nada de lo que Electroriente vende: sin coincidencia no entra."
 
 revision_semanal:
   - "Abra la pestaña 'Por revisar' y lea los primeros 10 a 15. Para cada uno pregúntese: ¿podríamos suministrar esto?"

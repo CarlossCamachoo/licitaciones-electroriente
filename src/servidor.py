@@ -195,11 +195,58 @@ def enviar_a_hoja(item):
     return salida
 
 
+ETIQUETAS_GRUPO = {"nucleo": "Núcleo", "catalogo_principal": "Catálogo principal",
+                   "lineas_secundarias": "Líneas secundarias", "contexto": "Contexto"}
+
+
+def etiqueta_grupo(nombre):
+    return ETIQUETAS_GRUPO.get(nombre, nombre.replace("_", " ").capitalize())
+
+
+def _ajustes_y_ejemplo(perfil, filtros):
+    """Los ajustes de puntaje tal como estan en la configuracion (para mostrarlos sin que se desactualicen) y un
+    ejemplo calculado con esos mismos numeros."""
+    aj = filtros["puntaje"]
+    ac, am = filtros.get("ajustes_contrato", {}), filtros.get("ajustes_modalidad", {})
+    cap = perfil["capacidad"]
+    millones = lambda v: f"{v / 1_000_000:,.0f} millones".replace(",", ".")
+    fav, des, man = ac.get("favorables", {}), ac.get("desfavorables", {}), ac.get("mantenimiento", {})
+    mfav, minfo = am.get("favorables", {}), am.get("solo_informacion", {})
+    ajustes = [
+        {"texto": "La entidad está en territorio prioritario", "puntos": aj["bono_territorio_prioritario"],
+         "nota": ", ".join(perfil["territorio_prioritario"])},
+        {"texto": "Es una entidad que ya compra este material", "puntos": aj["bono_entidad_conocida"], "nota": ""},
+        {"texto": "Contrato de suministro o compraventa", "puntos": fav.get("bono", 0), "nota": ", ".join(fav.get("tipos", []))},
+        {"texto": "Modalidad abierta a ofertas", "puntos": mfav.get("bono", 0), "nota": ", ".join(mfav.get("modalidades", []))},
+        {"texto": "Contrato de servicios, consultoría o arrendamiento", "puntos": des.get("penalizacion", 0),
+         "nota": "No resta si el objeto dice «suministro de» o «adquisición de»"},
+        {"texto": "Solo solicitud de información (no es oferta)", "puntos": minfo.get("penalizacion", 0), "nota": ""},
+        {"texto": "Es mantenimiento o reparación", "puntos": man.get("penalizacion", 0),
+         "nota": f"Y nunca pasa de {man.get('tope_puntaje')} puntos: queda en «por revisar»" if man.get("tope_puntaje") is not None else ""},
+        {"texto": "Requiere instalación o montaje (aliado)", "puntos": aj.get("penalizacion_requiere_aliado", 0),
+         "nota": "Baja a «por revisar», no se pierde"},
+        {"texto": "Valor fuera de la capacidad de la empresa", "puntos": aj["penalizacion_fuera_de_cuantia"],
+         "nota": f"Menos de {millones(cap['cuantia_minima_cop'])} o más de {millones(cap['cuantia_maxima_union_temporal_cop'])}"},
+    ]
+    ajustes = [a for a in ajustes if a["puntos"]]
+    # Ejemplo: suministro de lo que mas pesa, en territorio prioritario, abierto a ofertas.
+    grupo = max(filtros["incluir"].items(), key=lambda kv: kv[1]["peso"])
+    lineas = [(f"El objeto menciona un término de la familia «{etiqueta_grupo(grupo[0])}»", grupo[1]["peso"]),
+              ("La entidad está en Santander", aj["bono_territorio_prioritario"]),
+              ("Contrato de compraventa", fav.get("bono", 0)),
+              ("Modalidad de mínima cuantía", mfav.get("bono", 0))]
+    total = max(0, min(100, sum(p for _, p in lineas)))
+    niveles = filtros["niveles"]
+    nivel = "alta" if total >= niveles["alta"] else "media" if total >= niveles["media"] else "por revisar"
+    return ajustes, {"lineas": [{"texto": t, "puntos": p} for t, p in lineas], "total": total, "nivel": nivel,
+                     "objeto": grupo[1]["terminos"][0]}
+
+
 def criterios():
     """Criterios explicados, terminos de busqueda y cuantas veces acerto cada uno."""
     with open(radar.RAIZ / "config" / "criterios.yaml", encoding="utf-8") as f:
         crit = yaml.safe_load(f) or {}
-    _, filtros = radar.cargar_config()
+    perfil, filtros = radar.cargar_config()
 
     # Aciertos sobre la consulta mas reciente que haya en memoria.
     reciente = max(_cache.values(), key=lambda g: g["t"], default=None)
@@ -211,14 +258,17 @@ def criterios():
             for t in r["coincidencias"]:
                 aciertos[t] = aciertos.get(t, 0) + 1
 
-    grupos = [{"id": nombre, "peso": g["peso"],
+    grupos = [{"id": nombre, "etiqueta": etiqueta_grupo(nombre), "peso": g["peso"],
                "terminos": [{"t": t, "n": aciertos.get(radar.normalizar(t), 0)}
                             for t in g["terminos"]]}
               for nombre, g in filtros["incluir"].items()]
+    ajustes, ejemplo = _ajustes_y_ejemplo(perfil, filtros)
     return {"criterios": crit.get("criterios", []),
             "revision": crit.get("revision_semanal", []),
+            "descarte": crit.get("descarte", []),
             "grupos": grupos, "excluir": filtros["excluir"], "base": base,
-            "puntaje": filtros["puntaje"], "niveles": filtros["niveles"]}
+            "puntaje": filtros["puntaje"], "niveles": filtros["niveles"],
+            "ajustes": ajustes, "ejemplo": ejemplo}
 
 
 class Manejador(BaseHTTPRequestHandler):

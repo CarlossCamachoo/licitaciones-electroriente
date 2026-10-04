@@ -251,16 +251,72 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 .chip.alta { background: var(--primary); color: var(--on-primary); font-weight: 600; }
 .chip.media { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .chip.revisar { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.crit { padding: 14px 0; border-top: 1px solid var(--hair); }
-.crit h3 { margin: 0; font: 600 1rem/1.4 var(--sans); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
-.crit p { margin: 4px 0 0; max-width: 110ch; }
-.crit .por { color: var(--text-2); font-size: .9375rem; }
+.crit-cuerpo { max-width: 1180px; }
+.crit-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.crit-nav button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--primary); cursor: pointer; transition: background var(--t), border-color var(--t); }
+.crit-nav button:hover { background: var(--primary-soft); border-color: transparent; }
+.crit-nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.crit-sec { margin-top: 40px; scroll-margin-top: 16px; }
+.crit-sec > h2 { font: 600 1.5rem/1.2 var(--serif); letter-spacing: -.01em; margin: 0; color: var(--primary); }
+.crit-sec > .sub { margin: 6px 0 18px; color: var(--text-2); font-size: .9375rem; max-width: 80ch; }
+/* Como se califica */
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.cal-card { border: 1px solid var(--border); border-radius: 14px; padding: 20px; background: var(--bg); }
+.cal-card h3 { margin: 0 0 4px; font: 600 1.0625rem/1.3 var(--sans); display: flex; align-items: center; gap: 10px; }
+.cal-n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: var(--on-primary); font: 600 .875rem var(--sans); display: inline-grid; place-items: center; }
+.cal-card > p { margin: 6px 0 14px; color: var(--text-2); font-size: .9rem; }
+.fam { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--hair); font-size: .9375rem; }
+.fam b { font-variant-numeric: tabular-nums; color: var(--primary); }
+.fam i { grid-column: 1 / -1; display: block; height: 6px; border-radius: 3px; background: var(--muted); overflow: hidden; }
+.fam i::after { content: ""; display: block; height: 100%; width: var(--w); background: var(--primary); border-radius: 3px; }
+.aj { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--hair); font-size: .9rem; }
+.pts { font: 600 .8125rem var(--sans); font-variant-numeric: tabular-nums; min-width: 3.4em; text-align: center; padding: 2px 8px; border-radius: 999px; }
+.pts.mas { background: var(--primary-soft); color: var(--primary); }
+.pts.menos { background: var(--danger-soft); color: var(--danger); }
+.aj small { grid-column: 2; color: var(--text-2); font-size: .8125rem; line-height: 1.35; }
+.escala { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 6px 0 10px; }
+.escala span { display: block; }
+.escala .e0 { background: var(--muted); } .escala .e1 { background: var(--accent-soft); } .escala .e2 { background: var(--primary-soft); } .escala .e3 { background: var(--primary); }
+.niv { display: grid; gap: 4px; justify-items: start; padding: 10px 0; border-top: 1px solid var(--hair); font-size: .9rem; }
+.niv small { color: var(--text-2); font-size: .8125rem; line-height: 1.35; }
+.cal-extra { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.panel-suave { border-radius: 14px; padding: 20px; background: var(--surface); border: 1px solid var(--hair); }
+.panel-suave h3 { margin: 0 0 10px; font: 600 1rem/1.3 var(--sans); }
+.panel-suave ul { margin: 0; padding-left: 18px; color: var(--text); font-size: .9375rem; }
+.panel-suave li { margin: 5px 0; }
+.ejemplo .linea { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--hair); font-size: .9rem; }
+.ejemplo .linea:first-of-type { border-top: 0; }
+.ejemplo .total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 10px; border-top: 2px solid var(--primary); font-weight: 600; }
+.ejemplo .total b { font: 600 1.5rem var(--serif); color: var(--primary); }
+.ejemplo .obj { color: var(--text-2); font-size: .875rem; margin: 0 0 8px; }
+/* Que se evalua */
+.crit-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.crit { border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
+.crit h3 { margin: 0; font: 600 1rem/1.35 var(--sans); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+.crit p { margin: 0; font-size: .9375rem; }
+.crit ul { margin: 0; padding-left: 18px; font-size: .9rem; color: var(--text); }
+.crit li { margin: 4px 0; }
+.crit .por { margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--border); color: var(--text-2); font-size: .875rem; }
+.crit .por b { color: var(--text); font-weight: 600; }
+/* Terminos */
+.fam-terms { border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; margin-bottom: 12px; background: var(--bg); }
+.fam-terms header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fam-terms h3 { margin: 0; font: 600 1rem var(--sans); }
+.fam-terms details { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); }
+.ruido { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); }
+.ruido summary { cursor: pointer; padding: 14px 20px; font: 600 1rem var(--sans); min-height: 44px; display: flex; align-items: center; justify-content: space-between; }
+.ruido .terms { padding: 0 20px 16px; margin: 0; }
+.ruido + .nota-doc { margin-top: 12px; }
+/* Revision semanal */
+ol.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: paso; }
+ol.pasos li { counter-increment: paso; display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; margin: 0; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+ol.pasos li::before { content: counter(paso); width: 28px; height: 28px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font: 600 .875rem var(--sans); display: grid; place-items: center; }
+@media (max-width: 900px) { .cal-extra { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .crit-lista { grid-template-columns: 1fr; } }
 .terms { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
 .term { font-size: .8125rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-2); }
 .term.hit { background: var(--primary-soft); color: var(--primary); border-color: transparent; font-weight: 600; }
 .term.out { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
-ol.pasos { max-width: 72ch; padding-left: 20px; }
-ol.pasos li { margin: 6px 0; }
 footer { color: var(--text-2); font-size: .8125rem; padding: 32px 0 0; max-width: 70ch; border-top: 1px solid var(--border); margin-top: 24px; }
 .tab:active { color: var(--text); }
 .seg button:active { background: var(--muted); }
@@ -550,7 +606,7 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
 
   <div id="vista-crit" role="tabpanel" aria-labelledby="tab-crit" hidden>
     <p class="intro">Así decide el radar si una licitación vale la pena. Los pesos son supuestos de negocio para calibrar con el área: si algo no coincide con su experiencia, anótelo y ajústelo en la revisión semanal que aparece al final.</p>
-    <div id="crit-cuerpo"></div>
+    <div id="crit-cuerpo" class="crit-cuerpo"></div>
   </div>
 
   <footer>
@@ -1452,31 +1508,82 @@ async function cargarCrit() {
   try {
     const r = await fetch('/api/criterios'); if (!r.ok) throw new Error('No se pudieron leer los criterios');
     const d = await r.json(); critListo = true;
-    const sec = (t, sub) => { const g = el('section', 'grupo'); g.append(el('h2', '', t)); if (sub) g.append(el('p', '', sub)); return g; };
+    const sec = (id, t, sub) => { const g = el('section', 'crit-sec'); g.id = id; g.append(el('h2', '', t)); if (sub) g.append(el('p', 'sub', sub)); return g; };
+    const pts = (n) => el('span', 'pts ' + (n >= 0 ? 'mas' : 'menos'), (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n));
+    const { alta, media } = d.niveles, revisar = d.puntaje.umbral_revisar;
 
-    const g1 = sec('Qué se evalúa', `Puntaje de 0 a 100. Factibilidad alta desde ${d.niveles.alta}, media desde ${d.niveles.media}; entre ${d.puntaje.umbral_revisar} y ${d.niveles.media - 1} queda "por revisar".`);
+    // ---- 1. Como se califica ----
+    const g0 = sec('crit-calif', 'Cómo se califica una licitación',
+      'Cada licitación recibe un puntaje de 0 a 100. Se arma en tres pasos: primero qué compra la entidad, luego lo que sube o baja ese puntaje, y al final en qué nivel cae.');
+    const grid = el('div', 'cal-grid');
+    // Paso 1
+    const c1 = el('div', 'cal-card'); const h1 = el('h3'); h1.append(el('span', 'cal-n', '1'), document.createTextNode('Qué compra la entidad'));
+    c1.append(h1, el('p', '', 'Se busca el objeto del proceso entre cuatro familias de palabras. Cada familia que aparece suma su peso una sola vez, aunque repita palabras.'));
+    const maxPeso = Math.max(...d.grupos.map(g => g.peso));
+    d.grupos.forEach(g => { const f = el('div', 'fam'); f.append(el('span', '', g.etiqueta), el('b', '', g.peso + ' pts'), el('i')); f.lastChild.style.setProperty('--w', Math.round(g.peso / maxPeso * 100) + '%'); c1.append(f); });
+    // Paso 2
+    const c2 = el('div', 'cal-card'); const h2 = el('h3'); h2.append(el('span', 'cal-n', '2'), document.createTextNode('Lo que sube o baja el puntaje'));
+    c2.append(h2, el('p', '', 'Después se ajusta según el contexto del proceso.'));
+    d.ajustes.forEach(a => { const row = el('div', 'aj'); row.append(pts(a.puntos), el('span', '', a.texto)); if (a.nota) row.append(el('small', '', a.nota)); c2.append(row); });
+    // Paso 3
+    const c3 = el('div', 'cal-card'); const h3 = el('h3'); h3.append(el('span', 'cal-n', '3'), document.createTextNode('En qué nivel cae'));
+    c3.append(h3, el('p', '', 'El puntaje final queda entre 0 y 100 y decide cómo se muestra.'));
+    const esc = el('div', 'escala'); esc.setAttribute('role', 'img'); esc.setAttribute('aria-label', `Escala de 0 a 100: sin mostrar hasta ${revisar - 1}, por revisar de ${revisar} a ${media - 1}, media de ${media} a ${alta - 1}, alta desde ${alta}`);
+    [[revisar, 'e0'], [media - revisar, 'e1'], [alta - media, 'e2'], [100 - alta, 'e3']].forEach(([w, k]) => { const x = el('span', k); x.style.width = w + '%'; esc.append(x); });
+    c3.append(esc);
+    [[`Alta · desde ${alta}`, 'chip alta', 'Se muestra en el Radar y avisa en la campana.'],
+     [`Media · desde ${media}`, 'chip media', 'También entra al Radar.'],
+     [`Por revisar · de ${revisar} a ${media - 1}`, 'chip revisar', 'No avisa: queda en la pestaña «Por revisar» para que alguien la mire.'],
+     [`Menos de ${revisar}`, 'chip nota', 'No se muestra.']].forEach(([t, k, nota]) => { const n = el('div', 'niv'); n.append(el('span', k + ' sm', t), el('small', '', nota)); c3.append(n); });
+    grid.append(c1, c2, c3);
+    // Descarte y ejemplo
+    const extra = el('div', 'cal-extra');
+    const pd = el('div', 'panel-suave'); pd.append(el('h3', '', 'Antes de puntuar, se descarta de plano'));
+    const ul = el('ul'); (d.descarte || []).forEach(t => ul.append(el('li', '', t))); pd.append(ul);
+    const pe = el('div', 'panel-suave ejemplo'); pe.append(el('h3', '', 'Un ejemplo, paso a paso'));
+    pe.append(el('p', 'obj', `Una entidad de Santander publica «suministro de ${d.ejemplo.objeto}» como compraventa, por mínima cuantía.`));
+    d.ejemplo.lineas.forEach(l => { const ln = el('div', 'linea'); ln.append(el('span', '', l.texto), pts(l.puntos)); pe.append(ln); });
+    const tot = el('div', 'total'); tot.append(el('span', '', `Total · factibilidad ${d.ejemplo.nivel}`), el('b', '', String(d.ejemplo.total))); pe.append(tot);
+    extra.append(pd, pe);
+    g0.append(grid, extra);
+
+    // ---- 2. Que se evalua ----
+    const g1 = sec('crit-eval', 'Qué se evalúa', 'Cada criterio con lo que hace y por qué importa. La etiqueta dice qué tan firme es: «Activo» ya se aplica, «Supuesto a validar» es una decisión de negocio por confirmar.');
+    const lista = el('div', 'crit-lista');
     d.criterios.forEach(x => {
-      const div = el('div', 'crit'); const h = el('h3'); h.append(el('span', '', x.titulo));
+      const div = el('article', 'crit'); const h = el('h3'); h.append(el('span', '', x.titulo));
       const e = ESTADO_CRIT[x.estado]; if (e) h.append(el('span', e[0], e[1]));
-      div.append(h, el('p', '', x.como), el('p', 'por', 'Por qué importa: ' + x.por_que)); g1.append(div);
+      div.append(h, el('p', '', x.como));
+      if (x.detalles && x.detalles.length) { const u = el('ul'); x.detalles.forEach(t => u.append(el('li', '', t))); div.append(u); }
+      const por = el('p', 'por'); por.append(el('b', '', 'Por qué importa: '), document.createTextNode(x.por_que)); div.append(por);
+      lista.append(div);
     });
+    g1.append(lista);
 
-    const g2 = sec('Términos de búsqueda', d.base
+    // ---- 3. Terminos ----
+    const g2 = sec('crit-terminos', 'Términos de búsqueda', d.base
       ? `Los números cuentan en cuántos procesos de la última consulta (${d.base.generado}, ${d.base.candidatos} candidatos) acertó cada término. Los que están en gris no acertaron nada.`
       : 'Abra la pestaña Radar para consultar SECOP y ver cuántas veces acierta cada término.');
     d.grupos.forEach(g => {
-      g2.append(el('h4', 'why', `${g.id.replace(/_/g, ' ')} · ${g.peso} puntos`));
+      const caja = el('div', 'fam-terms'); const hd = el('header'); hd.append(el('h3', '', g.etiqueta), el('span', 'pts mas', g.peso + ' puntos'));
       const w = el('div', 'terms');
       g.terminos.forEach(t => w.append(el('span', 'term' + (t.n ? ' hit' : ''), t.t + (t.n ? ' · ' + t.n : ''))));
-      g2.append(w);
+      caja.append(hd, w); g2.append(caja);
     });
-    g2.append(el('h4', 'why', 'Términos que sacan un proceso (ruido)'));
-    const wx = el('div', 'terms'); d.excluir.forEach(t => wx.append(el('span', 'term out', t))); g2.append(wx);
+    const det = el('details', 'ruido'); const sm = el('summary'); sm.append(el('span', '', 'Términos que sacan un proceso (ruido)'), el('span', 'pts menos', String(d.excluir.length)));
+    const wx = el('div', 'terms'); d.excluir.forEach(t => wx.append(el('span', 'term out', t))); det.append(sm, wx); g2.append(det);
     g2.append(el('p', 'nota-doc', 'Para agregar o quitar términos se edita config/filtros.yaml; lo hace quien administra el radar.'));
 
-    const g3 = sec('Revisión semanal: cómo decidir si agregar términos');
+    // ---- 4. Revision semanal ----
+    const g3 = sec('crit-revision', 'Revisión semanal: cómo decidir si agregar términos');
     const ol = el('ol', 'pasos'); d.revision.forEach(t => ol.append(el('li', '', t))); g3.append(ol);
-    c.replaceChildren(g1, g2, g3);
+
+    // ---- Atajos ----
+    const nav = el('nav', 'crit-nav'); nav.setAttribute('aria-label', 'Ir a una parte de Criterios');
+    [['crit-calif', 'Cómo se califica'], ['crit-eval', 'Qué se evalúa'], ['crit-terminos', 'Términos de búsqueda'], ['crit-revision', 'Revisión semanal']].forEach(([id, t]) => {
+      const b = el('button', '', t); b.type = 'button'; b.onclick = () => $(id).scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); nav.append(b);
+    });
+    c.replaceChildren(nav, g0, g1, g2, g3);
   } catch (e) {
     const st = el('div', 'state'); st.append(svg('alert'), el('h2', '', 'No se pudo cargar'), el('p', '', e.message));
     const b = el('button', 'btn', 'Reintentar'); b.type = 'button'; b.onclick = cargarCrit; st.append(b); c.replaceChildren(st);
