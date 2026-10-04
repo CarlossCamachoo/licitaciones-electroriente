@@ -176,7 +176,9 @@ def _pedir_pagina(parametros, cabeceras, intentos=4, url=None):
                 respuesta.raise_for_status()
             respuesta.raise_for_status()
             return respuesta.json()
-        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError,
+                requests.exceptions.ChunkedEncodingError) as e:
+            # ChunkedEncodingError: la conexion se corta a mitad de una pagina (visto en GitHub Actions).
             reintentable = not isinstance(e, requests.HTTPError) or \
                 e.response is None or e.response.status_code >= 500 or e.response.status_code == 429
             if intento == intentos or not reintentable:

@@ -357,6 +357,28 @@ class DescargaSinRepetidos(unittest.TestCase):
         self.assertEqual(ids, ["CO1.NTC.1", "CO1.NTC.2", "CO1.NTC.3", "CO1.NTC.4", "", ""])   # sin id no se puede comparar: se conservan
 
 
+class ReintentosDeRed(unittest.TestCase):
+    def test_una_pagina_cortada_a_la_mitad_se_reintenta(self):
+        import requests
+
+        class Respuesta:
+            status_code = 200
+            def raise_for_status(self): pass
+            def json(self): return [{"id_del_proceso": "CO1.NTC.1"}]
+
+        llamadas = []
+
+        def get(*a, **k):
+            llamadas.append(1)
+            if len(llamadas) == 1:
+                raise requests.exceptions.ChunkedEncodingError("Connection broken: IncompleteRead")
+            return Respuesta()
+
+        with mock.patch.object(radar.requests, "get", side_effect=get), mock.patch.object(radar.time, "sleep"):
+            self.assertEqual(radar._pedir_pagina({}, {}), [{"id_del_proceso": "CO1.NTC.1"}])
+        self.assertEqual(len(llamadas), 2)
+
+
 class RealConfig(unittest.TestCase):
     """Que la configuracion real y los datos de ejemplo sigan funcionando de punta a punta."""
 
