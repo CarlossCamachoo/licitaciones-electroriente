@@ -253,6 +253,12 @@ details.req .nota { color: var(--text-2); margin: 10px 0 0; }
 .chip.alta { background: var(--primary); color: var(--on-primary); font-weight: 600; }
 .chip.media { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .chip.revisar { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.cuenta-filtros { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--primary); color: var(--on-primary); font: 600 .75rem var(--sans); display: inline-grid; place-items: center; }
+.cuenta-filtros[hidden], .mas-filtros[hidden] { display: none; }
+#btn-mas[aria-expanded=true] { background: var(--primary-soft); }
+.mas-filtros { margin: -2px 0 14px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: 12px; background: var(--surface); }
+.mas-filtros label.f { min-width: 200px; }
+#limpiar { align-self: center; min-height: 44px; }
 .crit-cuerpo { display: grid; gap: 36px; }
 .crit-nav { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: -12px; background: var(--bg); border-bottom: 1px solid var(--hair); }
 .crit-nav button { font: 500 .875rem var(--sans); min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--primary); cursor: pointer; transition: background var(--t), border-color var(--t); }
@@ -505,6 +511,10 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
     <label class="f">Departamento
       <select id="dep"><option value="">Todos</option></select>
     </label>
+    <button class="btn ghost" id="btn-mas" type="button" aria-expanded="false" aria-controls="mas-filtros">Más filtros<span class="cuenta-filtros" id="cuenta-filtros" hidden></span></button>
+    <button class="link" id="limpiar" type="button" hidden>Limpiar filtros</button>
+  </div>
+  <div class="controls mas-filtros" id="mas-filtros" role="group" aria-label="Más filtros" hidden>
     <label class="f">Renovación
       <select id="renov">
         <option value="">Todos</option>
@@ -762,7 +772,7 @@ function verEnRadar(it) {
   cerrarNotif(false);
   vista('radar');
   $('dep').value = ''; $('q').value = it.entidad; $('renov').value = ''; $('novedad').value = ''; $('equipo').value = '';
-  ver = 'todas'; mostrados = PAGINA; animar = true; pintar();
+  ver = 'todas'; mostrados = PAGINA; animar = true; sincronizarFiltros(true); pintar();
   window.scrollTo({ top: 0 });
 }
 function pintarPanelNotif() {
@@ -1941,7 +1951,19 @@ document.addEventListener('keydown', e => {
 $('orden').addEventListener('change', () => { orden = $('orden').value; mostrados = PAGINA; animar = true; pintar(); });
 $('actualizar').onclick = () => cargar(true, true);
 $('dias').onchange = () => cargar();
-['q', 'dep', 'renov', 'novedad', 'equipo'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; pintar(); }));
+// Filtros: buscar y departamento siempre a la vista; el resto en «Más filtros», con la cuenta de los activos.
+function sincronizarFiltros(abrir) {
+  const dentro = ['renov', 'novedad', 'equipo'].filter(id => $(id).value && !$(id).closest('label').hidden);
+  const n = dentro.length, panel = $('mas-filtros');
+  $('cuenta-filtros').hidden = !n; $('cuenta-filtros').textContent = n;
+  $('btn-mas').setAttribute('aria-label', 'Más filtros' + (n ? `, ${n} activo${n > 1 ? 's' : ''}` : ''));
+  if (abrir && n) panel.hidden = false;
+  $('btn-mas').setAttribute('aria-expanded', String(!panel.hidden));
+  $('limpiar').hidden = !(n || $('q').value || $('dep').value);
+}
+$('btn-mas').onclick = () => { $('mas-filtros').hidden = !$('mas-filtros').hidden; sincronizarFiltros(false); };
+$('limpiar').onclick = () => { ['q', 'dep', 'renov', 'novedad', 'equipo'].forEach(id => { $(id).value = ''; }); mostrados = PAGINA; sincronizarFiltros(false); pintar(); $('q').focus(); };
+['q', 'dep', 'renov', 'novedad', 'equipo'].forEach(id => $(id).addEventListener('input', () => { mostrados = PAGINA; sincronizarFiltros(false); pintar(); }));
 cargar();
 vista(location.hash.slice(1) || 'radar');
 iniciarHoja();
