@@ -128,7 +128,7 @@ def _descargar(filtros):
     consultas = sorted({v for g in filtros["incluir"].values()
                         for t in g["terminos"] for v in _variantes(t)})
     print(f"[mercado] {len(consultas)} consultas a SECOP", file=sys.stderr)
-    hoy = datetime.now()
+    hoy = radar.ahora()
     desde = (hoy - timedelta(days=30 * MESES_HISTORIAL)).strftime("%Y-%m-%dT00:00:00")
     ini = hoy.strftime("%Y-%m-%dT00:00:00")
     fin = (hoy + timedelta(days=DIAS_VENCIMIENTO)).strftime("%Y-%m-%dT00:00:00")
@@ -267,7 +267,7 @@ def vencimientos(dias=DIAS_VENCIMIENTO):
     d = datos_listos()
     if d is None:
         return []
-    hoy = datetime.now().date()
+    hoy = radar.ahora().date()
     limite = hoy + timedelta(days=dias)
     salida = []
     for c in d["contratos"]:
@@ -348,13 +348,13 @@ def renovacion_de(entidad, coincidencias):
         if comunes:
             candidatos.append((c["fin"], c, comunes))
     # Un contrato que termino hace mas de ~4 meses ya no apunta a una renovacion.
-    limite = (datetime.now() - timedelta(days=DIAS_RENOVACION_PASADA)).strftime("%Y-%m-%d")
+    limite = (radar.ahora() - timedelta(days=DIAS_RENOVACION_PASADA)).strftime("%Y-%m-%d")
     candidatos = [x for x in candidatos if x[0] >= limite]
     if not candidatos:
         return None
     fin, c, comunes = max(candidatos, key=lambda x: x[0])
     try:
-        dias = (datetime.strptime(fin, "%Y-%m-%d").date() - datetime.now().date()).days
+        dias = (datetime.strptime(fin, "%Y-%m-%d").date() - radar.ahora().date()).days
     except ValueError:
         dias = None
     return {"objeto": c["objeto"], "proveedor": c["proveedor"], "valor": c["valor"],

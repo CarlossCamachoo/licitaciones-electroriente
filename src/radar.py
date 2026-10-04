@@ -21,7 +21,7 @@ import re
 import sys
 import time
 import unicodedata
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
 
@@ -38,6 +38,15 @@ LIMITE_POR_DEFECTO = 300000
 # --------------------------------------------------------------------------
 # Utilidades de texto
 # --------------------------------------------------------------------------
+
+COLOMBIA = timezone(timedelta(hours=-5))   # Colombia no tiene horario de verano
+
+
+def ahora():
+    """La hora actual en Colombia. En la nube el reloj va en UTC: sin esto, desde las 7 p. m. el «dia de hoy»
+    seria el de manana y se descartarian como vencidos procesos que cierran hoy."""
+    return datetime.now(COLOMBIA)
+
 
 def normalizar(texto):
     """Minusculas, sin tildes. Para comparar sin sorpresas."""
@@ -201,7 +210,7 @@ def recorrer_secop(dias, limite=LIMITE_POR_DEFECTO, excluir_modalidades=()):
     modalidades excluidas (contratacion directa). Sin esto, 60 o 90 dias
     no caben. Todo el filtrado por contenido sigue siendo local.
     """
-    desde = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%dT00:00:00.000")
+    desde = (ahora() - timedelta(days=dias)).strftime("%Y-%m-%dT00:00:00.000")
     donde = (f"fecha_de_publicacion_del > '{desde}' AND "
              "(estado_de_apertura_del_proceso = 'Abierto' "
              "OR estado_de_apertura_del_proceso IS NULL)")
@@ -232,7 +241,19 @@ def recorrer_secop(dias, limite=LIMITE_POR_DEFECTO, excluir_modalidades=()):
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(HILOS) as pool:
             # map entrega en orden aunque las paginas lleguen desordenadas
-            yield from pool.map(pagina, range(0, total, TAMANO_PAGINA))
+            # La descarga pagina por $offset sobre datos que siguen cambiando: si SECOP publica procesos mientras
+            # se baja, las filas se corren y una misma aparece al final de una pagina y al inicio de la siguiente.
+            vistos = set()
+            for filas in pool.map(pagina, range(0, total, TAMANO_PAGINA)):
+                unicas = []
+                for p in filas:
+                    clave = p.get("id_del_proceso")
+                    if clave:
+                        if clave in vistos:
+                            continue
+                        vistos.add(clave)
+                    unicas.append(p)
+                yield unicas
 
     return total, existentes > limite, generar()
 
@@ -299,7 +320,7 @@ def evaluar(proceso, perfil, filtros, umbral=None):
     # trae en pocos procesos (cerca del 5 %). Si ya paso, el proceso esta
     # vencido aunque siga marcado "Abierto". Si no viene, no se descarta.
     fecha_cierre = (proceso.get("fecha_de_recepcion_de") or "")[:10]
-    if fecha_cierre and fecha_cierre < datetime.now().strftime("%Y-%m-%d"):
+    if fecha_cierre and fecha_cierre < ahora().strftime("%Y-%m-%d"):
         return None
 
     # --- Paso 1: inclusion y puntaje base -----------------------------

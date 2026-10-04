@@ -11,7 +11,9 @@ real y los datos de ejemplo sigan funcionando de punta a punta.
 import copy
 import sys
 import unittest
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
@@ -321,6 +323,38 @@ class Resultado(unittest.TestCase):
     def test_coincidencias_sin_repetir_y_ordenadas(self):
         r = evaluar(proceso("plc, cable electrico y variador de velocidad"))
         self.assertEqual(r["coincidencias"], sorted(set(r["coincidencias"])))
+
+
+class HoraDeColombia(unittest.TestCase):
+    """En la nube el reloj va en UTC; el «hoy» del motor debe ser el de Colombia (UTC-5)."""
+
+    def test_ahora_es_utc_menos_5(self):
+        self.assertEqual(radar.ahora().utcoffset(), timedelta(hours=-5))
+
+    def test_cierre_de_hoy_no_se_descarta_de_noche(self):
+        # 8:00 p. m. en Colombia = 01:00 UTC del dia siguiente
+        noche = datetime(2026, 10, 4, 1, 0, tzinfo=timezone.utc).astimezone(radar.COLOMBIA)
+        self.assertEqual(noche.strftime("%Y-%m-%d"), "2026-10-03")
+        with mock.patch.object(radar, "ahora", return_value=noche):
+            self.assertIsNotNone(evaluar(proceso(fecha_de_recepcion_de="2026-10-03T23:00:00.000")))
+            self.assertIsNone(evaluar(proceso(fecha_de_recepcion_de="2026-10-02T23:00:00.000")))
+
+
+class DescargaSinRepetidos(unittest.TestCase):
+    def test_un_proceso_corrido_de_pagina_no_se_repite(self):
+        def fila(i):
+            return {"id_del_proceso": f"CO1.NTC.{i}"}
+        paginas = {0: [fila(1), fila(2), fila(3)], 3: [fila(3), fila(4), {"id_del_proceso": ""}, {"id_del_proceso": ""}]}
+
+        def falso(parametros, cabeceras, *a, **k):
+            if "count(*) as n" in parametros["$select"]:
+                return [{"n": "6"}]
+            return paginas[parametros["$offset"]]
+
+        with mock.patch.object(radar, "_pedir_pagina", side_effect=falso), mock.patch.object(radar, "TAMANO_PAGINA", 3):
+            _, _, gen = radar.recorrer_secop(7)
+            ids = [p["id_del_proceso"] for pag in gen for p in pag]
+        self.assertEqual(ids, ["CO1.NTC.1", "CO1.NTC.2", "CO1.NTC.3", "CO1.NTC.4", "", ""])   # sin id no se puede comparar: se conservan
 
 
 class RealConfig(unittest.TestCase):

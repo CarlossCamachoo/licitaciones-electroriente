@@ -87,7 +87,7 @@ def _construir_base():
 
 def _recortar(base, dias):
     """Los datos de los ultimos `dias` dias a partir de la consulta de 30."""
-    corte = (datetime.now() - timedelta(days=dias)).strftime("%Y-%m-%d")
+    corte = (radar.ahora() - timedelta(days=dias)).strftime("%Y-%m-%d")
     return {"revisados": sum(n for d, n in base["por_dia"].items() if d >= corte),
             "truncado": base["truncado"], "umbral": base["umbral"],
             "generado": base["generado"], "generado_ts": base["generado_ts"], "dias": dias,

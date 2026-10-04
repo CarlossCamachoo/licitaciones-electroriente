@@ -926,7 +926,7 @@ function pintarSaludo() {
   }
 }
 // ---- Lo que marco el equipo: se lee de la hoja de Google y se muestra en cada tarjeta --------------
-let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '';
+let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '', equipoSeq = 0, equipoPendiente = false;
 const primerNombre = (n) => String(n).trim().split(' ')[0];
 const unirNombres = (l) => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1];
 function lineaEquipo(m) {
@@ -958,13 +958,14 @@ function lineaDescartes(m) {
 }
 async function cargarEquipo() {
   const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
+  const mia = ++equipoSeq;      // si salen dos lecturas, solo vale la ultima que se pidio
   try {
     const resp = cfg.servidor
       ? await fetch('/api/hoja', { method: 'POST', headers: API_POST, body: JSON.stringify({ accion: 'equipo' }) })
       : await fetch(cfg.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ accion: 'equipo', token: cfg.token }) });
     const res = await resp.json();
-    if (!res.ok || !Array.isArray(res.filas)) return;
+    if (mia !== equipoSeq || !res.ok || !Array.isArray(res.filas)) return;
     const descartes = Array.isArray(res.descartes) ? res.descartes : [];
     const firma = JSON.stringify([res.filas, descartes]);
     if (firma === equipoFirma) return;                 // nada cambio: no se redibuja
@@ -973,7 +974,10 @@ async function cargarEquipo() {
     equipoDescartes = Object.fromEntries(descartes.map(f => [f.id, f]));
     $('equipo-filtro').hidden = false; $('tab-tramite').hidden = false;
     if (datos) pintar();
-    if (!$('vista-tramite').hidden && !$('tr-lista').contains(document.activeElement)) pintarTramite();
+    if (!$('vista-tramite').hidden) {
+      // Con el cursor dentro de una nota no se redibuja (se perderia lo escrito): queda pendiente hasta que salga.
+      if ($('tr-lista').contains(document.activeElement)) equipoPendiente = true; else pintarTramite();
+    }
   } catch (_) { /* se intenta de nuevo en la proxima vuelta */ }
 }
 
@@ -1038,7 +1042,9 @@ function tarjetaTramite(m) {
   lEt.append(sel);
   const lNo = el('label', '', 'Notas del equipo'), ta = el('textarea'), est = el('span', 'tr-estado');
   ta.rows = 2; ta.maxLength = 500; ta.value = m.comentarios || ''; ta.placeholder = 'Qué falta, quién hace qué, a quién pedir precio…';
-  ta.onblur = () => { if (ta.value.trim() !== (m.comentarios || '').trim()) guardarSeguimiento(m, 'comentarios', ta.value.trim(), est); };
+  // El script guarda la nota en una sola linea y sin espacios dobles: se compara igual para no reenviarla en vano.
+  const aUnaLinea = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+  ta.onblur = () => { const nota = aUnaLinea(ta.value); if (nota !== aUnaLinea(m.comentarios)) guardarSeguimiento(m, 'comentarios', nota, est); };
   lNo.append(ta, est);
   ctrl.append(lEt, lNo);
   li.append(top, el('h2', '', m.entidad || 'Entidad sin nombre'), el('p', 'tr-obj', m.objeto || ''), meta, ctrl);
@@ -1048,6 +1054,7 @@ function tarjetaTramite(m) {
   return li;
 }
 function pintarTramite() {
+  equipoPendiente = false;
   const todas = Object.values(equipoMarcas);
   const grupoDe = (m) => EN_MARCHA.includes(m.seguimiento || 'Por estudiar') ? 'marcha' : 'fin';
   const q = $('tr-q').value.trim().toLowerCase();
@@ -1073,6 +1080,9 @@ function pintarTramite() {
   $('tr-lista').replaceChildren(...lista.map(tarjetaTramite));
 }
 $('tr-q').addEventListener('input', pintarTramite);
+$('tr-lista').addEventListener('focusout', e => {
+  if (equipoPendiente && !$('tr-lista').contains(e.relatedTarget)) { equipoPendiente = false; pintarTramite(); }
+});
 
 // Pide a GitHub (por medio del script de la hoja, que guarda el permiso) una publicacion nueva de la web.
 // Devuelve 'lanzada' (o ya habia una en curso) o 'no' (no disponible: se lee lo ya publicado).
@@ -1120,10 +1130,18 @@ function registrarVistos() {
     Object.keys(vistos).forEach(k => { if (vistos[k] < limite) delete vistos[k]; });
     try { localStorage.setItem(vistosClave, JSON.stringify(vistos)); } catch (_) {}
   }
-  try { localStorage.setItem(visitaClave, String(ahora)); } catch (_) {}
+  // La ultima visita se anota al salir de la pestaña (no en cada dibujo): asi una segunda pestaña no la pisa.
+  // Solo la primera vez se anota aqui, para que la proxima sesion tenga un corte.
+  try { if (!localStorage.getItem(visitaClave)) localStorage.setItem(visitaClave, String(ahora)); } catch (_) {}
 }
-const esNueva = (r) => corteVisita > 0 && (vistos[idDe(r)] || 0) > corteVisita && !estadoDe(r);
-document.addEventListener('visibilitychange', () => { if (document.hidden) try { localStorage.setItem(visitaClave, String(Date.now())); } catch (_) {} });
+// Nueva = la vio por primera vez despues de su ultima visita Y se publico hace poco. Lo segundo evita que, al
+// ampliar el periodo a 30 dias, procesos de hace semanas aparezcan como «nuevos» solo porque no estaban cargados.
+const fechaLocal = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const esNueva = (r) => corteVisita > 0 && (vistos[idDe(r)] || 0) > corteVisita && !estadoDe(r)
+  && (r.fecha_publicacion || '') >= fechaLocal(corteVisita - 2 * 86400000);
+const anotarVisita = () => { try { localStorage.setItem(visitaClave, String(Date.now())); } catch (_) {} };
+document.addEventListener('visibilitychange', () => { if (document.hidden) anotarVisita(); });
+addEventListener('pagehide', anotarVisita);
 
 const VISTAS = [['pendientes', 'Sin decidir', r => !estadoDe(r)], ['interesa', 'Me interesan', r => estadoDe(r) === 'interesa'],
                 ['descarta', 'Descartadas', r => estadoDe(r) === 'descarta'], ['todas', 'Todas', () => true]];

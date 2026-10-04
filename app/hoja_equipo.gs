@@ -259,10 +259,18 @@ function doPost(e) {
           SpreadsheetApp.newRichTextValue().setText('Abrir en SECOP').setLinkUrl(url).build());
       }
     } else if (i >= 0 && antes === 'interesa') {
-      // La quitaron o la descartaron: la fila se conserva y cambia su estado.
-      const que = estado === 'descarta' ? 'Descartada' : 'Quitada';
-      h.getRange(i + 2, COL('Fecha'), 1, 1).setValue(ahora);
-      h.getRange(i + 2, COL('Estado'), 1, 1).setValue(que + (persona ? ' por ' + persona : ''));
+      // La quitaron o la descartaron. Si otra persona sigue interesada, solo sale el nombre de quien la quita:
+      // la fila (con su etapa y sus notas) sigue activa para el resto del equipo.
+      const previa = h.getRange(i + 2, COL('Persona'), 1, 2).getValues()[0];   // Persona y Estado
+      const resto = nombresDe_(previa[0]).filter(x => x.toLowerCase() !== persona.toLowerCase());
+      if (persona && String(previa[1]) === 'Me interesa' && resto.length) {
+        h.getRange(i + 2, COL('Persona')).setValue(resto.join(', '));
+      } else {
+        // Ya nadie la tiene: la fila se conserva y cambia su estado.
+        const que = estado === 'descarta' ? 'Descartada' : 'Quitada';
+        h.getRange(i + 2, COL('Fecha'), 1, 1).setValue(ahora);
+        h.getRange(i + 2, COL('Estado'), 1, 1).setValue(que + (persona ? ' por ' + persona : ''));
+      }
     }
     CacheService.getScriptCache().remove('equipo');
     return salida_({ ok: true });
