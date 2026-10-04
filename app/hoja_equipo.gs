@@ -163,16 +163,44 @@ function equipo_() {
   const h = hoja_();
   const n = Math.max(h.getLastRow() - 1, 0);
   const filas = n ? h.getRange(2, 1, n, COLUMNAS.length).getValues() : [];
+  const dia = (v) => v instanceof Date ? Utilities.formatDate(v, 'America/Bogota', 'yyyy-MM-dd') : String(v || '').slice(0, 10);
   const hora = (v) => v instanceof Date ? Utilities.formatDate(v, 'America/Bogota', 'yyyy-MM-dd HH:mm') : String(v);
   const lista = filas
     .filter(f => f[COL('Estado') - 1] === 'Me interesa' && f[COL('Id del proceso') - 1])
     .map(f => ({ id: String(f[COL('Id del proceso') - 1]), persona: String(f[COL('Persona') - 1]),
-      seguimiento: String(f[COL('Seguimiento') - 1] || ''), fecha: hora(f[COL('Fecha') - 1]) }));
+      seguimiento: String(f[COL('Seguimiento') - 1] || ''), fecha: hora(f[COL('Fecha') - 1]),
+      entidad: String(f[COL('Entidad') - 1]), objeto: String(f[COL('Objeto') - 1]).slice(0, 400),
+      valor: Number(f[COL('Valor (COP)') - 1]) || 0, cierre: dia(f[COL('Cierre') - 1]),
+      comentarios: String(f[COL('Comentarios') - 1] || '') }));
+  // El enlace esta guardado como texto enriquecido: se lee aparte, en la misma pasada.
+  if (n) {
+    const enlaces = h.getRange(2, COL('Enlace'), n, 1).getRichTextValues().map(r => r[0].getLinkUrl() || '');
+    const ids = filas.map(f => String(f[COL('Id del proceso') - 1]));
+    lista.forEach(x => { x.enlace = enlaces[ids.indexOf(x.id)] || ''; });
+  }
   const descartes = leerDescartes_().filas
     .filter(f => f[4]).map(f => ({ id: String(f[4]), persona: String(f[1]) }));
   const r = { ok: true, filas: lista, descartes: descartes };
   try { cache.put('equipo', JSON.stringify(r), 30); } catch (err) { /* demasiado grande para la memoria: se lee cada vez */ }
   return r;
+}
+
+// Cambia la etapa o las notas de una licitacion ya marcada «Me interesa». Es del equipo: la ultima persona que cambia manda.
+function seguimiento_(d) {
+  const id = texto_(d.id, 120);
+  if (!ID_VALIDO.test(id)) return { ok: false, error: 'id no valido' };
+  if (d.campo !== 'seguimiento' && d.campo !== 'comentarios') return { ok: false, error: 'campo no valido' };
+  if (d.campo === 'seguimiento' && SEGUIMIENTO.indexOf(String(d.seguimiento)) < 0) return { ok: false, error: 'etapa no valida' };
+  if (!dentroDelLimite_()) return { ok: false, error: 'demasiadas solicitudes' };
+  const h = hoja_();
+  const filas = Math.max(h.getLastRow() - 1, 0);
+  const ids = filas ? h.getRange(2, COL('Id del proceso'), filas, 1).getValues().map(f => String(f[0])) : [];
+  const i = ids.indexOf(id);
+  if (i < 0) return { ok: false, error: 'no esta en la hoja' };
+  if (d.campo === 'seguimiento') h.getRange(i + 2, COL('Seguimiento')).setValue(String(d.seguimiento));
+  else h.getRange(i + 2, COL('Comentarios')).setValue(texto_(d.comentarios, 500));
+  CacheService.getScriptCache().remove('equipo');
+  return { ok: true };
 }
 
 function doPost(e) {
@@ -183,6 +211,7 @@ function doPost(e) {
     if (d.token !== TOKEN) return salida_({ ok: false, error: 'clave' });
     if (d.accion === 'actualizar') return salida_(actualizarWeb_());
     if (d.accion === 'equipo') return salida_(equipo_());
+    if (d.accion === 'seguimiento') return salida_(seguimiento_(d));
     if (!ID_VALIDO.test(String(d.id || ''))) return salida_({ ok: false, error: 'id no valido' });
     const estado = d.estado == null ? '' : String(d.estado);
     if (ESTADOS.indexOf(estado) < 0) return salida_({ ok: false, error: 'estado no valido' });

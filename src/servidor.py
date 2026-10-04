@@ -170,7 +170,7 @@ def persona_local():
     return nombre_propio(nombre)[:60]
 
 
-CAMPOS_HOJA = ("accion", "id", "estado", "antes", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
+CAMPOS_HOJA = ("accion", "campo", "seguimiento", "comentarios", "id", "estado", "antes", "persona", "entidad", "objeto", "valor", "cierre", "puntaje",
                "factibilidad", "departamento", "modalidad", "tipo", "url")
 
 
@@ -190,6 +190,8 @@ def enviar_a_hoja(item):
     salida = {"ok": bool(resultado.get("ok")), "error": resultado.get("error") or ""}
     if isinstance(resultado.get("filas"), list):
         salida["filas"] = resultado["filas"]
+    if isinstance(resultado.get("descartes"), list):
+        salida["descartes"] = resultado["descartes"]
     return salida
 
 
