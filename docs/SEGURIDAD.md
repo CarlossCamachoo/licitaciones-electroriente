@@ -14,12 +14,8 @@ lista, aplican los de secretos, validacion de entradas, logs y dependencias.
 | 21 Subida de archivos | No aplica | |
 | 26 Errores y HTTPS | OK | Solo se consulta por https; los errores de red no muestran trazas |
 | YAML | OK | Solo `yaml.safe_load` |
-| 27 Escaneo de dependencias | Parcial | `pip-audit` reporta fallos en urllib3 2.6.3 (CVE de 2026). Corregido desde 2.7.0, que exige Python 3.10 o superior |
-| 28 Dependencias al dia | Parcial | Igual que el anterior |
-
-## Accion pendiente
-Instalar Python 3.10+ y correr `pip install -U urllib3`. Riesgo real bajo:
-solo se hacen peticiones a datos.gov.co, un servidor publico y de confianza.
+| 27 Escaneo de dependencias | OK | `pip-audit` sin hallazgos (3 oct 2026). El entorno `.venv` usa Python 3.12 con requests 2.34 y urllib3 2.8 |
+| 28 Dependencias al dia | OK | Dependabot y deteccion de secretos activos en el repositorio. Para actualizar: `uv pip install --python .venv/bin/python -U -r requirements-publicar.txt` |
 
 ## Si un dia se agrega token de SECOP
 Usar la variable de entorno `SOCRATA_APP_TOKEN` (ya soportada, opcional).

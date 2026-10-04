@@ -34,7 +34,7 @@ se usa. Eso significa que las explicaciones importan tanto como el codigo.
 corrigio un bug: el limite de 2000 descartaba el 88 % de los procesos de la
 semana (hay unos 17.000). Ahora pagina, avisa si se corta, y por defecto
 solo muestra procesos abiertos; los cerrados se descartan.
-Seguridad: ver `docs/SEGURIDAD.md`. Pendiente: Python 3.10+ por urllib3.
+Seguridad: ver `docs/SEGURIDAD.md`. Entorno `.venv` con Python 3.12 (instalado con uv).
 
 ---
 
