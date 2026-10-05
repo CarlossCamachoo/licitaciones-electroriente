@@ -107,12 +107,9 @@ El resumen se guarda 30 segundos en la memoria del script para no leer la hoja e
 Muestra los «Me interesa» (con su Seguimiento) y también los «Descartar»: estos viven en la pestaña «Descartadas» de la misma hoja (fecha, persona, entidad, objeto, id) y en la tarjeta aparece «Ana la descartó». Si la persona se arrepiente, su nombre sale de esa pestaña y, si ya nadie la descarta, la fila se borra.
 
 
-## Pestaña «En trámite» (seguimiento del equipo)
+## Seguimiento (la pestaña «En trámite» se retiró)
 
-La web tiene una pestaña **En trámite** con las licitaciones que alguien marcó «Me interesa», ordenadas por la
-fecha de cierre más cercana. Cada una muestra su etapa (Por estudiar, Preparando oferta, Presentada, Ganada,
-Perdida, Descartada), las notas del equipo, el valor, quién la marcó y el enlace a SECOP. Se cambia la etapa y se
-escriben notas desde la propia web: se guardan en las columnas **Seguimiento** y **Comentarios** de la hoja, así
-que el equipo puede seguir editándolas en Excel o en Google Sheets. Es compartido: la última persona que cambia
-algo manda. Un aviso en la parte de arriba cuenta las que cierran en 3 días o menos y aún no se presentan.
-El script lo hace con la acción `seguimiento` (valida el id, la etapa y limita el largo de las notas).
+El 5 de octubre de 2026 se quitó de la web la pestaña **En trámite**. Las columnas **Seguimiento** y
+**Comentarios** de la hoja siguen existiendo y el equipo puede editarlas directamente en Google Sheets; el
+radar nunca las toca. En la tarjeta del Radar sigue apareciendo la etapa de quien marcó la licitación.
+El script conserva la acción `seguimiento`, aunque la web ya no la usa.

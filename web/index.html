@@ -224,23 +224,6 @@ ul.docs { list-style: none; margin: 0; padding: 0; }
 button.link { font: 600 .875rem var(--sans); min-height: 44px; padding: 0 8px; background: none; border: 0; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 button.link.peligro { color: var(--danger); }
 .err { color: var(--danger); font-size: .875rem; margin: 6px 0 0; }
-/* En trámite: lo que el equipo ya decidió trabajar */
-.tr-lista { list-style: none; margin: 0; padding: 0; }
-.tr-card { display: grid; gap: 10px; padding: 22px 0; border-bottom: 1px solid var(--hair); }
-.tr-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.tr-card h2 { font-size: 1.0625rem; margin: 0; line-height: 1.35; }
-.tr-obj { margin: 0; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.tr-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .875rem; color: var(--text-2); }
-.tr-ctrl { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: start; margin-top: 4px; }
-.tr-ctrl label { display: grid; gap: 4px; font-size: .8125rem; color: var(--text-2); font-weight: 500; }
-.tr-ctrl textarea { font: 400 .9375rem var(--sans); min-height: 44px; padding: 10px 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border-ctl); border-radius: 8px; resize: vertical; }
-.tr-ctrl textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-.tr-estado { font-size: .8125rem; color: var(--text-2); min-height: 1em; }
-.tr-estado.error { color: var(--danger); }
-.chip.etapa-marcha { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
-.chip.etapa-fin { background: var(--muted); color: var(--text-2); font-weight: 600; }
-.chip.etapa-ganada { background: var(--primary); color: var(--on-primary); font-weight: 600; }
-@media (max-width: 600px) { .tr-ctrl { grid-template-columns: 1fr; } }
 .chip.nueva { background: var(--accent); color: #fff; font-weight: 600; }
 .chip.ok { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .chip.aviso { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
@@ -501,7 +484,6 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
   <div class="tabs" role="tablist" aria-label="Secciones" id="tablist">
     <button class="tab" role="tab" id="tab-radar" aria-selected="true" tabindex="0" type="button">Radar</button>
     <button class="tab" role="tab" id="tab-revisar" aria-selected="false" tabindex="-1" type="button">Por revisar</button>
-    <button class="tab" role="tab" id="tab-tramite" aria-selected="false" tabindex="-1" type="button" hidden>En trámite</button>
     <button class="tab" role="tab" id="tab-venc" aria-selected="false" tabindex="-1" type="button">Oportunidades futuras</button>
     <button class="tab" role="tab" id="tab-mer" aria-selected="false" tabindex="-1" type="button">Mercado</button>
     <button class="tab" role="tab" id="tab-docs" aria-selected="false" tabindex="-1" type="button">Documentos</button>
@@ -564,17 +546,6 @@ dialog#persona-dialog input { width: 100%; font: 400 1rem var(--sans); min-heigh
     </div>
     <ol class="lista" id="lista"></ol>
   </main>
-  </div>
-
-  <div id="vista-tramite" role="tabpanel" aria-labelledby="tab-tramite" hidden>
-    <section class="banner warn" id="tr-aviso" hidden role="status"></section>
-    <div class="decide-bar">
-      <div class="seg" id="tr-seg" role="group" aria-label="Ver según la etapa"></div>
-      <label class="f buscar">Buscar
-        <input type="search" id="tr-q" placeholder="Entidad, objeto o nota" autocomplete="off">
-      </label>
-    </div>
-    <ul class="tr-lista" id="tr-lista"></ul>
   </div>
 
   <div id="vista-venc" role="tabpanel" aria-labelledby="tab-venc" hidden>
@@ -1019,7 +990,7 @@ function pintarSaludo() {
   }
 }
 // ---- Lo que marco el equipo: se lee de la hoja de Google y se muestra en cada tarjeta --------------
-let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '', equipoSeq = 0, equipoPendiente = false, equipoEstado = 'cargando';
+let equipoMarcas = {}, equipoDescartes = {}, equipoFirma = '', equipoSeq = 0, equipoEstado = 'cargando';
 const primerNombre = (n) => String(n).trim().split(' ')[0];
 const unirNombres = (l) => l.length < 2 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1];
 function lineaEquipo(m) {
@@ -1052,7 +1023,7 @@ function lineaDescartes(m) {
 async function cargarEquipo() {
   const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) return;
   const mia = ++equipoSeq;      // si salen dos lecturas, solo vale la ultima que se pidio
-  if (equipoEstado === 'error') { equipoEstado = 'cargando'; if (!$('vista-tramite').hidden) pintarTramite(); }
+  if (equipoEstado === 'error') equipoEstado = 'cargando';
   try {
     const resp = cfg.servidor
       ? await fetch('/api/hoja', { method: 'POST', headers: API_POST, body: JSON.stringify({ accion: 'equipo' }) })
@@ -1068,127 +1039,13 @@ async function cargarEquipo() {
     equipoFirma = firma;
     equipoMarcas = Object.fromEntries(res.filas.map(f => [f.id, f]));
     equipoDescartes = Object.fromEntries(descartes.map(f => [f.id, f]));
-    $('equipo-filtro').hidden = false; $('tab-tramite').hidden = false;
+    $('equipo-filtro').hidden = false;
     if (datos) pintar();
-    if (!$('vista-tramite').hidden) {
-      // Con el cursor dentro de una nota no se redibuja (se perderia lo escrito): queda pendiente hasta que salga.
-      if ($('tr-lista').contains(document.activeElement)) equipoPendiente = true; else pintarTramite();
-    }
   } catch (_) {
-    // Si nunca llego nada, «En trámite» lo dice (con reintento); si ya habia datos, se conservan y se reintenta en la proxima vuelta.
-    if (mia === equipoSeq && equipoEstado !== 'ok') { equipoEstado = 'error'; if (!$('vista-tramite').hidden) pintarTramite(); }
+    // Si ya habia datos, se conservan y se reintenta en la proxima vuelta.
+    if (mia === equipoSeq && equipoEstado !== 'ok') equipoEstado = 'error';
   }
 }
-
-// ---- En trámite: seguimiento del equipo sobre lo que marcó «Me interesa» -----------------------------------
-const ETAPAS = ['Por estudiar', 'Preparando oferta', 'Presentada', 'Ganada', 'Perdida', 'Descartada'];
-const EN_MARCHA = ['Por estudiar', 'Preparando oferta', 'Presentada'];
-const SIN_PRESENTAR = ['Por estudiar', 'Preparando oferta'];
-let trGrupo = 'marcha';
-function diasPara(f) {
-  const d = f ? new Date(f + 'T00:00:00') : null; if (!d || isNaN(d)) return null;
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  return Math.round((d - hoy) / 86400000);
-}
-function textoCierre(f) {
-  const dias = diasPara(f); if (dias === null) return null;
-  const fecha = new Date(f + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
-  if (dias < 0) return `Cerró el ${fecha} · hace ${plural(-dias, 'día', 'días')}`;
-  return `Cierra ${fecha} · ${dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`}`;
-}
-const urgenteTr = (m) => SIN_PRESENTAR.includes(m.seguimiento || 'Por estudiar') && (d => d !== null && d >= 0 && d <= 3)(diasPara(m.cierre));
-const ordenCierre = (m) => { const d = diasPara(m.cierre); return d === null ? 1e6 : d < 0 ? 1e5 - d : d; };
-
-async function hojaPost(carga) {
-  const cfg = await cargarHoja(); if (!cfg.servidor && !cfg.url) throw new Error('sin hoja');
-  const resp = cfg.servidor
-    ? await fetch('/api/hoja', { method: 'POST', headers: API_POST, body: JSON.stringify(carga) })
-    : await fetch(cfg.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...carga, token: cfg.token }) });
-  const res = await resp.json();
-  if (!res.ok) throw new Error(res.error || 'rechazada');
-  return res;
-}
-async function guardarSeguimiento(m, campo, valor, estado) {
-  const previo = m[campo]; m[campo] = valor;
-  if (estado) { estado.className = 'tr-estado'; estado.textContent = 'Guardando…'; }
-  try {
-    await hojaPost({ accion: 'seguimiento', campo, id: m.id, seguimiento: campo === 'seguimiento' ? valor : '', comentarios: campo === 'comentarios' ? valor : '' });
-    if (estado) estado.textContent = 'Guardado';
-    if (campo === 'seguimiento') { avisar(`Pasó a «${valor}».`); equipoFirma = ''; pintarTramite(); cargarEquipo(); }
-    else { equipoFirma = ''; cargarEquipo(); }
-  } catch (_) {
-    m[campo] = previo;
-    if (estado) { estado.className = 'tr-estado error'; estado.textContent = 'No se pudo guardar. Intente de nuevo.'; }
-    avisar('No se pudo guardar en la hoja del equipo.', true);
-    if (campo === 'seguimiento') pintarTramite();
-  }
-}
-function tarjetaTramite(m) {
-  const etapa = m.seguimiento || 'Por estudiar';
-  const li = el('li', 'tr-card');
-  const top = el('div', 'tr-top');
-  top.append(el('span', 'chip ' + (etapa === 'Ganada' ? 'etapa-ganada' : EN_MARCHA.includes(etapa) ? 'etapa-marcha' : 'etapa-fin'), etapa));
-  const c = textoCierre(m.cierre);
-  if (c) { const k = el('small', 'cierre', c); if (urgenteTr(m)) k.classList.add('pronto'); top.append(k); }
-  else top.append(el('small', 'cierre', 'Sin fecha de cierre publicada'));
-  const meta = el('div', 'tr-meta');
-  if (m.valor) meta.append(el('span', '', pesos(m.valor)));
-  meta.append(el('span', '', 'Marcada por ' + (String(m.persona || '').split(',').map(s => s.trim()).filter(Boolean).join(', ') || 'alguien del equipo')));
-  const ctrl = el('div', 'tr-ctrl');
-  const lEt = el('label', '', 'Etapa'), sel = el('select');
-  ETAPAS.forEach(e => { const o = el('option', '', e); o.value = e; sel.append(o); });
-  sel.value = etapa; sel.onchange = () => guardarSeguimiento(m, 'seguimiento', sel.value);
-  lEt.append(sel);
-  const lNo = el('label', '', 'Notas del equipo'), ta = el('textarea'), est = el('span', 'tr-estado');
-  ta.rows = 2; ta.maxLength = 500; ta.value = m.comentarios || ''; ta.placeholder = 'Qué falta, quién hace qué, a quién pedir precio…';
-  // El script guarda la nota en una sola linea y sin espacios dobles: se compara igual para no reenviarla en vano.
-  const aUnaLinea = (t) => String(t || '').replace(/\s+/g, ' ').trim();
-  ta.onblur = () => { const nota = aUnaLinea(ta.value); if (nota !== aUnaLinea(m.comentarios)) guardarSeguimiento(m, 'comentarios', nota, est); };
-  lNo.append(ta, est);
-  ctrl.append(lEt, lNo);
-  li.append(top, el('h2', '', m.entidad || 'Entidad sin nombre'), el('p', 'tr-obj', m.objeto || ''), meta, ctrl);
-  if (m.enlace && /^https:\/\/community\.secop\.gov\.co\//.test(m.enlace)) {
-    const a = el('a', 'link', 'Abrir en SECOP'); a.href = m.enlace; a.target = '_blank'; a.rel = 'noopener noreferrer'; meta.append(a);
-  }
-  return li;
-}
-function pintarTramite() {
-  equipoPendiente = false;
-  if (equipoEstado !== 'ok') {          // sin datos todavia: estructura de carga, o el error con reintento
-    $('tr-seg').replaceChildren(); $('tr-aviso').hidden = true;
-    $('tr-lista').replaceChildren(...(equipoEstado === 'error'
-      ? [estadoVacio('No se pudo leer la hoja del equipo', 'Revise la conexión e intente de nuevo.', cargarEquipo)]
-      : esqueletos('li')));
-    return;
-  }
-  const todas = Object.values(equipoMarcas);
-  const grupoDe = (m) => EN_MARCHA.includes(m.seguimiento || 'Por estudiar') ? 'marcha' : 'fin';
-  const q = $('tr-q').value.trim().toLowerCase();
-  const coincide = (m) => !q || ((m.entidad || '') + ' ' + (m.objeto || '') + ' ' + (m.comentarios || '')).toLowerCase().includes(q);
-  const marcha = todas.filter(m => grupoDe(m) === 'marcha'), fin = todas.filter(m => grupoDe(m) === 'fin');
-  const GRUPOS = [['marcha', 'En marcha', marcha.length], ['fin', 'Terminadas', fin.length], ['todas', 'Todas', todas.length]];
-  $('tr-seg').replaceChildren(...GRUPOS.map(([id, texto, n]) => {
-    const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(trGrupo === id));
-    b.setAttribute('aria-label', `${texto}, ${n}`); b.append(document.createTextNode(texto), el('b', '', String(n)));
-    b.onclick = () => { trGrupo = id; pintarTramite(); };
-    return b;
-  }));
-  const urgentes = marcha.filter(urgenteTr);
-  $('tr-aviso').hidden = !urgentes.length;
-  if (urgentes.length) $('tr-aviso').replaceChildren(el('strong', '', `${plural(urgentes.length, 'licitación cierra', 'licitaciones cierran')} en 3 días o menos y aún no se ${urgentes.length === 1 ? 'ha presentado' : 'han presentado'}.`));
-  const lista = (trGrupo === 'marcha' ? marcha : trGrupo === 'fin' ? fin : todas).filter(coincide).sort((a, b) => ordenCierre(a) - ordenCierre(b));
-  if (!lista.length) {
-    const st = el('li', 'state'); const vacio = !todas.length;
-    st.append(svg('users'), el('h2', '', vacio ? 'Aún no hay licitaciones en trámite' : 'Nada con estos filtros'),
-      el('p', '', vacio ? 'Cuando alguien del equipo marque «Me interesa» en el Radar, la licitación aparece aquí para darle seguimiento.' : 'Cambie la etapa que está viendo o la búsqueda.'));
-    $('tr-lista').replaceChildren(st); return;
-  }
-  $('tr-lista').replaceChildren(...lista.map(tarjetaTramite));
-}
-$('tr-q').addEventListener('input', pintarTramite);
-$('tr-lista').addEventListener('focusout', e => {
-  if (equipoPendiente && !$('tr-lista').contains(e.relatedTarget)) { equipoPendiente = false; pintarTramite(); }
-});
 
 // Pide a GitHub (por medio del script de la hoja, que guarda el permiso) una publicacion nueva de la web.
 // Devuelve 'lanzada' (o ya habia una en curso) o 'no' (no disponible: se lee lo ya publicado).
@@ -1206,7 +1063,6 @@ async function iniciarHoja() {
   const cfg = await cargarHoja(); pintarSaludo();
   if (!cfg.servidor && !cfg.url) return;
   pintarPersona(); vaciarColaHoja();
-  $('tab-tramite').hidden = false;
   cargarEquipo();
   setInterval(() => { if (!document.hidden) cargarEquipo(); }, 180000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) cargarEquipo(); });
@@ -1877,12 +1733,12 @@ function pintarMer() {
 }
 ['mq', 'mdep', 'mprod', 'mestado', 'morden'].forEach(id => $(id).addEventListener('input', () => { merVistos = PAGINA; pintarMer(); }));
 
-const TABS = ['radar', 'revisar', 'tramite', 'venc', 'mer', 'docs', 'crit'];
+const TABS = ['radar', 'revisar', 'venc', 'mer', 'docs', 'crit'];
 function vista(nombre) {
   if (nombre === 'documentos') nombre = 'docs';
   if (!TABS.includes(nombre)) nombre = 'radar';
   const esRadar = ['radar', 'revisar'].includes(nombre);
-  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-tramite').hidden = nombre !== 'tramite'; $('vista-venc').hidden = nombre !== 'venc'; $('vista-mer').hidden = nombre !== 'mer'; $('vista-crit').hidden = nombre !== 'crit';
+  $('vista-radar').hidden = !esRadar; $('vista-docs').hidden = nombre !== 'docs'; $('vista-venc').hidden = nombre !== 'venc'; $('vista-mer').hidden = nombre !== 'mer'; $('vista-crit').hidden = nombre !== 'crit';
   $('ctlRadar').hidden = !esRadar;
   TABS.forEach(t => { const b = $('tab-' + t); b.setAttribute('aria-selected', String(t === nombre)); b.tabIndex = t === nombre ? 0 : -1; });
   if (esRadar) {
@@ -1890,7 +1746,6 @@ function vista(nombre) {
     modo = nombre;
     if (alertasViejas) { alertasViejas = false; cargar(); } else if (datos) { pintarKpis(); pintar(); }
   }
-  if (nombre === 'tramite') { pintarTramite(); cargarEquipo(); }
   if (nombre === 'venc') cargarVenc();
   if (nombre === 'mer') cargarMer();
   if (nombre === 'docs' && !docs) cargarDocs();
@@ -1906,8 +1761,6 @@ const AYUDA = {
     'Cada tarjeta explica por qué salió, cuánto vale, cuándo cierra si SECOP lo publica, cuánta competencia suele haber y qué ha contratado antes esa entidad. Decida con «Me interesa» o «Descartar».']],
   revisar: ['Por revisar', ['Procesos con señales más débiles: no llegan al puntaje para avisarle, pero podrían servir.',
     'Revíselos para decidir si Electroriente puede suministrar o participar con un aliado, y para detectar qué términos faltan en la búsqueda.']],
-  tramite: ['En trámite', ['Las licitaciones que alguien del equipo marcó «Me interesa» y está trabajando, de la que cierra primero a la que cierra después.',
-    'Cambie la etapa (Por estudiar, Preparando oferta, Presentada…) y escriba notas: lo ve todo el equipo, porque se guarda en la hoja de Google compartida.']],
   venc: ['Oportunidades futuras', ['Contratos de lo que Electroriente vende que terminan pronto. Ya están adjudicados, así que no se puede ofertar en ellos.',
     'Sirven para anticiparse: cuando un contrato termina, la entidad suele necesitar lo mismo y puede abrir un proceso nuevo, que aparecería en Radar. Aquí ve quién es el proveedor actual y por cuánto se contrató.']],
   mer: ['Mercado', ['Quién le vende al Estado lo que Electroriente vende, según los contratos de suministro y compraventa firmados en los últimos 12 meses.',
