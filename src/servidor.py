@@ -332,12 +332,14 @@ class Manejador(BaseHTTPRequestHandler):
                 nombre = unquote(self.headers.get("X-Nombre", ""))
                 entrada = docs.guardar(q.get("doc", [""])[0], nombre,
                                        self.headers.get("X-Vence", ""), cuerpo)
+                docs.sincronizar_en_segundo_plano()
                 self._json(201, entrada)
             elif url.path == "/api/notificaciones/leer":
                 notificaciones.marcar_leidas()
                 self._json(200, {"ok": True})
             elif url.path == "/api/eliminar":
                 docs.eliminar(q.get("id", [""])[0])
+                docs.sincronizar_en_segundo_plano()
                 self._json(200, {"ok": True})
             else:
                 self._json(404, {"error": "no encontrado"})

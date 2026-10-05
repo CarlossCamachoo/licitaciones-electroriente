@@ -43,7 +43,7 @@
     const ruta = u.pathname;
     if (ruta === '/api/notificaciones') return json({ items: [], sin_leer: 0, intervalo_min: 60 });
     if (ruta === '/api/pendientes') return json([]);
-    const nombres = { '/api/vencimientos': 'vencimientos', '/api/mercado': 'mercado', '/api/criterios': 'criterios', '/api/hoja': 'hoja' };
+    const nombres = { '/api/vencimientos': 'vencimientos', '/api/mercado': 'mercado', '/api/criterios': 'criterios', '/api/hoja': 'hoja', '/api/documentos': 'documentos' };
     const nombre = ruta === '/api/alertas' ? 'alertas_' + (u.searchParams.get('dias') || '7') : nombres[ruta];
     if (!nombre) return json({ error: 'No disponible en la web compartida.' }, 404);
     try {

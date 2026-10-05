@@ -10,8 +10,9 @@ navegador descifra al escribir la contrasena. Sin ella no se puede leer nada.
 La contrasena nunca se guarda: llega por la variable de entorno CLAVE_WEB.
 
 Que incluye: Radar, Por revisar, Oportunidades futuras, Mercado y Criterios.
-Que NO incluye, a proposito: los documentos de la empresa (no deben quedar en un sitio
-publico) ni la campana. Si hay HOJA_URL y HOJA_TOKEN, lleva (cifrada) la direccion de la hoja
+Que NO incluye, a proposito: los archivos de la empresa (no deben quedar en un sitio publico)
+ni la campana. De los documentos solo viaja su ESTADO (falta, cargado, vence pronto, vencido), a
+partir del secreto ESTADO_DOCUMENTOS que sube el panel local (documentos.sincronizar_web). Si hay HOJA_URL y HOJA_TOKEN, lleva (cifrada) la direccion de la hoja
 compartida del equipo, para copiar ahi los «Me interesa». Las decisiones "Me interesa / Descartar" se guardan en el
 navegador de cada persona.
 
@@ -38,6 +39,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 import competencia
+import documentos
 import mercado
 import radar
 import servidor
@@ -134,8 +136,21 @@ def asegurar_mercado():
         competencia._memoria["datos"] = competencia._construir()
 
 
-def armar_pagina(destino):
-    """Copia web/index.html con las rutas relativas, la pantalla de acceso y sin documentos."""
+def estado_documentos():
+    """Resumen de documentos del secreto ESTADO_DOCUMENTOS, o None si no hay (la pestaña queda oculta)."""
+    crudo = os.environ.get("ESTADO_DOCUMENTOS", "").strip()
+    if not crudo:
+        return None
+    try:
+        return documentos.resumen_valido(json.loads(crudo))
+    except ValueError as e:
+        sys.exit(f"ESTADO_DOCUMENTOS no es valido: {e}")
+
+
+def armar_pagina(destino, con_documentos=False):
+    """Copia web/index.html con las rutas relativas y la pantalla de acceso.
+
+    La pestaña Documentos solo se muestra si hay estado de documentos que publicar."""
     web = radar.RAIZ / "web"
     html = (web / "index.html").read_text(encoding="utf-8")
     reemplazos = [
@@ -150,10 +165,10 @@ def armar_pagina(destino):
          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; "
          "script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; "
          "base-uri 'none'; form-action 'none'\">"),
-        # La pestaña de documentos no existe en la web compartida.
-        ('id="tab-docs" aria-selected="false" tabindex="-1" type="button"',
-         'id="tab-docs" aria-selected="false" tabindex="-1" type="button" hidden'),
     ]
+    if not con_documentos:
+        reemplazos.append(('id="tab-docs" aria-selected="false" tabindex="-1" type="button"',
+                           'id="tab-docs" aria-selected="false" tabindex="-1" type="button" hidden'))
     for viejo, nuevo in reemplazos:
         if viejo not in html:
             raise SystemExit(f"No se encontro en web/index.html: {viejo[:60]}")
@@ -201,7 +216,12 @@ def main():
         sal_ruta.write_text(base64.b64encode(sal).decode())
     clave = derivar(contrasena, sal)
 
-    armar_pagina(destino)
+    estado_docs = estado_documentos()
+    armar_pagina(destino, con_documentos=estado_docs is not None)
+    if estado_docs is None:
+        (datos_dir / "documentos.enc").unlink(missing_ok=True)
+    else:
+        (datos_dir / "documentos.enc").write_bytes(cifrar(clave, documentos.listar_desde(estado_docs)))
     # check.enc deja comprobar la contrasena sin descargar nada pesado.
     (datos_dir / "check.enc").write_bytes(cifrar(clave, {"ok": True}))
     # Hoja compartida del equipo (autorizado por el dueño del proyecto): su direccion y clave viajan

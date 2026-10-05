@@ -1501,6 +1501,21 @@ function filaDoc(d) {
   const [cls, txt] = ESTADO[d.estado]; h.append(el('span', cls, txt));
   li.append(h, el('p', 'para', d.para_que), el('p', 'datos', `Lo emite: ${d.emite}. Vigencia: ${d.vigencia}.`));
 
+  if (estatico) {
+    // Web compartida: solo estado. Los archivos no viajan, ni siquiera sus nombres.
+    if (d.archivos.length) {
+      const ul = el('ul', 'arch');
+      d.archivos.forEach(a => {
+        const f = el('li');
+        f.append(el('span', 'fin', a.vence ? `Vence ${a.vence}` : 'Sin fecha de vencimiento'));
+        if (a.estado === 'vencido' || a.estado === 'por_vencer') f.append(el('span', ESTADO[a.estado][0], ESTADO[a.estado][1]));
+        ul.append(f);
+      });
+      li.append(ul);
+    }
+    return li;
+  }
+
   if (d.archivos.length) {
     const ul = el('ul', 'arch');
     d.archivos.forEach(a => {
@@ -1897,8 +1912,11 @@ const AYUDA = {
     'Sirven para anticiparse: cuando un contrato termina, la entidad suele necesitar lo mismo y puede abrir un proceso nuevo, que aparecería en Radar. Aquí ve quién es el proveedor actual y por cuánto se contrató.']],
   mer: ['Mercado', ['Quién le vende al Estado lo que Electroriente vende, según los contratos de suministro y compraventa firmados en los últimos 12 meses.',
     'Vea quién gana, qué entidades compran y a quién, cuánta competencia hay por región y producto, y cuánto se paga. No es todo el gasto del Estado: solo lo que coincide con la búsqueda.']],
-  docs: ['Documentos', ['Los documentos generales que se piden en toda licitación. Suba aquí los de Electroriente y vea cuáles faltan, cuáles están vigentes y cuáles vencen pronto.',
-    'Los archivos se guardan solo en este computador (carpeta docs/empresa), nunca en GitHub. Lo que cambia según el proceso se ve en su pliego.']],
+  docs: ['Documentos', document.documentElement.hasAttribute('data-estatico')
+    ? ['Los documentos generales que se piden en toda licitación y cuáles de ellos ya tiene Electroriente: cuáles faltan, cuáles están vigentes y cuáles vencen pronto.',
+       'Aquí solo se ve el estado. Los archivos se suben y se descargan en el panel del computador de la oficina; nunca se publican. Lo que cambia según el proceso se ve en su pliego.']
+    : ['Los documentos generales que se piden en toda licitación. Suba aquí los de Electroriente y vea cuáles faltan, cuáles están vigentes y cuáles vencen pronto.',
+       'Los archivos se guardan solo en este computador (carpeta docs/empresa), nunca en GitHub; a la web compartida solo llega el estado de cada documento. Lo que cambia según el proceso se ve en su pliego.']],
   crit: ['Criterios', ['Cómo decide el radar si una licitación vale la pena: los criterios, su peso y los términos de búsqueda, con las veces que acertó cada uno.',
     'Sirve para revisar y ajustar la búsqueda.']]
 };

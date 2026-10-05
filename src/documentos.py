@@ -8,14 +8,18 @@ El nombre original solo se guarda como texto para mostrarlo.
 import json
 import os
 import re
+import shutil
+import subprocess
+import sys
 import threading
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
 
 import radar
+from usuarios_web import REPO
 
 DIR = radar.RAIZ / "docs" / "empresa"
 INDICE = DIR / "indice.json"
@@ -92,11 +96,11 @@ def _publico(entrada):
             "bytes": entrada["bytes"], "estado": estado_archivo(entrada)}
 
 
-def _estado_doc(archivos):
+def _estado_doc(archivos, hoy=None):
     """falta | listo | por_vencer | vencido, segun los archivos del documento."""
     if not archivos:
         return "falta"
-    estados = {estado_archivo(a) for a in archivos}
+    estados = {estado_archivo(a, hoy) for a in archivos}
     if estados & {"vigente", "sin_fecha"}:
         return "listo"
     return "por_vencer" if "por_vencer" in estados else "vencido"
@@ -112,6 +116,79 @@ def listar():
             d["archivos"] = [_publico(a) for a in archivos]
             d["estado"] = _estado_doc(archivos)
     return cats
+
+
+# ---- Version de solo estado para la web compartida --------------------------------------------
+# La web compartida es publica (los datos van cifrados) y la publicacion corre en GitHub, donde la
+# carpeta docs/empresa/ no existe. Por eso solo viaja un resumen: para cada documento, las fechas de
+# vencimiento de sus archivos. Nunca nombres de archivo, tamaños ni contenido.
+
+def resumen():
+    """{id de documento: [fecha de vencimiento o "" por cada archivo subido]}."""
+    resumen = {}
+    for e in _leer_indice():
+        resumen.setdefault(e["doc"], []).append(e.get("vence") or "")
+    return resumen
+
+
+def hoy_colombia():
+    return datetime.now(timezone(timedelta(hours=-5))).date()
+
+
+def listar_desde(resumen_docs):
+    """Catalogo con el estado de cada documento, calculado a partir de resumen().
+
+    Los archivos solo traen estado y vencimiento (sin nombre, tamaño ni id de archivo)."""
+    hoy = hoy_colombia()
+    cats = catalogo()
+    for c in cats:
+        for d in c["documentos"]:
+            entradas = [{"vence": v} for v in resumen_docs.get(d["id"], [])]
+            d["archivos"] = [{"vence": e["vence"], "estado": estado_archivo(e, hoy)} for e in entradas]
+            d["estado"] = _estado_doc(entradas, hoy)
+    return cats
+
+
+def resumen_valido(obj):
+    """Comprueba la forma del resumen (viene de un secreto de GitHub): ids conocidos y fechas ISO."""
+    if not isinstance(obj, dict):
+        raise ValueError("el resumen debe ser un objeto")
+    conocidos = {d["id"] for c in catalogo() for d in c["documentos"]}
+    for doc_id, fechas in obj.items():
+        if doc_id not in conocidos or not isinstance(fechas, list):
+            raise ValueError(f"documento no reconocido: {str(doc_id)[:30]}")
+        for v in fechas:
+            if v != "":
+                date.fromisoformat(v)
+    return obj
+
+
+def sincronizar_web(lanzar=True):
+    """Sube el resumen como secreto ESTADO_DOCUMENTOS y pide publicar la web.
+
+    GitHub no deja leer un secreto una vez guardado: el indice local es la fuente."""
+    if not shutil.which("gh"):
+        raise ErrorDocumento("Falta el comando gh para actualizar la web compartida.")
+    cuerpo = json.dumps(resumen(), separators=(",", ":"))
+    r = subprocess.run(["gh", "secret", "set", "ESTADO_DOCUMENTOS", "--repo", REPO],
+                       input=cuerpo, text=True, capture_output=True)
+    if r.returncode:
+        raise ErrorDocumento("No se pudo guardar ESTADO_DOCUMENTOS: " + r.stderr.strip()[:200])
+    if lanzar:
+        r = subprocess.run(["gh", "workflow", "run", "publicar.yml", "--repo", REPO],
+                           text=True, capture_output=True)
+        if r.returncode:
+            raise ErrorDocumento("El secreto se guardo, pero no se pudo lanzar la publicacion.")
+
+
+def sincronizar_en_segundo_plano():
+    """Tras subir o quitar un archivo: actualiza la web compartida sin hacer esperar al usuario."""
+    def tarea():
+        try:
+            sincronizar_web()
+        except (ErrorDocumento, OSError) as e:
+            sys.stderr.write(f"[documentos] No se actualizo la web compartida: {e}\n")
+    threading.Thread(target=tarea, daemon=True).start()
 
 
 def guardar(doc_id, original, vence, contenido):
@@ -213,3 +290,11 @@ def requisitos(resultado, cats=None):
                 else:
                     grupos["verificar"].append(item)
     return grupos
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["sincronizar"]:
+        sincronizar_web()
+        print("Listo: la web compartida se actualiza en unos 3 minutos.")
+    else:
+        sys.exit("Uso: python3 src/documentos.py sincronizar")
