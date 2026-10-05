@@ -29,6 +29,7 @@ se usa. Eso significa que las explicaciones importan tanto como el codigo.
 | A, radar | Detecta procesos en SECOP y los puntua | Funcionando, probado contra la API real (2 oct 2026) |
 | B, analista | Extraer requisitos y plazos de los pliegos | No construido |
 | C, gestor | Checklist de documentos, plazos, archivo historico | Parcial: el panel recibe los documentos de la empresa (`docs/empresa/`, fuera de git) y dice que falta para cada alerta, por reglas de `config/documentos.yaml`. No lee pliegos ni extrae datos de los archivos |
+| Web compartida (GitHub Pages) | Version cifrada del panel para el equipo | Funcionando. Pestanas: Radar, Por revisar, Oportunidades futuras, Mercado, Documentos (solo estado, sin archivos ni nombres; llega por el secreto `ESTADO_DOCUMENTOS`, que el panel local sube solo al subir o quitar un archivo, o con `python3 src/documentos.py sincronizar`) y Criterios. La pestana En tramite se retiro el 5 oct 2026 (la hoja conserva Seguimiento y Comentarios). Los flujos usan `ubuntu-24.04` y `reintentar.yml` relanza una vez una publicacion fallida |
 
 **Ya probado en vivo:** los nombres de campo de la API son correctos. Se
 corrigio un bug: el limite de 2000 descartaba el 88 % de los procesos de la
