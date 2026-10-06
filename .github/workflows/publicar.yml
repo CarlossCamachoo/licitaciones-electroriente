@@ -3,7 +3,9 @@ name: Publicar la web compartida
 # Genera la version compartida del panel (con contrasena) y la publica en el repositorio
 # publico "radar-licitaciones" (GitHub Pages). Los datos van cifrados: el sitio es publico pero
 # sin la contrasena no se puede leer nada. No incluye los documentos de la empresa.
-# Horario: cada 30 minutos, de 6:00 a. m. a 10:00 p. m. hora de Colombia (UTC-5) = 11:00 a 02:59 UTC.
+# Horario: cada 2 horas, de 7:00 a. m. a 7:00 p. m. hora de Colombia (UTC-5) = 12, 14, 16, 18, 20, 22 y 00 UTC.
+# Menos ejecuciones por dia reducen los fallos temporales de GitHub Pages ("Failed to get ID Token").
+# Para actualizar en cualquier momento: boton "Run workflow" de Actions o `gh workflow run publicar.yml`.
 # El repositorio es publico, asi que los minutos de Actions no tienen limite. Una ejecucion normal dura ~2 min
 # (una sola consulta a SECOP de 30 dias; 3, 7 y 15 salen de ella); el mercado se rehace una vez al dia (~10 min).
 # GitHub puede retrasar las ejecuciones programadas unos minutos cuando hay mucha carga.
@@ -14,7 +16,7 @@ name: Publicar la web compartida
 # Tambien se publica sola al subir cambios al codigo, la configuracion o la pantalla.
 on:
   schedule:
-    - cron: "*/30 0-2,11-23 * * *"
+    - cron: "0 0,12,14,16,18,20,22 * * *"
   workflow_dispatch:
   push:
     branches: [main]
