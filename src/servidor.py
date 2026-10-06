@@ -196,7 +196,9 @@ def enviar_a_hoja(item):
 
 
 ETIQUETAS_GRUPO = {"nucleo": "Núcleo", "catalogo_principal": "Catálogo principal",
-                   "lineas_secundarias": "Líneas secundarias", "contexto": "Contexto"}
+                   "lineas_secundarias": "Líneas secundarias", "contexto": "Contexto",
+                   "catalogo_tienda": "Productos de la tienda", "catalogo_sueltos": "Palabras sueltas de la tienda (mínimo 2)",
+                   "marcas_catalogo": "Marcas de la tienda"}
 
 
 def etiqueta_grupo(nombre):

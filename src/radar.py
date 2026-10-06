@@ -330,7 +330,9 @@ def evaluar(proceso, perfil, filtros, umbral=None):
     coincidencias = []
     for nombre_grupo, grupo in filtros["incluir"].items():
         encontrados = [t for t in grupo["terminos"] if contiene(texto_norm, t)]
-        if encontrados:
+        # Un grupo de terminos sueltos («interruptor», «lampara») solo cuenta cuando coinciden varios: una sola
+        # palabra aparece por casualidad en fichas de equipos medicos o de laboratorio.
+        if len(encontrados) >= grupo.get("minimo_terminos", 1) and encontrados:
             # El grupo aporta su peso una sola vez, no por cada termino.
             # Asi un pliego que repite palabras no infla el puntaje.
             puntaje += grupo["peso"]

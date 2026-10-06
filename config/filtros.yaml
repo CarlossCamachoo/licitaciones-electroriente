@@ -11,7 +11,8 @@
 
 # ---------------------------------------------------------------
 # PASO 1: terminos que hacen entrar un proceso
-# Agrupados por familia. El grupo determina el puntaje base.
+# Agrupados por familia. El grupo determina el puntaje base. Un grupo puede exigir varios terminos
+# distintos con `minimo_terminos` (por defecto basta uno).
 # ---------------------------------------------------------------
 incluir:
 
@@ -72,6 +73,68 @@ incluir:
       - "media tension"
       - "baja tension"
       - "transformador"
+
+  # Productos concretos del catalogo de la tienda en linea (2.945 productos, revisado el 5 oct 2026) que una
+  # entidad pide con su nombre y que los grupos de arriba no cubrian. Cada termino es lo bastante especifico
+  # para puntuar solo. Probados contra 61.474 procesos de 30 dias: sumaron 22 alertas, casi todas legitimas.
+  catalogo_tienda:
+    peso: 25
+    terminos:
+      - "contactor"
+      - "seccionador"
+      - "medidor de energia"
+      - "interruptor termomagnetico"
+      - "cargador de bateria"
+      - "pinza amperimetrica"
+      - "temporizador"
+      - "tomacorriente"
+      - "cable duplex"
+      - "cable encauchetado"
+      - "tubo led"
+      - "bombillo led"
+      - "reflector led"
+      - "lampara led"
+      - "fotocelda"
+      - "cofre electrico"
+      - "pulsador"
+      - "rele termico"
+      - "fuente de poder"
+
+  # Palabras sueltas del catalogo: una sola aparece por casualidad (un «fusible» en la ficha de una incubadora,
+  # una «lampara» UV de laboratorio). Solo cuentan cuando coinciden al menos dos, como en las listas de ferreteria
+  # electrica («bombillos, interruptores y tomacorrientes»).
+  catalogo_sueltos:
+    peso: 25
+    minimo_terminos: 2
+    terminos:
+      - "interruptor"
+      - "rele"
+      - "fusible"
+      - "lampara"
+      - "bombillo"
+      - "reflector"
+      - "cofre"
+      - "clavija"
+      - "regleta"
+      - "cinta aislante"
+      - "terminal"
+      - "conector"
+      - "caja de paso"
+
+  # Marcas que vende la tienda. Una entidad que nombra la marca suele pedir producto de esa linea.
+  marcas_catalogo:
+    peso: 20
+    terminos:
+      - "schneider"
+      - "legrand"
+      - "leviton"
+      - "sylvania"
+      - "lovato"
+      - "autonics"
+      - "centelsa"
+      - "procables"
+      - "tesys"
+      - "moeller"
 
   # Peso bajo: señal de sector, no de producto. Sirve combinado.
   contexto:

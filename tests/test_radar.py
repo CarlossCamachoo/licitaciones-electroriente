@@ -168,6 +168,15 @@ class Puntaje(unittest.TestCase):
     def test_grupos_distintos_se_suman(self):
         self.assertEqual(evaluar(proceso("variador de velocidad y cable electrico"))["puntaje"], 70)
 
+    def test_grupo_con_minimo_de_terminos(self):
+        sueltos = {"incluir": {**FILTROS["incluir"],
+                               "sueltos": {"peso": 25, "minimo_terminos": 2, "terminos": ["fusible", "lampara"]}}}
+        # una sola palabra suelta («fusible» en la ficha de una incubadora) no entra
+        self.assertIsNone(evaluar(proceso("incubadora con fusible"), 5, **sueltos))
+        # dos distintas si; la misma repetida no cuenta como dos
+        self.assertEqual(evaluar(proceso("fusible y lampara"), 5, **sueltos)["puntaje"], 25)
+        self.assertIsNone(evaluar(proceso("fusible fusibles fusible"), 5, **sueltos))
+
     def test_texto_repetido_no_infla(self):
         self.assertEqual(evaluar(proceso("plc plc plc plc"))["puntaje"], 40)
 
