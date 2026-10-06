@@ -87,7 +87,6 @@ incluir:
       - "seccionador"
       - "medidor de energia"
       - "interruptor termomagnetico"
-      - "cargador de bateria"
       - "pinza amperimetrica"
       - "temporizador"
       - "tomacorriente"
@@ -169,6 +168,25 @@ excluir:
   - "electrodomestico"
   - "electrobisturi"
   - "electrocardiograf"
+  # Baterias y servicios (decision del 6 oct 2026). Son frases y no las palabras sueltas, a proposito:
+  # «bateria» a secas sacaria las UPS (que mencionan sus baterias) y «servicio» sacaria suministros legitimos
+  # («variadores para la empresa de servicios publicos»). Probado contra 61.474 procesos de 30 dias.
+  - "baterias para"
+  - "baterias de"
+  - "baterias recargables"
+  - "compra de baterias"
+  - "prestacion de servicios"
+  - "prestacion del servicio"
+  - "prestar servicio"
+  - "prestar el servicio"
+  - "servicio de mantenimiento"
+  - "servicios de mantenimiento"
+  - "servicio de reparacion"
+  - "servicios de reparacion"
+  - "servicio de instalacion"
+  - "servicios de instalacion"
+  - "contratar el servicio"
+  - "contratar los servicios"
   # Ruido que entraba por una palabra suelta (canaleta de aguas, subestacion de telecomunicaciones)
   - "vertimientos"
   - "aguas lluvias"
