@@ -23,6 +23,9 @@ incluir:
       - "variador de velocidad"
       - "variadores de velocidad"
       - "variador de frecuencia"
+      - "variador"                  # la entidad suele escribir «variadores Yaskawa» o «variador frecuencia», sin «de»
+      - "inversor de frecuencia"
+      - "convertidor de frecuencia"
       - "automatizacion industrial"
       - "control de motores"
       - "arrancador suave"
