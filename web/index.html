@@ -821,7 +821,7 @@ async function cargar(forzar = false, manual = false) {
       await new Promise(res => setTimeout(res, 15000));
     }
     if (!r.ok) throw new Error(j.error || 'Error inesperado');
-    datos = j; mostrados = PAGINA; animar = true;
+    datos = j; mostrados = PAGINA; animar = true; datos30 = null; cargarAmplia();
     ultimaConsulta = j.generado_ts; pintarConsulta();
     if (manual && estatico && !lanzada && antes === j.generado_ts) avisar(`Ya tiene lo más reciente: los datos se publican cada 30 minutos (última publicación ${hace(j.generado_ts)}).`);
     llenarDeps();
@@ -1108,10 +1108,22 @@ addEventListener('pagehide', anotarVisita);
 const VISTAS = [['pendientes', 'Sin decidir', r => !estadoDe(r)], ['interesa', 'Me interesan', r => estadoDe(r) === 'interesa'],
                 ['descarta', 'Descartadas', r => estadoDe(r) === 'descarta'], ['todas', 'Todas', () => true]];
 
-function filtrar(conDecision = true) {
+// «Me interesan» no depende del periodo ni de la pestaña: muestra lo marcado entre los ultimos 30 dias, sea
+// del Radar o de Por revisar. Mientras llega la consulta de 30 dias se usa la del periodo elegido.
+let datos30 = null;
+const amplia = () => (datos30 || datos).resultados;
+async function cargarAmplia() {
+  if (+$('dias').value === 30) { datos30 = datos; return; }
+  try {
+    const r = await fetch('/api/alertas?dias=30'); if (!r.ok) return;
+    const j = await r.json(); if (!datos) return;
+    datos30 = j; ver === 'interesa' ? pintar() : pintarConteos();
+  } catch (_) {}
+}
+function filtrar(conDecision = true, vista = ver) {
   const q = $('q').value.trim().toLowerCase(), dep = $('dep').value;
-  const dv = VISTAS.find(v => v[0] === ver)[2];
-  const lista = base().filter(r =>
+  const dv = VISTAS.find(v => v[0] === vista)[2];
+  const lista = (vista === 'interesa' ? amplia() : base()).filter(r =>
     (!conDecision || dv(r)) &&
     (!dep || r.departamento === dep) &&
     (!$('renov').value || r.renovacion) &&
@@ -1263,7 +1275,7 @@ function pintarConteos() {
   const previa = filtrar(false);
   $('seg').replaceChildren(...VISTAS.map(([id, texto, fn]) => {
     const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(ver === id));
-    const n = previa.filter(fn).length;
+    const n = (id === 'interesa' ? filtrar(false, 'interesa') : previa).filter(fn).length;
     b.setAttribute('aria-label', `${texto}, ${n}`);
     b.append(document.createTextNode(texto), el('b', '', String(n)));
     b.onclick = () => { ver = id; mostrados = PAGINA; animar = true; pintar(); };
@@ -1277,7 +1289,9 @@ function pintar() {
   const f = filtrar(), lista = $('lista');
   pintarConteos();
   const total = base().length;
-  $('cuenta').textContent = `${f.length.toLocaleString('es-CO')} de ${plural(total, 'proceso', 'procesos')}`;
+  $('cuenta').textContent = ver === 'interesa'
+    ? `${plural(f.length, 'marcada', 'marcadas')} · de los últimos 30 días, sea cual sea el periodo elegido`
+    : `${f.length.toLocaleString('es-CO')} de ${plural(total, 'proceso', 'procesos')}`;
   if (!f.length) {
     const st = el('li', 'state');
     const sinPendientes = ver === 'pendientes' && total && !filtrar(false).filter(VISTAS[0][2]).length && filtrar(false).length;
